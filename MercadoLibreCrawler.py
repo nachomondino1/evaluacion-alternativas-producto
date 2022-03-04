@@ -35,6 +35,7 @@ class MercadoLibreCrawler():
         :param busqueda: Producto que quiere comprar el cliente
         :return: True si mercadolibre encuentra categoria a la busqueda o False en caso contrario
         """
+
         # Ingreso a URL semilla (en este caso, la pagina principal de mercado libre)
         a = busqueda.replace(" ", "-")
         b = busqueda.replace(" ", "%20")
@@ -45,22 +46,6 @@ class MercadoLibreCrawler():
         bs = BeautifulSoup(html, 'html.parser')
         resp = bs.find('div', {'class': "ui-search-breadcrumb"}).find("ol", {"class": "andes-breadcrumb"})
         return resp
-
-
-        """
-        Lo viejo
-        # Ingreso a URL semilla (en este caso, la pagina principal de mercado libre)
-        a = busqueda.replace(" ", "-")
-        b = busqueda.replace(" ", "%20")
-        url = 'https://listado.mercadolibre.com.ar/' + a + "#D[A:" + b + "]"
-        # driver.get(url)
-
-        try:
-            driver.find_element(By.XPATH, '//div[@class="ui-search-breadcrumb"]/ol[@class="andes-breadcrumb"]')
-            return True
-        except:
-            return False
-        """
 
 
     def getPublicationsUrl(self, driver):
@@ -101,13 +86,7 @@ class MercadoLibreCrawler():
 
         :return: Dataframe cuya unidad de analisis es la opinion y sus columnas son titulo, content, rate, fecha, likes, dislikes
         """
-
-        # Creo el dataframe
-        df = pd.DataFrame(columns=['title', 'content', 'rate','likes','dislikes']) # Falta el id en primera row
-        idx = 0
-
-        # Tendre que implementar extraccion de id o bien pasarlo como parametro
-
+        title, content, rate, likes, dislikes = [], [], [], [], []
 
         # Extraigo opiniones
         # Obtengo los XPATH donde se ubican los parrafos de cada una de las opiniones
@@ -118,15 +97,15 @@ class MercadoLibreCrawler():
 
             # Extraigo Title
             try:
-                title = opinion.find_element_by_xpath('.//h2').text
+                title.append(opinion.find_element_by_xpath('.//h2').text)
             except:
-                title = None
+                title.append(None)
 
             # Extraigo Content
             try:
-                content = opinion.find_element_by_xpath('.//p').text
+                content.append(opinion.find_element_by_xpath('.//p').text)
             except:
-                content = None
+                content.append(None)
 
             # Extraigo Rate
             try:
@@ -135,36 +114,31 @@ class MercadoLibreCrawler():
                 # print(stars)
 
                 for star in stars:
-                    # print(star.find_element_by_tag_name("path").get_attribute("fill"))
-                    # print(type(star.find_element_by_tag_name("path").get_attribute("fill")))
-                    # print(star.find_elements_by_class_name("fill"))
-
                     if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
                         n += 1
                     else:
                         break
-                rate = n
+                rate.append(n)
             except:
-                rate = None
+                rate.append(None)
 
             #Extraigo Likes y dislikes
             try:
-                likes = int(opinion.find_element_by_xpath('.//a[@data-testid="like-button"]').text)
-                dislikes = int(opinion.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text)
+                likes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
+                dislikes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
             except:
-                likes, dislikes = None, None
+                likes.append(None)
+                dislikes.append(None)
 
-            # Cargo nueva fila al df
-            df.loc[idx] = [title,content,rate,likes,dislikes] # falta el id
-            idx += 1
+        columns = [title,content,rate,likes,dislikes]
+        print(columns)
+        return columns
 
 
-        return df
-
+        # Tendre que implementar extraccion de id o bien pasarlo como parametro
 
     def verificationNewOpinions(self, driver, df):
         """
-
         :param driver:
         :param df: dataframe cuya unidad de analisis es una opinion y las columnas son titulo, content, rate, fecha, likes, dislikes
         :return: True si son opiniones ya extraidas o False en caso que sean nuevas
@@ -181,49 +155,6 @@ class MercadoLibreCrawler():
 
         return bool
 
-    """ old version
-    def getOpinionTitle(self, opinion):
-        title = opinion.find_element_by_xpath('.//h2').text
-        return title
-    
-    
-    def getOpinionRate(self, opinion):
-        '''
-
-        :param opinion: tag article con rate, content, titulo, likes y dislikes
-        :return: Numero de estrellas de la opinion
-        '''
-        n = 0
-        stars = opinion.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
-        # print(stars)
-
-        for star in stars:
-            # print(star.find_element_by_tag_name("path").get_attribute("fill"))
-            # print(type(star.find_element_by_tag_name("path").get_attribute("fill")))
-            # print(star.find_elements_by_class_name("fill"))
-
-            if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
-                n += 1
-            else:
-                break
-        return n
-
-
-    def getOpinionContent(self, opinion):
-        try:
-            content = opinion.find_element_by_xpath('.//p').text
-        except:
-            pass
-        return content
-
-
-    def getOpinionLikes(self, opinion):
-        # falta implementar handle exception
-        likes = int(opinion.find_element_by_xpath('.//a[@data-testid="like-button"]').text)
-        dislikes = int(opinion.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text)
-        return likes, dislikes
-
-"""
 
     # Puedo hacer un buscador de atributos... que busque en publicaciones hasta que encuentre en alguna un cuadro comparativo de publicaciones entonces saco la primera columna de la tabla
     # o bien, en la seccion que dice "Caracteristicas de ..." aunque veo que es poco (por ej, en celulares falta sistema operativo, memoria ram, etc)
@@ -257,9 +188,6 @@ class MercadoLibreCrawler():
         devolucion = getDevolucion(driver)
 
         # Compra protegida
-
-
-
 
 
         """

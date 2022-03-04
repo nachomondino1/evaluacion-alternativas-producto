@@ -31,9 +31,23 @@ opts.add_argument(
     "USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
 driver = webdriver.Chrome('/Users/nachomondino/Desktop/chromedriver', chrome_options=opts)
 
-
+"""
 def unirDataFrames(df1,df2):
     df = pd.concat([df1, df2])
+    return df
+"""
+
+def OpinionsDataFrame(new_opinions, df):
+    """
+    Mi idea es hacer una funcion que cree el dataframe
+    :return:
+    """
+    # Creo diccionario con nuevas opiniones y luego lo convierto a dataFrame
+    d = {'title':new_opinions[0], 'content':new_opinions[1], 'rate':new_opinions[2], 'likes':new_opinions[3], 'dislikes':new_opinions[4]}
+    new_df = pd.DataFrame(data=d)
+
+    # Concateno los dataframe de opiniones juntando las viejas y las nuevas
+    df = pd.concat([df, new_df])
     return df
 
 
@@ -42,8 +56,8 @@ def main():
     paginacion_num, paginacion_max = 1, 10
 
     # luego implementare que busqueda = 20/30 prod mas demandados
-    busqueda = str(input("Ingrese producto: "))
-    # busqueda = "celulares"
+    # busqueda = str(input("Ingrese producto: "))
+    busqueda = "celulares"
 
     crawler = MercadoLibreCrawler(driver, busqueda)
 
@@ -76,10 +90,9 @@ def main():
                     # WebScrapingActions.ScrollDown(driver)
 
                     # Extraigo opiniones
-                    df_opiniones_publicacion = crawler.getPublicacionOpinions(driver)
-                    print(df_opiniones_publicacion)
-                    df_opiniones_publicaciones = unirDataFrames(df_opiniones_publicaciones, df_opiniones_publicacion)
-
+                    opiniones_publicacion = crawler.getPublicacionOpinions(driver)
+                    df_opiniones_publicaciones = OpinionsDataFrame(opiniones_publicacion, df_opiniones_publicaciones)
+                    print(df_opiniones_publicaciones)
                     # Extraigo descripcion del producto (notar que solo lo extraigo si las opiniones son nuevas)
                     driver.back()  # salgo de "ver todas las opiniones"
 
