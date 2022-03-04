@@ -18,8 +18,11 @@ def getPublicacionOpinions(driver):
     """
 
     # Creo el dataframe
-    df = pd.DataFrame(columns=['title', 'content', 'rate','likes','dislikes'])
+    df = pd.DataFrame(columns=['id','title', 'content', 'rate','likes','dislikes'])
     idx = 0
+
+    # Tendre que implementar extraccion de id o bien pasarlo como parametro
+
 
     # Extraigo opiniones
     # Obtengo los XPATH donde se ubican los parrafos de cada una de las opiniones
@@ -33,7 +36,7 @@ def getPublicacionOpinions(driver):
         likes, dislikes = getOpinionLikes(opinion)
 
         # Cargo nueva fila al df
-        df.loc[idx] = [title,content,rate,likes,dislikes]
+        df.loc[idx] = [id,title,content,rate,likes,dislikes]
         idx += 1
 
     return df

@@ -24,6 +24,8 @@ def PublicationExtractor(driver):
     NO HACE FALTA HACER UN TRY PUES LOS TAGS SON UNICOS MAS ALLA DE SI ESTAN EN UNA COLUMNA U OTRA POR LO QUE,
     NO IMPORTAN.
     """
+    # Tendre que implementar extraccion de id o bien pasarlo como parametro
+
 
     # Estado. Esta en un lugar unico tanto para usados como nuevos div#class="ui-pdp-header__subtitle"
     driver.find_element(By.XPATH, '//div[@class="ui-pdp-header__subtitle"]/span]').text
@@ -91,4 +93,5 @@ def getDevolucion(driver):
     return devolucion
 
 
-def getCompraProtegida(driver):
+
+# def getCompraProtegida(driver):

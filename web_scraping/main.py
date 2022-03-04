@@ -20,7 +20,6 @@ import OpinionsExtractor as oe
 import LinksExtractor as le
 import WebScrapingActions
 
-
 # Defino a Chrome como Web Browser
 opts = Options()
 opts.add_argument(
@@ -31,6 +30,12 @@ driver = webdriver.Chrome('/Users/nachomondino/Desktop/chromedriver', chrome_opt
 def unirDataFrames(df1,df2):
     df = pd.concat([df1, df2])
     return df
+
+
+#def getIdentificadorProducto(url):
+    # los dos df tienen que tener el id pero no creo que este bien pasarlo como parametro en los get()
+    # es mejor llamar a esta funcion dentro de las funciones get()
+    #FALTA IMPLEMENTAR
 
 
 def main():
