@@ -9,7 +9,7 @@ Pseudocodigo de lo que quisiera que haga:
 # Importo librerias
 # import streamlit as st antes hacer pip install streamlit (hacerlo dsp de virtual env)
 from selenium import webdriver
-from meli_web_scraping import LinksExtractor as le
+from extraccion_datos import LinksExtractor as le
 from selenium.webdriver.chrome.options import Options
 
 

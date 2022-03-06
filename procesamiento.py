@@ -17,20 +17,13 @@ Pseudocodigo de lo que quisiera que haga:
 """
 
 # Importo Librerias
-from meli_web_scraping.MercadoLibreApi import MercadoLibreApi
+from extraccion_datos.MercadoLibreApi import MercadoLibreApi
 
 
 # 1.- Extrae los datos mediante web scraping para esa busqueda o los busca (uso directorio de web scraping)
 # 1.1.- Busca atributos
-extractor = MercadoLibreApi()
 
-# # para la busqueda del usuario, extraer id_categoria (del link) y llamar a la siguiente funcion
-# # Ejs de codigos: MLA1055 (para celulares) ; MLA1002 (no se de que es)
-# # DOS ALTERNATIVAS: con API o con web Scraping...
 
-extractor.getIdCategorias()
-
-extractor.getAtributosObligatorios("MLA3502")
 
 
 

@@ -12,9 +12,6 @@ from MercadoLibreApi import MercadoLibreApi
 
 class MercadoLibreCrawler(Crawler):
     """ A tool to extract information from Mercado Libre"""
-    # Los metodos dentro de la clase seran acciones que pueda hacer el crawler
-    # Para usar la clase tendre que definir un driver (Chrome, Firefox, Phantom, etc) y un producto a buscar
-    # TIENE QUE SER UNA CLASE HIJA DE CRAWLER() EN DONDE PONGO EL CODIGO DE WEB SCRAPING QUE SIRVE PARA CUALQUIER PROYECTOO......... Por ej, def Scrolldown
 
     def __init__(self, driver, busqueda):
         self.driver = driver
@@ -29,7 +26,7 @@ class MercadoLibreCrawler(Crawler):
         return url
 
 
-    def validacionBusqueda(self, driver, busqueda):
+    def validacionBusqueda(self, busqueda):
         """
         Validar la busqueda para que esta no sea muy amplia (hay un costo computacional).
         Si la busqueda es "acotada" Mercado Libre asocia la busqueda del usuario con una categoria de producto
@@ -48,8 +45,18 @@ class MercadoLibreCrawler(Crawler):
         # Podria implementar beatiful soup para acceder el codigo html de la pagina sin que se me abra el Chrome...
         html = urlopen(url)
         bs = BeautifulSoup(html, 'html.parser')
-        resp = bs.find('div', {'class': "ui-search-breadcrumb"}).find("ol", {"class": "andes-breadcrumb"})
+        resp = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"}) #Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
+
         return resp
+
+
+    def getCategoriaBusqueda(self, home_page_url):
+
+        # Podria implementar beatiful soup para acceder el codigo html de la pagina sin que se me abra el Chrome...
+        html = urlopen(home_page_url)
+        bs = BeautifulSoup(html, 'html.parser')
+        catergoria_busqueda = bs.find('div', {'class': "ui-search-breadcrumb"}).find('meta', {'content': "2"}).find_previous_sibling().attrs['title']
+        return catergoria_busqueda
 
 
     def getPublicationsUrl(self, driver):
@@ -161,7 +168,7 @@ class MercadoLibreCrawler(Crawler):
 
     # Puedo hacer un buscador de atributos... que busque en publicaciones hasta que encuentre en alguna un cuadro comparativo de publicaciones entonces saco la primera columna de la tabla
     # o bien, en la seccion que dice "Caracteristicas de ..." aunque veo que es poco (por ej, en celulares falta sistema operativo, memoria ram, etc)
-    def PublicationExtractor(self, driver):
+    def PublicationExtractor(self, driver, atributos):
         """Nota: los datos en las ≠ public estan en un div#class="ui-pdp-container ui-pdp-container--pdp".
         Por que hago un try?
         Publicaciones de celulares tienen datos en column center y objetos como roperos, banco de pesas en column right
@@ -171,45 +178,24 @@ class MercadoLibreCrawler(Crawler):
         NO IMPORTAN.
         """
         # Estado. Esta en un lugar unico tanto para usados como nuevos div#class="ui-pdp-header__subtitle"
-        estado = driver.find_element(By.XPATH, '//div[@class="ui-pdp-header__subtitle"]/span]').text
+        try:
+            estado = driver.find_element(By.XPATH, '//div[@class="ui-pdp-header__subtitle"]/span').text
+        except:
+            estado = None
 
         # Nombre publicacion. Esta en un lugar unico tanto para usados como nuevos h1#class="ui - pdp - title"
-        nombre_publicacion = driver.find_element(By.XPATH, '//h1[@class="ui - pdp - title"]').text
+        try:
+            nombre_publicacion = driver.find_element(By.XPATH, '//h1[@class="ui-pdp-title"]').text
+        except:
+            nombre_publicacion = None
 
         # Precio.
-        precio = driver.find_element(By.XPATH, '//div[@class="ui - pdp - price__second - line"]'
-                                          '/span[@class="andes-money-amount__fraction"]').text
+        try:
+            precio = driver.find_element(By.XPATH, '//div[@class="ui-pdp-price__second-line"]//span[@class="andes-money-amount__fraction"]').text
+        except:
+            precio = None
+
         # Envio. Hago try porque puede que no lo tengan si no es envio gratis...
-        envio = getEnvio(driver)
-
-        # Devolucion
-        devolucion = getDevolucion(driver)
-
-        # Compra protegida
-
-        return []
-
-
-        """
-        Faltaria extraer: marca ; modelo
-        Por que hago un try?
-        Por que los celularers tienen marca y modelo en el nombre de la seccion "Caracteristicas de ...".
-        En cambio, los roperos y los bancos de pesas dice "caracteristicas principales" y dentro de esta, hay una tabla
-        donde especifica marca, linea y modelo.
-        """
-
-
-
-    """
-    Este sera un ciclo que recorra publicaciones hasta que encuentre la primera que tenga la info.
-    Extraigo atributos del producto atrib_prod_1 ; atrib_prod_2 ; ... ; atrib_prodn
-    Por que hago un try?
-    Porque los celulares tienen datos de atributos en columncenter (tendre que ver como extraerlos) OJO! NO USO TABLA COMPARATIVA PORQUE SON ATRIBUTOS IRRELEVANTES
-    En cambio los roperos y bancos de pesas los tienen en la seccion "otras caracteristicas"
-    """
-
-
-    def getEnvio(self, driver):
         # envio = 1 es que es gratis, 0 si no.
         try:
             texto = driver.find_element(By.XPATH,
@@ -220,21 +206,28 @@ class MercadoLibreCrawler(Crawler):
             # Usan "Llega gratis" o "Envio gratis a todo el pais"
             if "gratis" in texto:
                 envio = 1
-
         except:
             envio = 0
-        return envio
 
-
-    def getDevolucion(self, driver):
+        # Devolucion
         try:
             driver.find_element(By.XPATH, '//div[@class="class="ui-pdp-container__row"]//p[contains("Devolución gratis")]')
             devolucion = 1
         except:
             devolucion = 0
-        return devolucion
+
+        # Compra protegida
+        try:
+            driver.find_element(By.XPATH, '//a[@href="https://www.mercadolibre.com.ar/compra-protegida"]')
+            compra_protegida = 1
+        except:
+            compra_protegida = 0
+
+        # FALTA IMPLEMENTAR BUSQUEDA DE VALORES DE ATRIBUTOS PARA LA DADA PUBLICACION
+
+        return [estado, nombre_publicacion, precio, envio, devolucion, compra_protegida]
 
 
-
-    # def getCompraProtegida(self, driver):
-
+"""
+Faltaria extraer: marca ; modelo
+"""
