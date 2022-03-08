@@ -141,7 +141,6 @@ def main():
                     driver.back()  # salgo de "ver todas las opiniones"
 
                     # Extraigo descripcion del producto (notar que solo lo extraigo si las opiniones son nuevas)
-                    sleep(3)
                     datos_publicaciones = crawler.PublicationExtractor(driver, atributos)
                     # print(datos_publicaciones)
 
