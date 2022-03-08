@@ -45,18 +45,18 @@ class MercadoLibreApi():
         # Defino lista donde guardare los atributos de los productos de la categoria
         atributos = []
 
-        # Defino manualmente los atributos no obligatorios y de relevancia 2 o 3 pero que me interesan
-        atrib_relevantes = {'MLA1055':['Tamaño de la pantalla','Linea', 'Tipo de resolución de la pantalla','Capacidad de la batería',
-                                       'Modelo del procesador','Cantidad de núcleos del procesador', 'Resolución de las cámaras traseras',
-                                       'Resolución de las cámaras frontales']}
+        # Defino manualmente los atributos (generales a la mayoria de las categorias) de relevancia 1 que no me interesan.
+        attr_rel1_remove = ['Altura del paquete', 'Ancho del paquete', 'Largo del paquete','Peso del paquete', 'Código universal de producto', 'Unidades por envase', 'SKU']
 
-        # Defino manualmente los atributos no obligatorios de relevancia 1 que no me interesan.
-        # Primero, los generales a la mayoria de las categorias.
-        atrib_irrelevantes1_grales = ['Altura del paquete', 'Ancho del paquete', 'Largo del paquete', 'Peso del paquete', 'Código universal de producto', 'Unidades por envase',
-                                      'SKU']
-        # Segundo, los especificos por categoria.
-        atrib_irrelevantes1_espec = {'MLA1055':['Sello SEC', 'Homologación Anatel Nº', 'Modelo detallado', 'IMEI', 'Compañía telefónica'],
-                                     'MLA393366':['Número de legajo resolución 155/98']}
+        # Por categoria, defino manualmente los atributos de relevancia 1 que no me interesan
+        attr_xcat_rel1_remove = {'MLA1055':['Sello SEC', 'Homologación Anatel Nº', 'Modelo detallado', 'IMEI', 'Compañía telefónica'],
+                                 'MLA393366':['Número de legajo resolución 155/98']}
+
+        # Por categoria, defino manualmente los atributos de relevancia 2 o 3 (no los incluidos por default) pero que me interesan
+        attr_xcat_rel2y3_add = {'MLA1055': ['Tamaño de la pantalla', 'Tipo de resolución de la pantalla', 'Capacidad de la batería', 'Modelo del procesador', 'Cantidad de núcleos del procesador', 'Resolución de las cámaras traseras', 'Resolución de las cámaras frontales']}
+
+        #  Por categoria, defino manualmente los atributos que la API NO TE TRAE cuando llamas a atributos y se encuentra dentro de "otras caracteristicas en las publicaciones
+        attr_xcat_add = {'MLA1338': ['Tipo de mancuerna', 'Peso', 'Recubrimiento de la mancuerna', 'Material de recubrimiento de la mancuerna', 'Forma de la mancuerna', 'Material de la mancuerna', 'Largo', 'Diámetro de la barra', 'Cromado', 'Mango ergonómico', 'Identificador de Peso', 'Antideslizante', 'Es ajustable']}
 
         # Esto despues lo borro es para ver los atributos que no tengo en cuenta por categoria
         atributos_desechados = []
@@ -70,51 +70,46 @@ class MercadoLibreApi():
         r = r.json()
 
         for element in r['groups']:
+
+            # Recorro cada atributo, y en particular, toda la informacion relacionado a cada uno.
             for componente in element['components']:
                 atributo_info = componente['attributes'][0] #pongo el [0] pues el['attributes'] es una lista de 1 elemento que contiene un dictionary
-                #print(atributo)
+                # print(atributo_info['name'])
 
-                # Me fijo si el atributo es obligatorio pues en ese caso tiene "required" en tags --> HAY SUBCATEGORIAS QUE NO TIENEN CAMPOS OBLIGATORIOS :(
-                if ("required" in atributo_info['tags']) and (atributo_info['name'] not in atrib_irrelevantes1_grales) and (atributo_info['name'] not in atrib_irrelevantes1_espec[id_categoria]):
-                    # print("Obligatorio", atributo['name'])
-                    atributos.append(atributo_info['name'])
+                # Si el atributo es obligatorio o de relevancia 1
+                if ("required" in atributo_info['tags']) or (atributo_info['relevance'] == 1):
+                    # print('Atributo es de relevancia 1',end = '')
 
-                # Si los atributos obligatorios son pocos (para mi son pocos y faltan relevantes) puedo obtener segun el campo "relevance"
-                # SERA DIFICIL IMPLEMENTAR MAS ATRIBUTOS...
-                elif (atributo_info['relevance'] == 1) and (atributo_info['name'] not in atrib_irrelevantes1_grales) and (atributo_info['name'] not in atrib_irrelevantes1_espec[id_categoria]):
-                    atributos.append(atributo_info['name'])
+                    # y si no es de los atributos generales que no me interesan
+                    if atributo_info['name'] not in attr_rel1_remove:
+                        # print('Atributo es de relevancia 1 y me interesa',end = '')
 
+                        #  ni de los especificos de la categoria que no me interesan
+                        if id_categoria in attr_xcat_rel1_remove.keys():
+                            if atributo_info['name'] not in attr_xcat_rel1_remove[id_categoria]:
+                                # print('Atributo es de relevancia 1 y me interesa x2',end = '')
+                                atributos.append(atributo_info['name'])
+                        else:
+                            atributos.append(atributo_info['name'])
+
+                # Si el atributo es de relevancia 2 o 3
                 else:
-                    atributos_desechados.append(atributo_info['name'])
+                    try:
+                        # y si es de los que me interesa
+                        if atributo_info['name'] in attr_xcat_rel2y3_add[id_categoria]:
+                            atributos.append(atributo_info['name'])
+                            # print('Atributo es de relevancia 2/3 y me interesa',end = '')
 
-        # Agrego atributos de relevancia ≠ 1 pero que me interesan
-        for atributos_relevantes in atrib_relevantes[id_categoria]:
-            atributos.append(atributos_relevantes)
+                    except:
+                        pass
+                #print()
 
-        # print(atributos)
-        # print(atributos_desechados)
+        # Agrego atributos que me interesan y la API no te los devuelve (ni como relevancia 1, ni 2, ni 3)
+        if id_categoria in attr_xcat_add.keys():
+            for atributo in attr_xcat_add[id_categoria]:
+                atributos.append(atributo)
+
         return atributos
-
-'''
-                else:
-                    if atributo['relevance'] == 3:
-                        try:
-                            print("RELEVANCIA 3:",atributo['name'],atributo['values'])
-                        except:
-                            print("RELEVANCIA 3:",atributo['name'])
-    
-                    elif atributo['relevance'] == 2:
-                        try:
-                            print("RELEVANCIA 2:", atributo['name'], atributo['values'])
-                        except:
-                            print("RELEVANCIA 2:", atributo['name'])
-    
-                    else:
-                        try:
-                            print("RELEVANCIA 1:", atributo['name'], atributo['values'])
-                        except:
-                            print("RELEVANCIA 1:", atributo['name'])
-'''
 
 
 ''' EN DESUSO PORQUE HAY LIMITE DE EXTRACCION DE DATOS EN AMBOS CASES

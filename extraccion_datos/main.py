@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.options import Options
 from MercadoLibreCrawler import MercadoLibreCrawler
 from MercadoLibreApi import MercadoLibreApi
 from selenium.webdriver.common.by import By
-
+from time import sleep # despues la saco e implemento implicit wait
 
 
 # Defino a Chrome como Web Browser
@@ -56,21 +56,15 @@ def getIdentificadorProducto(driver):
     url = driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
     print(url)
 
-    idx_ini = url.index('p/MLA')
-    id = url[idx_ini + 5:]
-
-    '''
-    Lo viejo:
-        try:
-        idx_ini = url.index('MLA-')
-        idx_fin = url.index('-')
-        id = url[idx_ini+4:idx_fin]
+    try:
+        idx_ini = url.index('p/MLA')
+        id = url[idx_ini + 5:]
 
     except:
-        idx_ini = url.index('p/MLA')
-        id = url[idx_ini+5:]
-    
-    '''
+        idx_ini = url.index('MLA-')
+        idx_fin = url.index('-')
+        id = url[idx_ini + 4:idx_fin]
+
     return id
 
 
@@ -86,7 +80,9 @@ def main():
 
     # luego implementare que busqueda = 20/30 prod mas demandados. Creo que cambiaria "busqueda" por "producto"
     # busqueda = str(input("Ingrese producto: "))
+    # busqueda = "Mancuernas"
     busqueda = "celulares"
+
 
     # Creo objetos crawler y api para tener disponible todos los metodos de ambas formas de extraccion
     crawler = MercadoLibreCrawler(driver, busqueda)
@@ -107,9 +103,11 @@ def main():
     categoria_busqueda = crawler.getCategoriaBusqueda(home_page_url)
     id_categorias = api.getCategoriasID()
     id_categoria_busqueda = BuscaCategoriaID(id_categorias,categoria_busqueda)
+    print(id_categoria_busqueda)
 
     #  BUSQUEDA DE ATRIBUTOS SEGUN LA CATEGORIA DEL PRODUCTO
     atributos = api.getAtributosCategoria(id_categoria_busqueda)
+    print('atributos:', atributos)
     # api.getAtributosCategoria("MLA1055") #Ejemplo de categoria de producto
 
     while paginacion_num < paginacion_max:
@@ -121,11 +119,12 @@ def main():
         for publicacion in links_publicaciones[:3]:
             # Ingreso a publicacion
             driver.get(publicacion)
+            print(publicacion)
 
             # Obtengo id del producto
             # GETPUBLICATIONSURL() obtiene urls que son de la forma "https://click1.mercadolibre.com.ar..." que no siguen las reglas...
             # Y cuando hago el driver.get(url) no falla pues ese link raro te termina mandando a la url para la cual hice la funcion getIdentificadorProducto()
-            id_publicacion = getIdentificadorProducto(driver)
+            # id_publicacion = getIdentificadorProducto(driver)
 
             # Click en "Ver todas las opiniones" --> Si no puede hacer click es por dos razones: 1) o no hay opiniones 2) hay menos de 3 opiniones. En cualquier caso me conviene no obtenerlas
             if crawler.ClickVerTodasLasOpiniones(driver) == True:
@@ -137,14 +136,14 @@ def main():
                     # crawler.ScrollDown() # TENDRE QUE VER COMO LLAMAR EL METODO DE LA CLASE PADRE CRAWLER
 
                     # Extraigo opiniones
-                    opiniones_publicacion = crawler.getPublicacionOpinions(driver)
-                    df_opiniones_publicaciones = OpinionsDataFrame(id_publicacion, opiniones_publicacion, df_opiniones_publicaciones)
-                    #print(df_opiniones_publicaciones)
+                    # opiniones_publicacion = crawler.getPublicacionOpinions(driver)
+                    # df_opiniones_publicaciones = OpinionsDataFrame(id_publicacion, opiniones_publicacion, df_opiniones_publicaciones)
                     driver.back()  # salgo de "ver todas las opiniones"
 
                     # Extraigo descripcion del producto (notar que solo lo extraigo si las opiniones son nuevas)
+                    sleep(3)
                     datos_publicaciones = crawler.PublicationExtractor(driver, atributos)
-                    print(datos_publicaciones)
+                    # print(datos_publicaciones)
 
                 else:
                     # Vuelvo a pagina de publicacion

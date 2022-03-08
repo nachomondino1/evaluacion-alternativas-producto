@@ -177,6 +177,7 @@ class MercadoLibreCrawler(Crawler):
         NO HACE FALTA HACER UN TRY PUES LOS TAGS SON UNICOS MAS ALLA DE SI ESTAN EN UNA COLUMNA U OTRA POR LO QUE,
         NO IMPORTAN.
         """
+        '''
         # Estado. Esta en un lugar unico tanto para usados como nuevos div#class="ui-pdp-header__subtitle"
         try:
             estado = driver.find_element(By.XPATH, '//div[@class="ui-pdp-header__subtitle"]/span').text
@@ -222,10 +223,290 @@ class MercadoLibreCrawler(Crawler):
             compra_protegida = 1
         except:
             compra_protegida = 0
+            
+        '''
+        d = {}
+        pageSource = driver.page_source
+        bs = BeautifulSoup(pageSource, "html.parser")
 
+        '''
+        # Recorro cada fila (que contiene atributo y valor) de la tabla de atributos de la publicacion en "Caracteristicas Principales"]
+        tabla = bs.find_all('tr',{"class":"andes-table__row"}) # faltaria implementar la busqueda de tr de publicaciones tipo 2
+        '''
+        # Extraigo tabla de atributos de las publicaciones que tienen la info en "ver mas caracteristicas"
+        tabla = bs.find_all('tr',{"class":"andes-table__row"}) # faltaria implementar la busqueda de tr de publicaciones tipo 2
+
+        # Si corresponde a las publicaciones que tienen la info en "ver mas caracteristicas"
+        if tabla == None:
+            tabla = bs.find().find_all('tr', {"class": "andes-table__row ui-vpp-striped-specs__row"})  # faltaria implementar la busqueda de tr de publicaciones tipo 2
+
+        for fila_tabla in tabla:
+            atrib_pub = fila_tabla.find('th').text
+            # print('b',atrib_pub)
+
+            # Si el atributo de la publicacion es de interes, entonces lo guardo
+            if atrib_pub in atributos:
+                d[atrib_pub] = fila_tabla.find('td').text
+
+
+        # Recorro cada fila (que contiene atributo y valor) de "otras caracteristicas"
+        tabla_otras_carac = bs.find_all('p',{"class":"ui-pdp-family--REGULAR ui-pdp-list__text"}) # faltaria implementar la busqueda de tr de publicaciones tipo 2
+        # creo que si es None no entra (por lo que, no tendria que poner != None). None te devuelve si no encuentra el xpath.
+        if tabla_otras_carac != None:
+            # print("Encontro la tabla")
+            for fila_tabla in tabla_otras_carac:
+                atrib_y_val = fila_tabla.text
+                idx = atrib_y_val.index(':')  # Falla a veces. Por que? Vi la publicacion y tiene el "ver mas caracteristicas" podria ser eso. ahora no fallo mas...
+                atrib_pub = atrib_y_val[:idx]
+
+                # Si el atributo de la publicacion es de interes, entonces lo guardo
+                if atrib_pub in atributos:
+                    d[atrib_pub] = atrib_y_val[idx+2:]
+
+        print(d)
+
+        return None
+
+
+
+
+
+
+
+        '''
+        # INTENTO HACER CLICK EN "VER MAS CARACTERISTICAS" SI EXISTE DICHO BOTON..
+        try:
+            boton = driver.find_element(By.XPATH, '//span[@role="button" and @title="Ver más características"]')
+            boton.click()
+        except:
+            print("NO LO ENCONTRO")
+        '''
+
+
+        '''
+        INTENTO 1848
+
+        # PUBLICACION TIPO 1
+        # Intento extraer atributo
+        try:
+            # attr_y_val_pub = driver.find_elements(By.XPATH,'//h2[contains(text(),"Características principales")]//tr[@class="andes-table__row"]') #Faltaria aclararle que solo quieero dentro de carac ppales... podria ser con un //h2[contains("Características principales")]
+            attr_y_val_pub = driver.find_element(By.XPATH,'//div[@class="ui-pdp-specs")]') # no se por que falla.
+            print("Encontro al menos el div")
+            attr_y_val_pub = attr_y_val_pub.find_elements(By.XPATH,'.//tr') # no se por que falla.
+            print("Encontro los tr")
+
+
+            # si la publicacion tiene seccion "Otras caracteristicas"...
+            try:
+                attr_y_val_pub_otras_carac = driver.find_elements(By.XPATH,'//div[@class="ui-pdp-list ui-pdp-specs__list"]//p')
+            except:
+                print("fallo z")
+
+            for attr_y_val in attr_y_val_pub:
+                print(attr_y_val.text)
+                attr = attr_y_val.find_element(By.XPATH, './th').text
+                val = attr_y_val.find_element(By.XPATH, './td').text # Por alguna razon a veces falla. RTA: claro es porque entra  a la tabla comparativa
+                d[attr] = val
+
+            for attr_y_val in attr_y_val_pub_otras_carac:
+                atrib_y_val = attr_y_val.text
+                idx = atrib_y_val.index(':')  # Falla a veces. Por que? Vi la publicacion y tiene el "ver mas caracteristicas" podria ser eso. ahora no fallo mas...
+                attr = atrib_y_val[: idx]
+                val = atrib_y_val[idx + 2:]
+                d[attr] = val
+
+        except:
+            # PUBLICACION TIPO 2  --> puede ser que falle pq no termine de cargar la pagina
+            # attr_y_val_pub_2 = driver.find_elements(By.XPATH,'//div[@class="ui-vpp-highlighted-specs__striped-specs"]//tr[@class="andes-table__row ui-vpp-striped-specs__row"]') #Faltaria aclararle que solo quieero dentro de carac ppales ocultas... //div[@class="ui-vpp-highlighted-specs__striped-specs"]
+            attr_y_val_pub_2 = driver.find_elements(By.XPATH,'//div[@class="ui-vpp-highlighted-specs__striped-specs"]//tr') #Faltaria aclararle que solo quieero dentro de carac ppales ocultas... //div[@class="ui-vpp-highlighted-specs__striped-specs"]
+
+            for attr_y_val in attr_y_val_pub_2:
+                print(attr_y_val.text)
+                attr = attr_y_val.find_element(By.XPATH, './th').text
+                val = attr_y_val.find_element(By.XPATH, './td').text # Por alguna razon a veces falla. RTA: claro es porque entra  a la tabla comparativa
+                d[attr] = val
+
+        print(d)
+      '''
+
+
+
+        """ intento 15 
+        d = {}
+        attr_pub, val_attr_pub = [], []
+
+        ''' PARA AMBAS PUBLICACIONES
+         attrs_pub = driver.find_elements(By.XPATH, '//th[@class="andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title" '
+                                                           'or @class="andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"]')
+         val_attrs_pub = driver.find_elements(By.XPATH,'//td[@class="andes-table__column andes-table__column--left ui-vpp-striped-specs__row__column" '
+                                                 'or @class="andes-table__column andes-table__column--left ui-pdp-specs__table__column"]//span')
+        '''
+        # PUBLICACIONES TIPO 1 ("CARAC PPALES")
+        # Busco atributos de una publicacion
+        try:
+            attrs_pub = driver.find_elements(By.XPATH,'//th[@class="andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title"]')
+            attrs_pub_otras_carac = driver.find_elements(By.XPATH,'//div[@class="ui-pdp-list ui-pdp-specs__list"]//span')
+        except:
+            print("Fallo atributos")
+
+        try:
+            val_attrs_pub = driver.find_elements(By.XPATH,'//td[@class="andes-table__column andes-table__column--left ui-pdp-specs__table__column"]//span')
+            val_attrs_pub_otras_carac = driver.find_elements(By.XPATH,'//div[@class="ui-pdp-list ui-pdp-specs__list"]//p')
+        except:
+            print('Fallaron valores')
+
+        '''
+        # PUBLICACIONES TIPO 2
+        # Busco atributos de una publicacion
+        try:
+            attrs_pub = driver.find_elements(By.XPATH,
+                                             '//th[@class="andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"]')
+        except:
+            print("Fallo atributos")
+
+        try:
+            val_attrs_pub = driver.find_elements(By.XPATH,
+                                                 '//td[@class="andes-table__column andes-table__column--left ui-vpp-striped-specs__row__column"]//span')
+        except:
+            print('Fallaron valores')
+        '''
+
+
+        # Guardo atributos de la publicacion
+        for a in attrs_pub:
+            attr_pub.append(a.text)
+
+        for b in attrs_pub_otras_carac:
+            attr_pub.append(b.text)
+
+        for c in val_attrs_pub:
+            val_attr_pub.append(c.text)
+
+        for d in val_attrs_pub_otras_carac:
+            val_y_atrib = d.text
+            print(val_y_atrib)
+            idx = val_y_atrib.index(":") + 2
+            val_attr_pub.append(val_y_atrib[idx:])
+
+        # Selecciono atributos de interes...
+
+        print("atributo y valor", attr_pub, val_attr_pub)
+"""
+
+
+'''
         # FALTA IMPLEMENTAR BUSQUEDA DE VALORES DE ATRIBUTOS PARA LA DADA PUBLICACION
+        d = {}
 
-        return [estado, nombre_publicacion, precio, envio, devolucion, compra_protegida]
+        # Defino la tabla de la publicacion donde cada fila es una atributo y su respectivo valor
+
+        try:
+            # tabla_atributos = driver.find_elements(By.XPATH, '//table[@class="andes-table"]//tr')
+            tabla_atributos = driver.find_elements(By.XPATH, '//tr[@class="andes-table__row ui-vpp-striped-specs__row"]')
+
+        except:
+            # tabla_atributos = driver.find_elements(By.XPATH, '//section[@class=”ui-vpp-highlighted-specs  pl-45 pr-45"]//tr')
+            #tabla_atributos = driver.find_elements(By.XPATH, '//div[@class=”ui-pdp-collapsable__container"]//tr')
+            print('Fallo :(')
+
+        # Tuve que aclarar la section primero antes de los tr porque si la publicacion tiene tabla comparativa de publicaciones entraba..
+        # tendria que probar:  tabla_atributos = driver.find_elements(By.XPATH, '/section[@class="ui-vpp-highlighted-specs  pl-45 pr-45"] or section[@class="ui-pdp-specs pl-45 pr-45"]//tr')
+
+
+        # Recorro cada fila de la tabla
+        for fila in tabla_atributos:
+
+            # Cada fila contiene un atributo y su valor
+            # Los try despues vere de sacarlos...
+            try:
+                atributo = fila.find_element(By.XPATH, '/th').text
+                print(atributo)
+            except:
+                print('Fallo 2')
+
+            try:
+                valor = fila.find_element(By.XPATH, '//td').text
+            except:
+                print('Fallo 3')
+
+            # Si el atributo de la publicacion es de interes, lo extraigo
+            if atributo in atributos:
+                d[atributo] = valor
+            print('Cambia de atributo...')
+
+        return d
+'''
+
+
+
+
+
+'''
+        1er intento
+        atributo_pub, val_atributo_pub = [], []
+        d ={}
+
+        # Publicaciones que tienen sus attrs descriptos en tabla dentro de "Caracteristicas principales"
+        try:
+            # Extraigo atributos de la publicacion en "caracteristicas principales"
+            for tag in driver.find_elements(By.XPATH, '//th[@class="andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title"]'):
+                atributo_pub.append(tag.text)
+
+            # Extraigo valores de los atributos de la publicacion en "caracteristicas principales"
+            for tag in driver.find_elements(By.XPATH, '//td[@class="andes-table__column andes-table__column--left ui-pdp-specs__table__column"]//span'):
+                val_atributo_pub.append(tag.text)
+
+            # Extraigo atributos de la publicacion en "Otras" o "Otras caracteristicas"
+            for tag in driver.find_elements(By.XPATH, '//div[@class="ui-pdp-list ui-pdp-specs__list"]//span'):
+                atributo_pub.append(tag.text)
+
+            # Extraigo valores de atributos de la publicacion en "Otras" o "Otras caracteristicas"
+            for tag in driver.find_elements(By.XPATH, '//div[@class="ui-pdp-list ui-pdp-specs__list"]//p'):
+                # tiene el problema que el text de ese tag es ineevitablemente "<atributo> : <valor>" y no solo el valor
+                atrib_valor = tag.text
+                idx = atrib_valor.index(':') + 2
+                valor = atrib_valor[idx:]
+                val_atributo_pub.append(valor)
+
+        # Publicaciones que tienen sus attrs dentro de "ver mas caracteristicas" --> aun no funciona
+        except:
+            driver.find_element(By.XPATH, 'span[@title="Ver más características"]').click()
+
+            # Extraigo atributos de la publicacion
+            for tag in driver.find_elements(By.XPATH, '//th[@class="andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"]'):
+                atributo_pub.append(tag.text)
+
+            # Extraigo valores de los atributos
+            for tag in driver.find_elements(By.XPATH, '//td[@class="andes-table__column andes-table__column--left ui-vpp-striped-specs__row__column"]//span'):
+                val_atributo_pub.append(tag.text)
+
+        
+        # Para cada atributo de interes veo si consegui su valor en la publicacion (puede que la publicacion no de su valor)
+        for atributo in atributos:
+            if atributo in atributo_pub:
+                idx_atrib = atributo_pub.index(atributo)
+                d[atributo] = val_atributo_pub[idx_atrib]
+            else:
+                d[atributo] = None
+        print(d)
+        
+        Asi NO:
+        idx = 0
+        for atributo in atributo_pub:
+            if atributo in atributos:
+                d[atributo] = val_atributo_pub[idx]
+            idx += 1
+
+        print(d)
+        
+        # tengo que retornar  [estado, nombre_publicacion, precio, envio, devolucion, compra_protegida, marca, modelo, atributos..]
+        # return [estado, nombre_publicacion, precio, envio, devolucion, compra_protegida]
+        return atributo_pub, val_atributo_pub
+        
+        
+        
+'''
+
 
 
 """
