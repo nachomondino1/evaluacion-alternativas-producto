@@ -4,7 +4,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from MercadoLibreCrawler import MercadoLibreCrawler
 from MercadoLibreApi import MercadoLibreApi
-import storing_data
 from selenium.webdriver.common.by import By
 from time import sleep # despues la saco e implemento implicit wait
 
@@ -13,6 +12,26 @@ from time import sleep # despues la saco e implemento implicit wait
 opts = Options()
 opts.add_argument("USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
 driver = webdriver.Chrome('/Users/nachomondino/Desktop/chromedriver', chrome_options=opts)
+
+
+def AgregarFilasAlDataFrame(d_data_publicacion, df):
+    """
+    Agrega datos en un DataFrame existente
+    :param d_data_publicacion: diccionario con datos. Los value pueden ser un solo valor o una lista de valores
+    :param df: DataFrame existente
+    :return: DataFrame existente con nuevos datos agregados
+    """
+
+    # Convierto diccionario a DataFrame para poder concatenarlos luego
+    try:
+        new_df = pd.DataFrame(data=d_data_publicacion) #index=[0]
+    except:
+        new_df = pd.DataFrame(data=d_data_publicacion, index=[0])
+
+    # Concateno los dataframe agregando la nueva publicacion a ya extraidas.
+    df = pd.concat([df, new_df])
+
+    return df
 
 
 def CrearPublicationsDataFrame(campos_especificos):
@@ -121,9 +140,8 @@ def main():
 
                     # Extraigo opiniones y las guardo en df_opiniones
                     d_opiniones_publicacion = crawler.getPublicacionOpinions(driver, id_publicacion)
-                    print(d_opiniones_publicacion)
                     # df_opiniones = storing_data.OpinionsDataFrame(id_publicacion, l_opiniones_publicacion, df_opiniones)
-                    df_opiniones = storing_data.AgregarFilasAlDataFrame1(d_opiniones_publicacion, df_opiniones)
+                    df_opiniones = AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
                     print(df_opiniones)
 
                     # Salgo de "Ver todas las opiniones"
@@ -132,7 +150,8 @@ def main():
                     # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
                     # los guardo en df_publicaciones
                     d_data_publicacion = crawler.PublicationExtractor(driver, id_publicacion, atributos)
-                    df_publicaciones = storing_data.AgregarFilasAlDataFrame2(d_data_publicacion, df_publicaciones)
+                    df_publicaciones = AgregarFilasAlDataFrame(d_data_publicacion, df_publicaciones)
+                    print(df_publicaciones)
 
                 else:
                     # Vuelvo a pagina de publicacion

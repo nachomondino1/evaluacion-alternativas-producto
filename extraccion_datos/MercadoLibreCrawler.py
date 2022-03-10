@@ -317,37 +317,3 @@ class MercadoLibreCrawler(Crawler):
             id = url[idx_ini + 4:idx_fin]
 
         return id
-
-
-""" EX IMPLMENTACION PARA BUSCAR VALORES DE CAMPOS ESPECIFICOS EN CADA PUBLICACION
-        # Extraigo tabla de atributos de las publicaciones que tienen la info en "ver mas caracteristicas"
-        tabla = bs.find_all('tr',{"class":"andes-table__row"})
-
-        # Si corresponde a las publicaciones que tienen la info en "ver mas caracteristicas"
-        if tabla == None:
-            tabla = bs.find().find_all('tr', {"class": "andes-table__row ui-vpp-striped-specs__row"})  # faltaria implementar la busqueda de tr de publicaciones tipo 2
-
-        for fila_tabla in tabla:
-            atrib_pub = fila_tabla.find('th').text
-            # print('b',atrib_pub)
-
-            # Si el atributo de la publicacion es de interes, entonces lo guardo
-            if atrib_pub in atributos:
-                d[atrib_pub] = fila_tabla.find('td').text
-
-        # Recorro cada fila (que contiene atributo y valor) de "otras caracteristicas"
-        tabla_otras_carac = bs.find_all('p',{"class":"ui-pdp-family--REGULAR ui-pdp-list__text"}) # faltaria implementar la busqueda de tr de publicaciones tipo 2
-
-        if tabla_otras_carac != None:
-            # print("Encontro la tabla")
-            for fila_tabla in tabla_otras_carac:
-                atrib_y_val = fila_tabla.text
-                idx = atrib_y_val.index(':')
-                atrib_pub = atrib_y_val[:idx]
-
-                # Si el atributo de la publicacion es de interes, entonces lo guardo
-                if atrib_pub in atributos:
-                    d[atrib_pub] = atrib_y_val[idx+2:]
-        return d
-"""
-
