@@ -9,25 +9,36 @@ class MercadoLibreApi():
 
 
     def getCategoriasID(self):
-        df = pd.DataFrame(columns=['id_categoria', 'categoria','id_subcategoria','subcategoria'])
+        """
+        Llama a la API de Mercado Libre solicitando informacion sobre TODAS las categorias de los productos existentes.
+        :return: DataFrame con 4 columnas: id de la categoria, nombre de la categoria, id de la subcategoria y
+        nombre de la subcategoria
+        """
+        # Creo el DataFrame en el que guardare la informacion sobre las categorias
+        df = pd.DataFrame(columns=['id_categoria', 'nombre_categoria', 'id_subcategoria', 'nombre_subcategoria'])
+
+        # Hago un GET pidiendo informacion sobre las categorias de los productos a la API de Mercado Libre
         url = "https://api.mercadolibre.com/sites/MLA/categories"
         categorias = requests.get(url)
 
-        # Convierto variable r de Bytes a JSON para facilitar operacion
+        # Para facilitar operacion, transformo el type de la variable "categorias", de Bytes a JSON.
         categorias = categorias.json()
 
-        # Recorro cada categoria
+        # Recorro cada categoria de las categorias
         for categoria in categorias:
             id_categoria = categoria['id']
 
-            # Busco children categories
+            # Con el id de una categoria, hago un GET pidiendo informacion sobre sus subcategorias de productos a la API de Mercado Libre
             url =  "https://api.mercadolibre.com/categories/" + id_categoria
             subcategorias = requests.get(url)
 
-            # Convierto variable r de Bytes a JSON para facilitar operacion
+            # Para facilitar operacion, transformo el type de la variable "subcategorias", de Bytes a JSON.
             subcategorias = subcategorias.json()
 
+            # Recorro cada subcategoria de las subcategorias dentro de una categoria
             for subcategoria in subcategorias['children_categories']:
+
+                # Guardo informacion de la subcategoria en particular y de la categoria a la que pertenece
                 df =  df.append({'id_categoria': categoria['id'], 'categoria': categoria['name'],'id_subcategoria': subcategoria['id'], 'subcategoria':subcategoria['name']}, ignore_index=True)
 
         # Creo archivo de excel para verificar que este bien el dataframe
@@ -35,14 +46,14 @@ class MercadoLibreApi():
         return df
 
 
-    def getAtributosCategoria(self, id_categoria):
-        """
-        Atributos obligatorios
-        Consultando el recurso /categories/$CATEGORY_ID/technical_specs/input podrás saber cuáles son los atributos obligatorios
-        por categoría y completarlos con anticipación para evitar que las publicaciones se vean afectadas en el posicionamiento
-        de los listados. Podrás identificar los atributos que serán obligatorios con el tag "required".
-        """
-        # Defino lista donde guardare los atributos de los productos de la categoria
+    def getAtributosSubcategoria(self, id_subcat):
+        '''
+        Solicita informacion sobre atributos de una subcategoria a la API de Mercado Libre. Luego, selecciona los
+        atributos de mayor interes segun si son obligatorios, o bien, de acuerdo a su relevancia.
+        :param id_subcat: id de una subcategoria de productos de Mercado Libre
+        :return: Lista de atributos interesantes para la subcategoria
+        '''
+        # Defino lista donde guardare los atributos de los productos de la subcategoria
         atributos = []
 
         # Defino manualmente los atributos (generales a la mayoria de las categorias) de relevancia 1 que no me interesan.
@@ -61,10 +72,9 @@ class MercadoLibreApi():
         # Esto despues lo borro es para ver los atributos que no tengo en cuenta por categoria
         atributos_desechados = []
 
-        # Creo url con la categoria del producto Ej de url: "https://api.mercadolibre.com/categories/MLA1002/technical_specs/input"
-        url = "https://api.mercadolibre.com/categories/" + id_categoria + "/technical_specs/input"
+        # Hago un GET pidiendo informacion sobre los atributos de una subcategoria a la API de Mercado Libre
+        url = "https://api.mercadolibre.com/categories/" + id_subcat + "/technical_specs/input"
         r = requests.get(url)
-        # print(r.content)
 
         # Convierto variable r de Bytes a JSON para facilitar operacion
         r = r.json()
@@ -85,28 +95,28 @@ class MercadoLibreApi():
                         # print('Atributo es de relevancia 1 y me interesa',end = '')
 
                         #  ni de los especificos de la categoria que no me interesan
-                        if id_categoria in attr_xcat_rel1_remove.keys():
-                            if atributo_info['name'] not in attr_xcat_rel1_remove[id_categoria]:
-                                # print('Atributo es de relevancia 1 y me interesa x2',end = '')
+                        if id_subcat in attr_xcat_rel1_remove.keys():
+                            if atributo_info['name'] not in attr_xcat_rel1_remove[id_subcat]:
+                                # entonces lo guardo
                                 atributos.append(atributo_info['name'])
                         else:
+                            # entonces lo guardo
                             atributos.append(atributo_info['name'])
 
                 # Si el atributo es de relevancia 2 o 3
                 else:
                     try:
                         # y si es de los que me interesa
-                        if atributo_info['name'] in attr_xcat_rel2y3_add[id_categoria]:
+                        if atributo_info['name'] in attr_xcat_rel2y3_add[id_subcat]:
                             atributos.append(atributo_info['name'])
                             # print('Atributo es de relevancia 2/3 y me interesa',end = '')
 
                     except:
                         pass
-                #print()
 
         # Agrego atributos que me interesan y la API no te los devuelve (ni como relevancia 1, ni 2, ni 3)
-        if id_categoria in attr_xcat_add.keys():
-            for atributo in attr_xcat_add[id_categoria]:
+        if id_subcat in attr_xcat_add.keys():
+            for atributo in attr_xcat_add[id_subcat]:
                 atributos.append(atributo)
 
         return atributos

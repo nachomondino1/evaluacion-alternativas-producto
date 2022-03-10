@@ -11,7 +11,8 @@ class MercadoLibreCrawler(Crawler):
     """ A tool to extract information from Mercado Libre"""
 
     def __init__(self, driver, busqueda):
-        self.driver = driver
+        """Initialize attributes of the parent class."""
+        super().__init__(driver)
         self.busqueda = busqueda
 
 
@@ -47,13 +48,18 @@ class MercadoLibreCrawler(Crawler):
         return resp
 
 
-    def getCategoriaBusqueda(self, home_page_url):
-
+    def getSubcategoriaProducto(self, home_page_url):
+        '''
+        Dada una pagina de Mercado Libre en donde se detallen las publicaciones de un mismo producto,
+        encuentra el nombre de la categoria a la que pertenece dicho producto.
+        :param home_page_url: pagina de Mercado Libre en donde se detallan las publicaciones de un mismo producto
+        :return: nombre de la categoria a la que pertenece dicho producto
+        '''
         # Podria implementar beatiful soup para acceder el codigo html de la pagina sin que se me abra el Chrome...
         html = urlopen(home_page_url)
         bs = BeautifulSoup(html, 'html.parser')
-        catergoria_busqueda = bs.find('div', {'class': "ui-search-breadcrumb"}).find('meta', {'content': "2"}).find_previous_sibling().attrs['title']
-        return catergoria_busqueda
+        nombre_categoria_producto = bs.find('div', {'class': "ui-search-breadcrumb"}).find('meta', {'content': "2"}).find_previous_sibling().attrs['title']
+        return nombre_categoria_producto
 
 
     def getPublicationsUrl(self, driver):
@@ -88,13 +94,17 @@ class MercadoLibreCrawler(Crawler):
         return resp
 
 
-    def getPublicacionOpinions(self, driver):
+    def getPublicacionOpinions(self, driver, id_publicacion):
         """
         Extrae opiniones de una publicacion
 
         :return: Dataframe cuya unidad de analisis es la opinion y sus columnas son titulo, content, rate, fecha, likes, dislikes
         """
-        title, content, rate, likes, dislikes = [], [], [], [], []
+        # Inicializo el diccionario
+        d = {'id_publicacion': None, 'title': None, 'content': None,'rate': None, 'likes': None, 'dislikes': None}
+
+        # Creo listas en donde guardare los valores de las distintas opiniones de una publicacion
+        l_id_publicacion, title, content, rate, likes, dislikes = [], [], [], [], [], [] # agregarles la l al ppio
 
         # Extraigo opiniones
         # Obtengo los XPATH donde se ubican los parrafos de cada una de las opiniones
@@ -138,11 +148,20 @@ class MercadoLibreCrawler(Crawler):
                 likes.append(None)
                 dislikes.append(None)
 
-        columns = [title,content,rate,likes,dislikes]
-        return columns
+        # Creo lista de id_publicacion segun la cantidad de opiniones
+        for i in range(len(title)):  # podria haber puesto cualquier campo en lugar de title
+            l_id_publicacion.append(id_publicacion)
 
+        # Creo lis
+        data = [l_id_publicacion, title, content, rate, likes, dislikes]
+        idx = 0
 
-        # Tendre que implementar extraccion de id o bien pasarlo como parametro
+        for key in d.keys():
+            d[key] = data[idx]
+            idx += 1
+
+        return d
+
 
     def verificationNewOpinions(self, driver, df):
         """
@@ -163,72 +182,146 @@ class MercadoLibreCrawler(Crawler):
         return bool
 
 
-    # Puedo hacer un buscador de atributos... que busque en publicaciones hasta que encuentre en alguna un cuadro comparativo de publicaciones entonces saco la primera columna de la tabla
-    # o bien, en la seccion que dice "Caracteristicas de ..." aunque veo que es poco (por ej, en celulares falta sistema operativo, memoria ram, etc)
-    def PublicationExtractor(self, driver, atributos):
-        """Nota: los datos en las ≠ public estan en un div#class="ui-pdp-container ui-pdp-container--pdp".
-        Por que hago un try?
-        Publicaciones de celulares tienen datos en column center y objetos como roperos, banco de pesas en column right
-        De aqui extraigo: nombre_publicacion ; precio ; envio gratis? ; estado (nuevo o usado) ; devolucion?
-
-        NO HACE FALTA HACER UN TRY PUES LOS TAGS SON UNICOS MAS ALLA DE SI ESTAN EN UNA COLUMNA U OTRA POR LO QUE,
-        NO IMPORTAN.
+    def PublicationExtractor(self, driver, id_publicacion ,campos_especificos):
         """
-        # Convierto el codigo html de la pagina de la publicacion en un objeto de la clase BeautifulSoup
+        Extrae el valor que toma cada campo (campos tanto generales a varias subcategorias de productos por ej precio o
+        estado como especificos de una subcategoria por ej tamaño de pantalla o resolucion de camara para publicaciones
+        de la subcategoria "Celulares y smartphones") para una sola publicacion
+
+        :param driver: Web Borwser Automatico
+        :param campos_especificos: Lista de campos especificos (o "atributos") de una subcategoria de productos de
+        Mercado Libre que deseo extraer. Por ejemplo, "tamano de pantalla" para la subcategoria "Celulares y
+        Smartphones". Su largo dependera de cada subcategoria
+        :return: Diccionario cuyas keys son cada campo a extraer de una publicacion (no solo son los atributos) y cuyos
+        value son el valor que toma el respectivo campo para una publicacion en particular. Uso diccionario por la
+        facilidad que representa  transformarlo en fila/s de un DataFrame.
+        """
+
+        # Defino el diccionario donde guardare los campos a extraer y su valor para una publicacion. Agrego al
+        # diccionario el unico campo que extraigo de antemano
+        d = {'id_publicacion': id_publicacion}
+
+        # Para facilitar la extraccion, convierto el codigo html de la pagina de la publicacion en un objeto de la
+        # clase BeautifulSoup
         pageSource = driver.page_source
         bs = BeautifulSoup(pageSource, "html.parser")
 
+        # EXTRAIGO NOMBRE DE PUBLICACION
+        d["nombre_publicacion"] = bs.find('h1',{'class':"ui-pdp-title"}).text
+
         # EXTRAIGO ESTADO
-        texto_estado = bs.find('div',{'class':"ui-pdp-header__subtitle"}).span.text
+        texto_estado = bs.find('div', {'class': "ui-pdp-header__subtitle"}).span.text
         try:
             idx = texto_estado.index('|')
-            estado = texto_estado[:idx - 2]
+            d["estado"] = texto_estado[:idx - 2]
         except:
-            estado = "Reacondicionado"
-
-        # EXTRAIGO NOMBRE DE PUBLICACION
-        nombre_publicacion = bs.find('h1',{'class':"ui-pdp-title"}).text
+            d["estado"] = "Reacondicionado"
 
         # EXTRAIGO PRECIO
-        precio = bs.find('div',{'class':"ui-pdp-price__second-line"}).find('span',{'class':"andes-money-amount__fraction"}).text
+        d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"})\
+            .find('span',{'class':"andes-money-amount__fraction"}).text
 
         # EXTRAIGO ENVIO. envio = 1 es que es gratis, 0 si no.
         texto = bs.find('div',{"class":"ui-pdp-container__row ui-pdp-container__row--shipping-summary"})
         if texto == None:
             texto = bs.find('div',{'class':"ui-pdp-media ui-pdp-shipping ui-pdp-shipping--md mb-20 ui-pdp-color--GREEN"})
 
+        # Busco el paragraph una vez que encontre el texto sino salta error por hacerle un find() a un NoneType object
         texto = texto.p.text
-        print(texto)
 
-         # Usan "Llega gratis" o "Envio gratis a tod@ el pais"
+         # Me fijo si el texto dice "gratis pues puede ser "Llega gratis" o "Envio gratis a tod@ el pais"
         if "gratis" in texto:
-            envio = 1
+            d['envio'] = 1
         else:
-            envio = 0
+            d['envio'] = 0
 
+        # EXTRAIGO DEVOLUCION --> FALLA, hay muchas pub que dice devolucion gratis y le re chupa la pija.
+        # Publicaciones que tienen el "Devolucion gratis" debajo del "comprar ahora"
+        # dev_pub_tipo_1 = bs.find('a', {'data-testid': "action-modal-link", 'class': "ui-pdp-action-modal__link"})
+        dev_pub_tipo_1 = bs.find('a', text='Devolución gratis.')
+        # Publicaciones que tienen el "Devolucion gratis" arriba del "comprar ahora" (menos comunes)
+        dev_pub_tipo_2 = bs.find('p', text='Devolución gratis.')
+        print(dev_pub_tipo_1, dev_pub_tipo_2)
+        if (dev_pub_tipo_1 == None) and (dev_pub_tipo_2 == None):
+            d['devolucion'] = 0
+        else:
+            d['devolucion'] = 1
+        print(d['devolucion'])
 
-        # EXTRAIGO DEVOLUCION
+        '''
         try:
-            driver.find_element(By.XPATH, '//div[@class="class="ui-pdp-container__row"]//p[contains("Devolución gratis")]')
-            devolucion = 1
+            driver.find_element(By.XPATH, '//div[@class="ui-pdp-container__row"]//p[contains("Devolución gratis")]')
+            d['devolucion'] = 1
         except:
-            devolucion = 0
-
+            d['devolucion'] = 0
+        '''
 
         # EXTRAIGO COMPRA PROTEGIDA
         compra_protegida = bs.find('a',{'href':"https://www.mercadolibre.com.ar/compra-protegida"})
         if compra_protegida == None:
-            compra_protegida = 0
+            d['compra_protegida'] = 0
         else:
-            compra_protegida = 1
+            d['compra_protegida'] = 1
 
-        print(estado, nombre_publicacion, precio, envio, devolucion, compra_protegida)
+        # EXTRACCION DE LOS CAMPOS ESPECIFICOS DE LA SUBCATEGORIA DE PRODUCTOS QUE CORRESPONDA
+        # Recorro cada campo especifico de la subcategoria
+        # Si no hay  hacer si la categoria no tiene campos especificos?
+        # tod@ esto me ahorraria el quilombo que hago despues en PublicationDataframe()
 
-        '''
-        d = {}
+        for campo_especifico in campos_especificos:
 
+            # Obtengo el tag, si existe, donde esta el atributo (en particular, uno de los que me interesa). Puede
+            # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
+            attr = bs.find('th', text=campo_especifico)
+            attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"}, text=campo_especifico)
+
+            # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
+            if attr != None:
+                valor = attr.nextSibling.text
+                attr = attr.text
+                d[attr] = valor
+
+            # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
+            # y su valor en el diccionario
+            elif attr_otras_carac != None:
+                valor = attr_otras_carac.nextSibling.text
+                attr_otras_carac = attr_otras_carac.text
+                d[attr_otras_carac] = valor[2:]
+
+            # Si no existe el tag en ninguna seccion, entonces guardo el atributo con valor None en el diccionario
+            else:
+                d[campo_especifico] = None
+
+        return d
+
+
+    def getIdPublicacion(self, driver):
+        """
+        Estando dentro de una publicacion de Mercado Libre, busca automaticamente el id que identifica como unica
+        a dicha publicacion.
+        :param driver: Web Browser automatico
+        :return: id de la publicacion
+        """
+        # Obtengo la url de la publicacion
+        url = driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
+
+        # Busco el id dentro de la url a partir de reglas
+        try:
+            idx_ini = url.index('p/MLA')
+            id = url[idx_ini + 5:]
+
+        # Hago un try pues hay dos tipos de url
+        except:
+            idx_ini = url.index('MLA-')
+            idx_fin = url.index('-')
+            id = url[idx_ini + 4:idx_fin]
+
+        return id
+
+
+""" EX IMPLMENTACION PARA BUSCAR VALORES DE CAMPOS ESPECIFICOS EN CADA PUBLICACION
         # Extraigo tabla de atributos de las publicaciones que tienen la info en "ver mas caracteristicas"
-        tabla = bs.find_all('tr',{"class":"andes-table__row"}) # faltaria implementar la busqueda de tr de publicaciones tipo 2
+        tabla = bs.find_all('tr',{"class":"andes-table__row"})
 
         # Si corresponde a las publicaciones que tienen la info en "ver mas caracteristicas"
         if tabla == None:
@@ -242,26 +335,19 @@ class MercadoLibreCrawler(Crawler):
             if atrib_pub in atributos:
                 d[atrib_pub] = fila_tabla.find('td').text
 
-
         # Recorro cada fila (que contiene atributo y valor) de "otras caracteristicas"
         tabla_otras_carac = bs.find_all('p',{"class":"ui-pdp-family--REGULAR ui-pdp-list__text"}) # faltaria implementar la busqueda de tr de publicaciones tipo 2
-        # creo que si es None no entra (por lo que, no tendria que poner != None). None te devuelve si no encuentra el xpath.
+
         if tabla_otras_carac != None:
             # print("Encontro la tabla")
             for fila_tabla in tabla_otras_carac:
                 atrib_y_val = fila_tabla.text
-                idx = atrib_y_val.index(':')  # Falla a veces. Por que? Vi la publicacion y tiene el "ver mas caracteristicas" podria ser eso. ahora no fallo mas...
+                idx = atrib_y_val.index(':')
                 atrib_pub = atrib_y_val[:idx]
 
                 # Si el atributo de la publicacion es de interes, entonces lo guardo
                 if atrib_pub in atributos:
                     d[atrib_pub] = atrib_y_val[idx+2:]
-
-        print(d)
-        '''
-
-        return None
-
-
-
+        return d
+"""
 
