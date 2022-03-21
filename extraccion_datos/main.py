@@ -41,13 +41,15 @@ def ExtractorDatos(crawler, df_opiniones, df_modelos):
         link_paginacion = crawler.getPaginacionUrl()
 
         # Recorro cada publicacion
-        for publicacion in links_publicaciones:
+        for publicacion in links_publicaciones[:3]:
 
             # Ingreso a una publicacion
             driver.get(publicacion)
 
             # Obtengo id de la publicacion (que identifica como unica a cada publicacion)
             id_publicacion = crawler.getIdPublicacion()
+            if len(id_publicacion) == 0: #solo para ver cual es el error
+                print("FALLO LA EXTRACCION DEL ID", publicacion)
             # print(id_publicacion)
 
             # Clickeo, si existe en la publicacion, en "Ver todas las opiniones"
@@ -60,7 +62,7 @@ def ExtractorDatos(crawler, df_opiniones, df_modelos):
                     pub_consec_sinopi = 0
 
                     # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
-                    crawler.ScrollDown(driver)
+                    crawler.ScrollDown()
 
                     # Procedo a extraccion de datos
                     # Extraigo opiniones y las guardo en df_opiniones
@@ -88,6 +90,7 @@ def ExtractorDatos(crawler, df_opiniones, df_modelos):
                 print("PUBLICACION SIN OPINIONES")
                 # Sumo 1 a la variable "publicaciones consecutivas sin opiniones"
                 pub_consec_sinopi += 1
+                print("VERIFICAR QUE NO TIENE OPINIONES", publicacion) #para verificar que no tenga opiniones
 
                 # Si llegue al maximo de "publicaciones consecutivas sin opiniones", dejar de extraer
                 if pub_consec_sinopi == pub_consec_sinopi_max:
@@ -123,12 +126,12 @@ def ExtractorDatos(crawler, df_opiniones, df_modelos):
 
 def main():
     # A partir de input del usuario sobre el producto a buscar, creo objeto de clase Product
-    producto = Product(str(input("Ingrese producto a buscar: ")))
+    # producto = Product(str(input("Ingrese producto a buscar: ")))
+    producto = Product("celulares") # despues lo saco
 
     # Defino a Chrome como Web Browser
     opts = Options()
-    opts.add_argument(
-        "USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
+    opts.add_argument("USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
     driver = webdriver.Chrome('/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', chrome_options=opts)
 
     # Creo objeto de clase MercadoLibreCrawler para tener disponible todos los metodos para hacer web scraping
@@ -145,16 +148,15 @@ def main():
     df_opiniones, df_modelos = ExtractorDatos(crawler, df_opiniones, df_modelos)
 
     # Exporto dataframes --> implementarlo en DataFrameCreator.py
-    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto), 'Hoja de datos', index=False)
-    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto), 'Hoja de datos', index=False)
+    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
 
 main()
 
 
-""" Nueva inicializacion de Web browser --> falla urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fc60dc1dc10>: Failed to establish a new connection: [Errno 61] Connection refused
+""" 
+Nueva inicializacion de Web browser --> falla urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fc60dc1dc10>: Failed to establish a new connection: [Errno 61] Connection refused
 options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    driver = webdriver.Chrome(executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', options=options)
-
-
+options.add_argument('--headless')
+driver = webdriver.Chrome(executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', options=options)
 """

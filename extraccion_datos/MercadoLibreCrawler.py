@@ -56,26 +56,24 @@ class MercadoLibreCrawler(Crawler):
         :return: Lista de links de las publicaciones en la pagina principal
         """
 
-        # Implicit wait
+        # Implicit wait: Extraigo recien cuando carga la pagina tal que encuentra el tag donde se encuentran las url
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]')))
         finally:
-            self.driver.quit()
+            # Busco todos los tags que contienen un link a una publicacion
+            # No le puedo hacer get_attribute al ser mas de un elemento
+            tag_urls_publicaciones = self.driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
 
-        # Busco todos los tags que contienen un link a una publicacion
-        # No le puedo hacer get_attribute al ser mas de un elemento
-        tag_urls_publicaciones = self.driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
+            # Defino lista vacia en donde guardare los links de las publicaciones
+            l_url_publicaciones = []
 
-        # Defino lista vacia en donde guardare los links de las publicaciones
-        l_url_publicaciones = []
+            # Recorro cada tag (cada uno contiene un link)
+            for tag_url in tag_urls_publicaciones:
+                # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+                l_url_publicaciones.append(tag_url.get_attribute("href"))
 
-        # Recorro cada tag (cada uno contiene un link)
-        for tag_url in tag_urls_publicaciones:
-            # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
-            l_url_publicaciones.append(tag_url.get_attribute("href"))
-
-        return l_url_publicaciones
+            return l_url_publicaciones
 
 
     def getPaginacionUrl(self):
@@ -90,19 +88,18 @@ class MercadoLibreCrawler(Crawler):
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//ul[@class="ui-search-pagination andes-pagination"]')))
         finally:
-            self.driver.quit()
 
-        # Obtengo el url de la siguiente pagina
-        try:
-            url_next_page = self.driver.find_element_by_xpath(
-            './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+            # Obtengo el url de la siguiente pagina
+            try:
+                url_next_page = self.driver.find_element_by_xpath(
+                './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
 
-        # No hay "siguiente pagina", es la ultima
-        except:
-            print("No hay mas paginas")
-            url_next_page = None
+            # No hay "siguiente pagina", es la ultima
+            except:
+                print("No hay mas paginas")
+                url_next_page = None
 
-        return url_next_page
+            return url_next_page
 
 
     def ClickVerTodasLasOpiniones(self):
@@ -246,45 +243,43 @@ class MercadoLibreCrawler(Crawler):
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
         finally:
-            self.driver.quit()
+            # Para facilitar la extraccion, convierto el codigo html de la pagina de la publicacion en un objeto de la
+            # clase BeautifulSoup
+            pageSource = self.driver.page_source
+            bs = BeautifulSoup(pageSource, "html.parser")
 
-        # Para facilitar la extraccion, convierto el codigo html de la pagina de la publicacion en un objeto de la
-        # clase BeautifulSoup
-        pageSource = self.driver.page_source
-        bs = BeautifulSoup(pageSource, "html.parser")
+            # EXTRAIGO VALOR DE PRECIO
+            d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"})\
+                .find('span',{'class':"andes-money-amount__fraction"}).text
 
-        # EXTRAIGO VALOR DE PRECIO
-        d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"})\
-            .find('span',{'class':"andes-money-amount__fraction"}).text
+            # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
+            # Por campo especifico
+            for campo_especifico in campos_especificos:
 
-        # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
-        # Por campo especifico
-        for campo_especifico in campos_especificos:
+                # Obtengo el tag, si existe, donde esta el atributo (en particular, uno de los que me interesa). Puede
+                # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
+                attr = bs.find('th', text=campo_especifico)
+                attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
+                                           text=campo_especifico)
 
-            # Obtengo el tag, si existe, donde esta el atributo (en particular, uno de los que me interesa). Puede
-            # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
-            attr = bs.find('th', text=campo_especifico)
-            attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
-                                       text=campo_especifico)
+                # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
+                if attr != None:
+                    valor = attr.nextSibling.text
+                    attr = attr.text
+                    d[attr] = valor
 
-            # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
-            if attr != None:
-                valor = attr.nextSibling.text
-                attr = attr.text
-                d[attr] = valor
+                # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
+                # y su valor en el diccionario
+                elif attr_otras_carac != None:
+                    valor = attr_otras_carac.nextSibling.text
+                    attr_otras_carac = attr_otras_carac.text
+                    d[attr_otras_carac] = valor[2:]
 
-            # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
-            # y su valor en el diccionario
-            elif attr_otras_carac != None:
-                valor = attr_otras_carac.nextSibling.text
-                attr_otras_carac = attr_otras_carac.text
-                d[attr_otras_carac] = valor[2:]
+                # Si no existe el tag en ninguna seccion, entonces guardo el atributo con valor None en el diccionario
+                else:
+                    d[campo_especifico] = None
 
-            # Si no existe el tag en ninguna seccion, entonces guardo el atributo con valor None en el diccionario
-            else:
-                d[campo_especifico] = None
-
-        return d
+            return d
 
 
     def getIdPublicacion(self):
@@ -299,20 +294,23 @@ class MercadoLibreCrawler(Crawler):
         try:
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]')))
         finally:
-            self.driver.quit()
+            # Obtengo la url de la publicacion
+            url = self.driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
 
-        # Obtengo la url de la publicacion
-        url = self.driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
+            # Busco el id dentro de la url a partir de reglas
+            try:
+                idx_ini = url.index('p/MLA')
+                id = url[idx_ini + 5:]
 
-        # Busco el id dentro de la url a partir de reglas
-        try:
-            idx_ini = url.index('p/MLA')
-            id = url[idx_ini + 5:]
+            # Hago un try pues hay dos tipos de url
+            except:
+                idx_ini = url.index('MLA-')
+                idx_fin = url.index('-')
+                id = url[idx_ini + 4:idx_fin]
 
-        # Hago un try pues hay dos tipos de url
-        except:
-            idx_ini = url.index('MLA-')
-            idx_fin = url.index('-')
-            id = url[idx_ini + 4:idx_fin]
-
-        return id
+            return id
+"""
+Fallas:
+- /MLA-1126048282-
+- https://click1.mercadolibre.com.ar...
+"""
