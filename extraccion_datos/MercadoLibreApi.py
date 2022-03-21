@@ -3,6 +3,7 @@ import requests
 
 
 class MercadoLibreApi():
+    """ A tool to extract data from Mercado Libre using the Mercado Libre's API """
 
     def __init__(self):
         pass
@@ -65,14 +66,14 @@ class MercadoLibreApi():
 
         # Por categoria, defino manualmente los atributos de relevancia 1 que no me interesan
         attr_xcat_rel1_remove = {
-            'MLA1055': ['Sello SEC', 'Homologación Anatel Nº', 'Modelo detallado', 'IMEI', 'Compañía telefónica'],
+            'MLA1055': ['Versión', 'Dual SIM', 'Sello SEC', 'Homologación Anatel Nº', 'Modelo detallado', 'IMEI', 'Compañía telefónica'],
             'MLA393366': ['Número de legajo resolución 155/98']}
 
         # Por categoria, defino manualmente los atributos de relevancia 2 o 3 (no los incluidos por default) pero que me interesan
         attr_xcat_rel2y3_add = {
             'MLA1055': ['Tamaño de la pantalla', 'Tipo de resolución de la pantalla', 'Capacidad de la batería',
                         'Modelo del procesador', 'Cantidad de núcleos del procesador',
-                        'Resolución de las cámaras traseras', 'Resolución de las cámaras frontales']}
+                        'Resolución de las cámaras traseras']}
 
         # Hago un GET pidiendo informacion sobre los atributos de una subcategoria a la API de Mercado Libre
         url = "https://api.mercadolibre.com/categories/" + id_subcat + "/technical_specs/input"

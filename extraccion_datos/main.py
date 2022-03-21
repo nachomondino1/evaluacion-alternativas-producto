@@ -3,66 +3,68 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from MercadoLibreCrawler import MercadoLibreCrawler
-from MercadoLibreCrawler import Product
-from MercadoLibreApi import MercadoLibreApi
-from selenium.webdriver.common.by import By
-from time import sleep # despues la saco e implemento implicit wait
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
 import DataFrameCreator
+from product import Product
 
 
+def ExtractorDatos(crawler, df_opiniones, df_modelos):
+    """
+    Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y la API de Mercado Libre
+    y los almacena en los DataFrames pasados como parametro. Representa toda la logica de extraccion.
 
-def Extractor(crawler):
-    # Obtengo url de Pagina principal del producto e ingreso
+    :param crawler: Objeto de clase MercadoLibreCrawler donde dispongo de todos los metodos de extraccion
+    :param df_opiniones: DataFrame solo con los nombres de las columnas para ser llenado con opiniones
+    :param df_modelos: DataFrame solo con los nombres de las columnas para ser llenado con datos de publicaciones
+    :return: Ambos Datafranes cargados con todos los datos extraidos
+    """
+
+    # Simplemente para que el codigo quede mas simple
     HomePageUrl = crawler.producto.HomePageUrl
     driver = crawler.driver
 
-    # Ingreso a pagina principal del producto en Mercado Libre
-    crawler.driver.get(HomePageUrl)
-
-    # Creo dataframes
-    df_opiniones = pd.DataFrame(columns=['id_publicacion','title', 'content', 'rate', 'likes', 'dislikes'])
-    atributos = crawler.producto.getAtributos()
-    df_modelos = DataFrameCreator.CrearModelosDataFrame(atributos)
-
-    # Defino parametros para que que corte el web scraping
+    # Defino parametros de corte de la extraccion
+    # Parametro 1: Extraer datos hasta pagina 10 de Mercado libre
     paginacion_num, paginacion_max = 1, 10
-    pub_consec_sinopi, pub_consec_sinopi_max = 0, 5
+    # Parametro 2: Extraer datos hasta ultima pagina (si hay menos de 10 paginas para ese producto)
     no_mas_paginas = 0
+    # Parametro 3: Extraer datos a menos que no extraiga datos de 10 publicaciones consecutivas por no tener opiniones
+    corte_pub_consec_sinopi, pub_consec_sinopi, pub_consec_sinopi_max = 0, 0, 5
 
-    # Extraer info hasta que entre 5 veces consecutivas a publicaciones sin opiniones o que haya visitado mas de 10 paginas
-    while (paginacion_num < paginacion_max) and (no_mas_paginas == 0):
-        print(pub_consec_sinopi < pub_consec_sinopi_max) #no lo puedo poner aca porque solo chequea en cada cambio de pagina
-        print(paginacion_num < paginacion_max)
-        print(no_mas_paginas == 0)
+    # Ingreso a pagina principal del producto en Mercado Libre
+    driver.get(HomePageUrl)
+
+    # Mientras que no se cumpla alguno de los tres parametro de corte
+    while (paginacion_num < paginacion_max) and (no_mas_paginas == 0) and (corte_pub_consec_sinopi == 0):
 
         # Extraigo links de la pagina principal de Mercado Libre. De cada publicacion y para cambiar de pagina
-        links_publicaciones = crawler.getPublicationsUrl(driver)
+        links_publicaciones = crawler.getPublicationsUrl()
+        link_paginacion = crawler.getPaginacionUrl()
 
         # Recorro cada publicacion
-        for publicacion in links_publicaciones[:3]:
+        for publicacion in links_publicaciones:
 
             # Ingreso a una publicacion
             driver.get(publicacion)
 
             # Obtengo id de la publicacion (que identifica como unica a cada publicacion)
-            id_publicacion = crawler.getIdPublicacion(driver) #no lo esta extrayendo
-            print(id_publicacion)
+            id_publicacion = crawler.getIdPublicacion()
+            # print(id_publicacion)
 
-            # Click en "Ver todas las opiniones" --> Si no puede hacer click es por dos razones: 1) o no hay opiniones 2) hay menos de 3 opiniones. En cualquier caso me conviene no obtenerlas
-            if crawler.ClickVerTodasLasOpiniones(driver) == True:
+            # Clickeo, si existe en la publicacion, en "Ver todas las opiniones"
+            if crawler.ClickVerTodasLasOpiniones() == True:
 
-                # Verifico que las Opiniones sean nuevas
-                if crawler.verificationNewOpinions(driver, df_opiniones) == True:
+                # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
+                if crawler.verificationNewOpinions(df_opiniones) == True:
+
                     # Reinicio parametro de corte por publiaciones consecutivas sin opiniones pues encontro nuevas opiniones
                     pub_consec_sinopi = 0
 
                     # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
                     crawler.ScrollDown(driver)
 
+                    # Procedo a extraccion de datos
                     # Extraigo opiniones y las guardo en df_opiniones
-                    d_opiniones_publicacion = crawler.getPublicationOpinionsData(driver, id_publicacion)
+                    d_opiniones_publicacion = crawler.getPublicationOpinionsData(id_publicacion)
                     df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
                     print(df_opiniones)
 
@@ -70,86 +72,89 @@ def Extractor(crawler):
                     driver.back()
 
                     # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
-                    # los guardo en df_publicaciones
-                    d_data_modelos = crawler.getModeloData(driver, id_publicacion, atributos)
+                    # los guardo en df_modelos
+                    d_data_modelos = crawler.getModeloData(id_publicacion, crawler.producto.atributos)
                     df_modelos = DataFrameCreator.AgregarFilasAlDataFrame(d_data_modelos, df_modelos)
                     print(df_modelos)
 
+                # Las opiniones se repiten con las de otra publicacion, por lo que, no extraigo nada
                 else:
-                    # Vuelvo a pagina de publicacion
                     print("OPINIONES REPETIDAS")
+                    # Vuelvo a pagina de publicacion para luego poder volver a la pagina principal
                     driver.back()
 
+            # La publicacion no tiene boton "Ver todas las opiniones" porque hay menos de 3 opiniones, o bien, no hay
             else:
                 print("PUBLICACION SIN OPINIONES")
+                # Sumo 1 a la variable "publicaciones consecutivas sin opiniones"
                 pub_consec_sinopi += 1
 
+                # Si llegue al maximo de "publicaciones consecutivas sin opiniones", dejar de extraer
                 if pub_consec_sinopi == pub_consec_sinopi_max:
-                    break # no funciona creo
-                print(pub_consec_sinopi)
+                    corte_pub_consec_sinopi = 1
 
-            # Vuelvo a Home Page
-            driver.back()  # Puede que no haga falta
+            # Habiendo extraido datos de la publicacion o no segun corresponda, vuelvo a Home Page para continuar con
+            # otra publicacion
+            driver.back()
 
-        # Hago click en Siguiente pagina (guardo paginas visitadas?)
-        link_paginacion = crawler.getPaginacionUrl(driver)
-
-        # Puede que no haya mas paginas...
+        # Si existe "siguiente pagina"
         if link_paginacion != None:
+            # Clickeo en siguiente pagina
             driver.get(link_paginacion)
             print("Cambio de pagina", link_paginacion)
             paginacion_num += 1
+        # No hay "siguiente pagina", por lo que, dejo de extraer datos
         else:
             no_mas_paginas = 1
 
-    # Explico por que razon finalizo el web scraping...
-    if pub_consec_sinopi == pub_consec_sinopi_max:
-        print("Corto por 5 publicaciones seguidas sin opiniones ")
+    # Cierro el Web Browser Automatico dando por finalizada la extraccion de datos
+    driver.close()
+
+    # Explico por que razon finalizo la extraccion de datos
+    if corte_pub_consec_sinopi == 1:
+        print("Corto por 10 publicaciones seguidas sin opiniones ")
+    elif no_mas_paginas == 1:
+        print("Corto por no haber mas paginas")
     else:
         print("Corto porque se visitaron las 10 primeras paginas")
 
-    driver.close()
-
-    # Exporto dataframes --> implementarlo en DataFrameCreator.py
-    # tendre que implementar una forma de guardar el archivo para ≠ productos..
-    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto), 'Hoja de datos', index=False)
-    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto), 'Hoja de datos', index=False)
+    return df_opiniones, df_modelos
 
 
 def main():
-    # Creo objetos crawler para tener disponible todos los metodos para hacer web scraping
-    crawler = MercadoLibreCrawler()
+    # A partir de input del usuario sobre el producto a buscar, creo objeto de clase Product
+    producto = Product(str(input("Ingrese producto a buscar: ")))
 
-    # Defino driver y producto a buscar
     # Defino a Chrome como Web Browser
     opts = Options()
     opts.add_argument(
         "USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
-    crawler.driver = webdriver.Chrome('/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver',
-                              chrome_options=opts)
-    # crawler.producto = str(input("Ingrese producto a buscar: "))
-    crawler.producto = "banco de pesas"
+    driver = webdriver.Chrome('/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', chrome_options=opts)
 
+    # Creo objeto de clase MercadoLibreCrawler para tener disponible todos los metodos para hacer web scraping
+    crawler = MercadoLibreCrawler(driver, producto)
     # Valido el producto buscado tal que no sea una busqueda tan amplia
     crawler.validacionBusqueda()
 
-    # Extraigo datos del producto buscado usando el driver
-    Extractor(crawler)
+    # Creo dataframes
+    df_opiniones = pd.DataFrame(columns=['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes'])
+    producto.atributos = crawler.producto.getAtributos()
+    df_modelos = DataFrameCreator.CrearModelosDataFrame(producto.atributos)
+
+    # Carga de datos a dataframes usando el crawler
+    df_opiniones, df_modelos = ExtractorDatos(crawler, df_opiniones, df_modelos)
+
+    # Exporto dataframes --> implementarlo en DataFrameCreator.py
+    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto), 'Hoja de datos', index=False)
+    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto), 'Hoja de datos', index=False)
 
 main()
 
 
-'''
-    # Solicito producto al cliente
-    # busqueda = str(input("Ingrese producto a buscar: ")) # luego implementare que busqueda = 20/30 prod mas demandados.
-    # busqueda = "Mancuernas"
-    busqueda = "celulares"
-    busqueda = "banco de pesas"
-        
-    # Defino a Chrome como Web Browser
-    opts = Options()
-    opts.add_argument(
-        "USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
-    driver = webdriver.Chrome('/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver',
-                              chrome_options=opts)
-'''
+""" Nueva inicializacion de Web browser --> falla urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fc60dc1dc10>: Failed to establish a new connection: [Errno 61] Connection refused
+options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', options=options)
+
+
+"""
