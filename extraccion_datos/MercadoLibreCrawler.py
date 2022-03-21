@@ -5,157 +5,177 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from utils.web_scraping.crawler import Crawler
+from MercadoLibreApi import MercadoLibreApi
 
 
 class MercadoLibreCrawler(Crawler):
     """ A tool to extract information from Mercado Libre"""
 
-    def __init__(self, driver, busqueda):
+    def __init__(self, driver = None, producto = None):
         """Initialize attributes of the parent class."""
-        super().__init__(driver)
-        self.busqueda = busqueda
+        super().__init__(driver) # no se si esta biee.
+        self.producto = Product(producto)
 
 
-    def getHomePageUrl(self, busqueda):
-        # Ingreso a URL semilla (en este caso, la pagina principal de mercado libre)
-        a = busqueda.replace(" ", "-")
-        b = busqueda.replace(" ", "%20")
-        url = 'https://listado.mercadolibre.com.ar/' + a + "#D[A:" + b + "]"
-        return url
-
-
-    def validacionBusqueda(self, busqueda):
+    def validacionBusqueda(self):
         """
         Validar la busqueda para que esta no sea muy amplia (hay un costo computacional).
         Si la busqueda es "acotada" Mercado Libre asocia la busqueda del usuario con una categoria de producto
         y el seria muy alto para una busqueda sin sentido
 
-        :param driver: web browser automatico
         :param busqueda: Producto que quiere comprar el cliente
-        :return: True si mercadolibre encuentra categoria a la busqueda o False en caso contrario
+        :return: Producto que quiere comprar el cliente validado, es decir, Mercado Libre le encontro categoria
+        al producto buscado
         """
 
-        # Ingreso a URL semilla (en este caso, la pagina principal de mercado libre)
-        a = busqueda.replace(" ", "-")
-        b = busqueda.replace(" ", "%20")
-        url = 'https://listado.mercadolibre.com.ar/' + a + "#D[A:" + b + "]"
+        # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
+        print(self.producto.getHomePageUrl())
+        self.producto.HomePageUrl = self.producto.getHomePageUrl()
+        print(self.producto.getHomePageUrl())
 
-        # Podria implementar beatiful soup para acceder el codigo html de la pagina sin que se me abra el Chrome...
-        html = urlopen(url)
+        # Implemento BeatifulSoup para acceder el codigo html de la pagina sin que se me abra el Chrome...
+        html = urlopen(self.producto.HomePageUrl)
         bs = BeautifulSoup(html, 'html.parser')
-        resp = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"}) #Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
 
-        return resp
+        # Valido la busqueda solo si encuentro subcategoria del producto
+        tag_nombre_subcat = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"})
+        if tag_nombre_subcat == None:  # Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
+            print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
+            self.producto.nombre = str(input("Ingrese producto a buscar: "))
 
+            # Funcion recursiva, hasta que la busqueda no sea acotada, sigue pidiendo ingreso de producto a buscar
+            self.validacionBusqueda()
 
-    def getSubcategoriaProducto(self, home_page_url):
-        '''
-        Dada una pagina de Mercado Libre en donde se detallen las publicaciones de un mismo producto,
-        encuentra el nombre de la categoria a la que pertenece dicho producto.
-        :param home_page_url: pagina de Mercado Libre en donde se detallan las publicaciones de un mismo producto
-        :return: nombre de la categoria a la que pertenece dicho producto
-        '''
-        # Podria implementar beatiful soup para acceder el codigo html de la pagina sin que se me abra el Chrome...
-        html = urlopen(home_page_url)
-        bs = BeautifulSoup(html, 'html.parser')
-        nombre_categoria_producto = bs.find('div', {'class': "ui-search-breadcrumb"}).find('meta', {'content': "2"}).find_previous_sibling().attrs['title']
-        return nombre_categoria_producto
+        # Actualizo atributo "nombre subcategoria" del producto
+        self.producto.nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
+
+        return True
 
 
     def getPublicationsUrl(self, driver):
-        # Podria intentar que sirva no solo para mercadolibre.com sino tambien para otras como amazon.com o Ebay.com
-        # Nota: estan en un div#class=ui-search-result__image
-        links = driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
-        links_pagina = []
+        """
+        Obtiene los links de cada publicacion en la pagina principal de Mercado Libre
+        :param driver: Web browser automatico
+        :return: Lista de links de las publicaciones en la pagina principal
+        """
+        # Busco todos los tags que contienen un link a una publicacion
+        # No le puedo hacer get_attribute al ser mas de un elemento
+        tag_urls_publicaciones = driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
 
-        for link in links:
-            links_pagina.append(link.get_attribute("href"))
-        return links_pagina
+        # Defino lista vacia en donde guardare los links de las publicaciones
+        l_url_publicaciones = []
+
+        # Recorro cada tag (cada uno contiene un link)
+        for tag_url in tag_urls_publicaciones:
+            # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+            l_url_publicaciones.append(tag_url.get_attribute("href"))
+
+        return l_url_publicaciones
 
 
     def getPaginacionUrl(self, driver):
-        # Ubico link de siguiente pagina
-        link_paginacion = driver.find_element_by_xpath(
+        """
+        Obtiene el link a la siguiente pagina principal de Mercado Libre
+        :param driver: Web browser automatico
+        :return: Url de la siguiente pagina de Mercado Libre
+        """
+        # Obtengo el url de la siguiente pagina
+        try:
+            url_next_page = driver.find_element_by_xpath(
             './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
-        return link_paginacion
+        except:
+            print("No hay mas paginas")
+            url_next_page = None
+
+        return url_next_page
 
 
     def ClickVerTodasLasOpiniones(self, driver):
-        # Busco link de "Ver todas las opiniones" y hago click
-        # El boton "ver todas las opiniones" esta dentro de un tag unico div#class=ui-pdp-reviews__actions__container
-
+        """
+        Accede, si existe, al boton "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
+        :param driver: Web Browser Automatico
+        :return: True si encontro el boton "Ver todas las opiniones" (y en ese caso ingreso) y False si no lo encontro
+        """
         try:
-            link_opiniones = driver.find_element(By.XPATH,'//div[@class="ui-pdp-reviews__actions__container"]/a').get_attribute("href")
-            driver.get(link_opiniones)
+            url_ver_opiniones = driver.find_element(By.XPATH,'//div[@class="ui-pdp-reviews__actions__container"]/a')\
+                .get_attribute("href")
+            # Solo ingresa a la pagina si encontro el boton "Ver todas las opiniones"
+            driver.get(url_ver_opiniones)
             resp = True
         except:
-            resp = None
+            resp = False
 
         return resp
 
 
-    def getPublicacionOpinions(self, driver, id_publicacion):
+    def getPublicationOpinionsData(self, driver, id_publicacion):
         """
-        Extrae opiniones de una publicacion
+        Extrae opiniones de seccion "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
 
-        :return: Dataframe cuya unidad de analisis es la opinion y sus columnas son titulo, content, rate, fecha, likes, dislikes
+        :param driver: Web Browser Automatico
+        :param id_publicacion: Identificador de cada publicacion
+        :return: Diccionario cuyas keys son los nombres de los campos a extraer (titulo, content, rate, fecha, likes,
+        dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese campo.
+        Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
         """
-        # Inicializo el diccionario
+
+        # Inicializo el diccionario en donde guardare las listas con los datos extraidos
         d = {'id_publicacion': None, 'title': None, 'content': None,'rate': None, 'likes': None, 'dislikes': None}
 
-        # Creo listas en donde guardare los valores de las distintas opiniones de una publicacion
-        l_id_publicacion, title, content, rate, likes, dislikes = [], [], [], [], [], [] # agregarles la l al ppio
+        # Inicializo una lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
+        l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []
 
-        # Extraigo opiniones
-        # Obtengo los XPATH donde se ubican los parrafos de cada una de las opiniones
-        # Por opinion (recorda que cada publicacion tiene varias opiniones) Ojo que por ahi va solo al primer article y no a todos...
+        # Obtengo tags donde cada uno contiene una opinion
         opiniones_publicacion = driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]/article')
 
+        # Recorro cada opinion
         for opinion in opiniones_publicacion:
 
             # Extraigo Title
             try:
-                title.append(opinion.find_element_by_xpath('.//h2').text)
+                l_title.append(opinion.find_element_by_xpath('.//h2').text)
             except:
-                title.append(None)
+                l_title.append(None)
 
             # Extraigo Content
             try:
-                content.append(opinion.find_element_by_xpath('.//p').text)
+                l_content.append(opinion.find_element_by_xpath('.//p').text)
             except:
-                content.append(None)
+                l_content.append(None)
 
             # Extraigo Rate
             try:
                 n = 0
                 stars = opinion.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
-                # print(stars)
 
+                # Recorro cada una de las 5 estrellas
                 for star in stars:
                     if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
                         n += 1
                     else:
+                        # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
                         break
-                rate.append(n)
+                l_rate.append(n)
             except:
-                rate.append(None)
+                l_rate.append(None)
 
             #Extraigo Likes y dislikes
             try:
-                likes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
-                dislikes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
+                l_likes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
+                l_dislikes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
             except:
-                likes.append(None)
-                dislikes.append(None)
+                l_likes.append(None)
+                l_dislikes.append(None)
 
         # Creo lista de id_publicacion segun la cantidad de opiniones
-        for i in range(len(title)):  # podria haber puesto cualquier campo en lugar de title
+        for i in range(len(l_title)):  # podria haber puesto cualquier campo en lugar de title
             l_id_publicacion.append(id_publicacion)
 
-        # Creo lis
-        data = [l_id_publicacion, title, content, rate, likes, dislikes]
-        idx = 0
+        # Creo lista que contiene todas las listas con los datos extraidos
+        data = [l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes]
 
+        # Por cada campo a extraer, guardo su lista en el diccionario
+        idx = 0
         for key in d.keys():
             d[key] = data[idx]
             idx += 1
@@ -165,36 +185,44 @@ class MercadoLibreCrawler(Crawler):
 
     def verificationNewOpinions(self, driver, df):
         """
-        :param driver:
-        :param df: dataframe cuya unidad de analisis es una opinion y las columnas son titulo, content, rate, fecha, likes, dislikes
-        :return: True si son opiniones ya extraidas o False en caso que sean nuevas
+        Dentro de la seccion "Ver todas las opiniones" pero antes de extraer las opiniones, verifico que sean
+        opiniones nuevas (es decir, que no las haya extraido)
+
+        :param driver: Web Browser Automatico
+        :param df: DataFrame cuya unidad de analisis es una opinion y las columnas son id_publicacion, titulo, content,
+        rate, fecha, likes, dislikes
+        :return: True si son opiniones nuevas, o bien, False en caso que sean repetidas
         """
-        # Preasumo que la opinion es nueva
+        # A priori, asumo que la opinion es nueva
         bool = True
 
         # Extraigo la primera opinion
         prim_opinion = driver.find_element(By.XPATH, '//div[@class="infinite-scroll-component "]/article/p').text
 
+        # Obtengo lista de opiniones extraidas
+        opiniones_extraidas = df['content']
+
         # Veo si la primera opinion ya fue extraida
-        if prim_opinion in df["content"]:
+        if prim_opinion in opiniones_extraidas:
             bool = False
 
         return bool
 
 
-    def PublicationExtractor(self, driver, id_publicacion ,campos_especificos):
+    def getModeloData(self, driver, id_publicacion, campos_especificos):
         """
-        Extrae el valor que toma cada campo (campos tanto generales a varias subcategorias de productos por ej precio o
-        estado como especificos de una subcategoria por ej tamaño de pantalla o resolucion de camara para publicaciones
-        de la subcategoria "Celulares y smartphones") para una sola publicacion
+        De una sola publicacion, extrae el precio de ésta y, segun la subcategoria del producto, cada campo especifico
+        por ejemplo tamaño de pantalla o resolucion de camara para publicaciones de la subcategoria "Celulares y
+        smartphones".
 
-        :param driver: Web Borwser Automatico
+        :param driver: Web Browser Automatico
+        :param id_publicacion: Identificador de publicacion
         :param campos_especificos: Lista de campos especificos (o "atributos") de una subcategoria de productos de
         Mercado Libre que deseo extraer. Por ejemplo, "tamano de pantalla" para la subcategoria "Celulares y
         Smartphones". Su largo dependera de cada subcategoria
         :return: Diccionario cuyas keys son cada campo a extraer de una publicacion (no solo son los atributos) y cuyos
         value son el valor que toma el respectivo campo para una publicacion en particular. Uso diccionario por la
-        facilidad que representa  transformarlo en fila/s de un DataFrame.
+        facilidad que representa transformarlo en fila/s de un DataFrame.
         """
 
         # Defino el diccionario donde guardare los campos a extraer y su valor para una publicacion. Agrego al
@@ -206,74 +234,19 @@ class MercadoLibreCrawler(Crawler):
         pageSource = driver.page_source
         bs = BeautifulSoup(pageSource, "html.parser")
 
-        # EXTRAIGO NOMBRE DE PUBLICACION
-        d["nombre_publicacion"] = bs.find('h1',{'class':"ui-pdp-title"}).text
-
-        # EXTRAIGO ESTADO
-        texto_estado = bs.find('div', {'class': "ui-pdp-header__subtitle"}).span.text
-        try:
-            idx = texto_estado.index('|')
-            d["estado"] = texto_estado[:idx - 2]
-        except:
-            d["estado"] = "Reacondicionado"
-
-        # EXTRAIGO PRECIO
+        # EXTRAIGO VALOR DE PRECIO
         d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"})\
             .find('span',{'class':"andes-money-amount__fraction"}).text
 
-        # EXTRAIGO ENVIO. envio = 1 es que es gratis, 0 si no.
-        texto = bs.find('div',{"class":"ui-pdp-container__row ui-pdp-container__row--shipping-summary"})
-        if texto == None:
-            texto = bs.find('div',{'class':"ui-pdp-media ui-pdp-shipping ui-pdp-shipping--md mb-20 ui-pdp-color--GREEN"})
-
-        # Busco el paragraph una vez que encontre el texto sino salta error por hacerle un find() a un NoneType object
-        texto = texto.p.text
-
-         # Me fijo si el texto dice "gratis pues puede ser "Llega gratis" o "Envio gratis a tod@ el pais"
-        if "gratis" in texto:
-            d['envio'] = 1
-        else:
-            d['envio'] = 0
-
-        # EXTRAIGO DEVOLUCION --> FALLA, hay muchas pub que dice devolucion gratis y le re chupa la pija.
-        # Publicaciones que tienen el "Devolucion gratis" debajo del "comprar ahora"
-        # dev_pub_tipo_1 = bs.find('a', {'data-testid': "action-modal-link", 'class': "ui-pdp-action-modal__link"})
-        dev_pub_tipo_1 = bs.find('a', text='Devolución gratis.')
-        # Publicaciones que tienen el "Devolucion gratis" arriba del "comprar ahora" (menos comunes)
-        dev_pub_tipo_2 = bs.find('p', text='Devolución gratis.')
-        print(dev_pub_tipo_1, dev_pub_tipo_2)
-        if (dev_pub_tipo_1 == None) and (dev_pub_tipo_2 == None):
-            d['devolucion'] = 0
-        else:
-            d['devolucion'] = 1
-        print(d['devolucion'])
-
-        '''
-        try:
-            driver.find_element(By.XPATH, '//div[@class="ui-pdp-container__row"]//p[contains("Devolución gratis")]')
-            d['devolucion'] = 1
-        except:
-            d['devolucion'] = 0
-        '''
-
-        # EXTRAIGO COMPRA PROTEGIDA
-        compra_protegida = bs.find('a',{'href':"https://www.mercadolibre.com.ar/compra-protegida"})
-        if compra_protegida == None:
-            d['compra_protegida'] = 0
-        else:
-            d['compra_protegida'] = 1
-
-        # EXTRACCION DE LOS CAMPOS ESPECIFICOS DE LA SUBCATEGORIA DE PRODUCTOS QUE CORRESPONDA
-        # Recorro cada campo especifico de la subcategoria
-        # Si no hay  hacer si la categoria no tiene campos especificos?
-        # tod@ esto me ahorraria el quilombo que hago despues en PublicationDataframe()
-
+        # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
+        # Por campo especifico
         for campo_especifico in campos_especificos:
 
             # Obtengo el tag, si existe, donde esta el atributo (en particular, uno de los que me interesa). Puede
             # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
             attr = bs.find('th', text=campo_especifico)
-            attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"}, text=campo_especifico)
+            attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
+                                       text=campo_especifico)
 
             # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
             if attr != None:
@@ -300,7 +273,7 @@ class MercadoLibreCrawler(Crawler):
         Estando dentro de una publicacion de Mercado Libre, busca automaticamente el id que identifica como unica
         a dicha publicacion.
         :param driver: Web Browser automatico
-        :return: id de la publicacion
+        :return: id de la publicacion (en formato string)
         """
         # Obtengo la url de la publicacion
         url = driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
@@ -317,3 +290,215 @@ class MercadoLibreCrawler(Crawler):
             id = url[idx_ini + 4:idx_fin]
 
         return id
+
+class Product():
+
+    def __init__(self, nombre, HomePageUrl=None, nombre_subcat=None, id_subcat=None):
+        self.nombre = nombre
+        self.HomePageUrl = HomePageUrl
+        self.nombre_subcat = nombre_subcat
+        self.id_subcat = id_subcat
+
+
+    def getHomePageUrl(self):
+        # Ingreso a URL semilla (en este caso, la pagina principal de mercado libre)
+        a = self.nombre.replace(" ", "-")
+        b = self.nombre.replace(" ", "%20")
+        url = 'https://listado.mercadolibre.com.ar/' + a + "#D[A:" + b + "]"
+        return url
+
+
+    def getAtributos(self):
+
+        # Obtengo datos de las categorias, sus id y sus subcategorias usando la API de mercado libre
+        api = MercadoLibreApi()
+        df_categorias = api.getCategoriasID()
+
+        # Extraigo fila del df de la subcategoria del producto
+        datos_subcategoria = df_categorias[df_categorias.nombre_subcategoria == self.nombre_subcat]
+
+        # De dicha fila me interesa solo la columna del id (numero 2)
+        self.id_subcat_prod = datos_subcategoria.iloc[0, 2]
+
+        # Segun la subcategoria del producto, busco sus atributos
+        atributos = api.getAtributosSubcategoria(
+            self.id_subcat_prod)  # este proceso tarda mucho, seria ideal que se corra independiente de programa (main.py) pero no lo pude hacer en categorias.py
+        print('atributos:', atributos)
+
+        # Si la subcategoria tiene pocos atributos
+        if len(atributos) < 5:
+            # Le agrego atributos de seccion "Otras caracteristicas"
+            attr_otras_carac = self.getAttrOtrasCarac()
+            for attr in attr_otras_carac:
+                atributos.append(attr)
+
+        return atributos
+
+
+    def getAttrOtrasCarac(self):
+        driver = webdriver.PhantomJS(
+            executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/phantomjs-2.1.1-macosx/bin/phantomjs')
+
+        # Inicializo variables
+        d = {}  # diccionario donde guardare los atributos y su frecuencia
+        atributos = []  # lista donde guardare los atributos
+        c = 10  # cantidad de publicaciones a visitar
+        f = 0.75  # flexibilidad para aceptar atributos
+
+        # Ingreso a Pagina Principal del producto a buscar
+        driver.get(self.HomePageUrl)
+
+        # Busco todos los tags que contienen un link a una publicacion
+        # No le puedo hacer get_attribute al ser mas de un elemento
+        tag_urls_publicaciones = driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
+
+        # Defino lista vacia en donde guardare los links de las publicaciones
+        l_url_publicaciones = []
+
+        # Recorro cada tag (cada uno contiene un link)
+        for tag_url in tag_urls_publicaciones:
+            # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+            l_url_publicaciones.append(tag_url.get_attribute("href"))
+
+        for publicacion in l_url_publicaciones[:c]:
+
+            # Ingreso a publicacion
+            driver.get(publicacion)
+
+            # Obtengo los tags donde se ubican todos los atributos de "Otras caracteristicas"
+            tags_attrs = driver.find_elements(By.XPATH,
+                                              '//span[@class="ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"]')
+
+            # Por cada tag (que contiene un atributo)
+            for tag in tags_attrs:
+
+                # Obtengo el atributo (es el texto del tag)
+                attr = tag.text
+
+                # Si el atributo es nuevo
+                if attr not in d.keys():
+
+                    # Lo agrego y le pongo frecuencia 1
+                    d[attr] = 1
+
+                # Si el atributo no es nuevo
+                else:
+                    # Obtengo su frecuencia y le sumo 1
+                    frec = d.get(attr)
+                    d[attr] = frec + 1
+
+            # Salgo de publicacion
+            driver.back()
+
+        print(d)
+        # Obtener los atributos de mayor frecuencia que al menos este en un 75% de las publicaciones
+        for key in d.keys():
+            if d[key] > (c * f):
+                atributos.append(key)
+                print("AGREGADO:", key)
+            else:
+                print("Desechado:", key)
+
+        # print('atributos:', atributos)
+        return atributos
+
+
+"""
+    def getIdSubcategoria(home_page_url, df_categorias):
+        '''
+        Dada una pagina de Mercado Libre en donde se detallen las publicaciones de un mismo producto,
+        encuentra el nombre de la categoria a la que pertenece dicho producto.
+        :param home_page_url: pagina de Mercado Libre en donde se detallan las publicaciones de un mismo producto
+        :return: nombre de la categoria a la que pertenece dicho producto
+        '''
+        # Podria implementar beatiful soup para acceder el codigo html de la pagina sin que se me abra el Chrome...
+        html = urlopen(home_page_url)
+        bs = BeautifulSoup(html, 'html.parser')
+        nombre_subcat_prod = \
+        bs.find('div', {'class': "ui-search-breadcrumb"}).find('meta', {'content': "2"}).find_previous_sibling().attrs[
+            'title']
+
+        # Extraigo fila del df de la subcategoria del producto
+        datos_subcategoria = df_categorias[df_categorias.nombre_subcategoria == nombre_subcat_prod]
+
+        # De dicha fila me interesa solo la columna del id (numero 2)
+        id = datos_subcategoria.iloc[0, 2]
+        return id
+
+"""
+
+
+"""
+def getAttrOtrasCarac(HomePageUrl):
+    # Defino a PhantomJS como Web Browser pues corre por atras
+    driver2 = webdriver.PhantomJS(executable_path='/Users/nachomondino/Desktop/phantomjs-2.1.1-macosx/bin/phantomjs')
+
+    # Inicializo variables
+    d = {} # diccionario donde guardare los atributos y su frecuencia
+    atributos = [] # lista donde guardare los atributos
+    c = 10 # cantidad de publicaciones a visitar
+    f = 0.75 # flexibilidad para aceptar atributos
+
+    # Ingreso a Pagina Principal del producto a buscar
+    driver2.get(HomePageUrl)
+
+    # Busco todos los tags que contienen un link a una publicacion
+    # No le puedo hacer get_attribute al ser mas de un elemento
+    tag_urls_publicaciones = driver2.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
+
+    # Defino lista vacia en donde guardare los links de las publicaciones
+    l_url_publicaciones = []
+
+    # Recorro cada tag (cada uno contiene un link)
+    for tag_url in tag_urls_publicaciones:
+        # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+        l_url_publicaciones.append(tag_url.get_attribute("href"))
+
+    for publicacion in l_url_publicaciones[:c]:
+
+        # Ingreso a publicacion
+        driver2.get(publicacion)
+
+        # Obtengo los tags donde se ubican todos los atributos de "Otras caracteristicas"
+        tags_attrs = driver2.find_elements(By.XPATH,
+                                          '//span[@class="ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"]')
+
+        # Por cada tag (que contiene un atributo)
+        for tag in tags_attrs:
+
+            # Obtengo el atributo (es el texto del tag)
+            attr = tag.text
+
+            # Si el atributo es nuevo
+            if attr not in d.keys():
+
+                # Lo agrego y le pongo frecuencia 1
+                d[attr] = 1
+
+            # Si el atributo no es nuevo
+            else:
+                # Obtengo su frecuencia y le sumo 1
+                frec = d.get(attr)
+                d[attr] = frec + 1
+    print(d)
+
+    # Obtener los atributos de mayor frecuencia que al menos este en un 75% de las publicaciones
+    for key in d.keys():
+        if d[key] > (c * f):
+            atributos.append(key)
+            print("AGREGADO:", key)
+        else:
+            print("Desechado:", key)
+
+    print('atributos:', atributos)
+    driver2.close()
+    return atributos
+    """
+
+
+
+
+
+
+
+
