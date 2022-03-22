@@ -218,8 +218,12 @@ class MercadoLibreCrawler(Crawler):
             bs = BeautifulSoup(pageSource, "html.parser")
 
             # EXTRAIGO VALOR DE PRECIO
-            d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"})\
-                .find('span',{'class':"andes-money-amount__fraction"}).text
+            try:
+                d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"}).\
+                    find('span',{'class':"andes-money-amount__fraction"}).text
+            except:
+                print("No encontro el precio")
+                d['precio'] = None # tendre que ver en que tipo de publicaciones no encuentra el precio
 
             # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
             # Por campo especifico

@@ -44,3 +44,8 @@ def CrearModelosDataFrame(campos_especificos):
     df = pd.DataFrame(columns=campos_a_extraer)
 
     return df
+
+
+def CrearOpinionsDataFrame():
+    df = pd.DataFrame(columns=['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes'])
+    return df

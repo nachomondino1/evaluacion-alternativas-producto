@@ -27,13 +27,11 @@ class Product():
 
     def validacionBusqueda(self):
         """
-        Validar la busqueda para que esta no sea muy amplia (hay un costo computacional).
-        Si la busqueda es "acotada" Mercado Libre asocia la busqueda del usuario con una categoria de producto
-        y el seria muy alto para una busqueda sin sentido
+        Validar la busqueda tal que sea lo suficientemente acotada tal que se refiere a un solo producto en particular.
+        En esos casos, Mercado Libre le encuentra una subcategoria de producto.
 
-        :param busqueda: Producto que quiere comprar el cliente
-        :return: Producto que quiere comprar el cliente validado, es decir, Mercado Libre le encontro categoria
-        al producto buscado
+        :return: Nombre de subcategoria del producto. Cabe resaltar, que retornara algo solo cuando la busqueda sea
+         lo suficientemente acotada tal que Mercado Libre le encuentro una subcategoria
         """
 
         # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
@@ -52,17 +50,17 @@ class Product():
             # Funcion recursiva, hasta que la busqueda no sea acotada, sigue pidiendo ingreso de producto a buscar
             self.validacionBusqueda()
 
-        # Actualizo atributo "nombre subcategoria" del producto
-        self.nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
+        # Extraigo el nombre de la subcateegoria a la que pertenece el producto
+        nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
 
-        return True
+        return nombre_subcat
 
 
     def getHomePageUrl(self):
         """
         Busca URL de la Pagina principal de Mercado Libre de un producto (a partir del nombre de este)
 
-        :return: Url en formato string (string pues asi es como lo necesita el driver.get(url))
+        :return: URL en formato string (string pues asi es como lo necesita el driver.get(url))
         """
 
         # Implemento reglas que  siguen las url de mercado libre tras introducir un producto en su barra de busquedas
@@ -105,12 +103,10 @@ class Product():
             for attr in attr_otras_carac:
                 atributos.append(attr)
 
-        self.atributos = atributos
-
-        return True
+        return atributos
 
 
-    def getAttrOtrasCarac(self):
+    def getAttrOtrasCarac(self): #quedo medio larga la funcion..
         """
         Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
         Mercado Libre.
@@ -118,8 +114,12 @@ class Product():
         :return: Lista de atributos mas frecuentes en seccion "Otras caracteristicas"
         """
         # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
-        driver = webdriver.PhantomJS(
-            executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/phantomjs-2.1.1-macosx/bin/phantomjs')
+        # Defino a Chrome como Web Browser
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
+        driver = webdriver.Chrome(
+            executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver',
+            options=options)
 
         # Inicializo variables
         d = {}  # diccionario donde guardare los atributos y su frecuencia

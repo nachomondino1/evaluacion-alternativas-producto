@@ -1,13 +1,11 @@
 # Importo librerias
-import pandas as pd
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from MercadoLibreCrawler import MercadoLibreCrawler
 import DataFrameCreator
 from product import Product
 
 
-def ExtractorDatos(df_opiniones, df_modelos):
+def ExtractorDatos(producto, df_opiniones, df_modelos):
     """
     Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y la API de Mercado Libre
     y los almacena en los DataFrames pasados como parametro. Representa toda la logica de extraccion.
@@ -19,7 +17,7 @@ def ExtractorDatos(df_opiniones, df_modelos):
 
     # Defino a Chrome como Web Browser
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless') # Hace que
+    options.add_argument('--headless') # Hace que no se abra un web browser en tu compu
     driver = webdriver.Chrome(
         executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', options=options)
 
@@ -36,7 +34,7 @@ def ExtractorDatos(df_opiniones, df_modelos):
     # Parametro 2: Extraer datos hasta ultima pagina (si hay menos de 10 paginas para ese producto)
     no_mas_paginas = 0
     # Parametro 3: Extraer datos a menos que no extraiga datos de 10 publicaciones consecutivas por no tener opiniones
-    corte_pub_consec_sinopi, pub_consec_sinopi, pub_consec_sinopi_max = 0, 0, 5
+    corte_pub_consec_sinopi, pub_consec_sinopi, pub_consec_sinopi_max = 0, 0, 15
 
     # Ingreso a pagina principal del producto en Mercado Libre
     driver.get(HomePageUrl)
@@ -58,7 +56,7 @@ def ExtractorDatos(df_opiniones, df_modelos):
             id_publicacion = crawler.getIdPublicacion()
             if len(id_publicacion) == 0: #solo para ver cual es el error
                 print("FALLO LA EXTRACCION DEL ID", publicacion)
-            # print(id_publicacion)
+            print("Nueva publicacion a extraer datos:", publicacion)
 
             # Clickeo, si existe en la publicacion, en "Ver todas las opiniones"
             if crawler.ClickVerTodasLasOpiniones() == True:
@@ -133,22 +131,23 @@ def ExtractorDatos(df_opiniones, df_modelos):
 
 
 def main():
-    # A partir de input del usuario sobre el producto a buscar, creo objeto de clase Product
+    # Pedido al usuario de producto a buscar y, con el, creo objeto de clase Product
     # producto = Product(str(input("Ingrese producto a buscar: ")))
     producto = Product("celulares") # despues lo saco
+    # producto = Product("mancuernas") # despues lo saco
 
     # Valido el producto buscado tal que no sea una busqueda tan amplia
-    producto.validacionBusqueda()
+    producto.nombre_subcat = producto.validacionBusqueda()
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
-    producto.getAtributos()
+    producto.atributos = producto.getAtributos()
 
     # Creo dataframes
-    df_opiniones = pd.DataFrame(columns=['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes'])
+    df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()
     df_modelos = DataFrameCreator.CrearModelosDataFrame(producto.atributos) #ver si puede llamar a producto.atributos dentro
 
     # Carga de datos a dataframes usando el crawler
-    df_opiniones, df_modelos = ExtractorDatos(df_opiniones, df_modelos)
+    df_opiniones, df_modelos = ExtractorDatos(producto, df_opiniones, df_modelos)
 
     # Exporto dataframes --> implementarlo en DataFrameCreator.py
     df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
