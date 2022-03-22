@@ -7,16 +7,24 @@ import DataFrameCreator
 from product import Product
 
 
-def ExtractorDatos(crawler, df_opiniones, df_modelos):
+def ExtractorDatos(df_opiniones, df_modelos):
     """
     Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y la API de Mercado Libre
     y los almacena en los DataFrames pasados como parametro. Representa toda la logica de extraccion.
 
-    :param crawler: Objeto de clase MercadoLibreCrawler donde dispongo de todos los metodos de extraccion
     :param df_opiniones: DataFrame solo con los nombres de las columnas para ser llenado con opiniones
     :param df_modelos: DataFrame solo con los nombres de las columnas para ser llenado con datos de publicaciones
     :return: Ambos Datafranes cargados con todos los datos extraidos
     """
+
+    # Defino a Chrome como Web Browser
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless') # Hace que
+    driver = webdriver.Chrome(
+        executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', options=options)
+
+    # Creo objeto de clase MercadoLibreCrawler para tener disponible todos los metodos para hacer web scraping
+    crawler = MercadoLibreCrawler(driver, producto)
 
     # Simplemente para que el codigo quede mas simple
     HomePageUrl = crawler.producto.HomePageUrl
@@ -100,15 +108,15 @@ def ExtractorDatos(crawler, df_opiniones, df_modelos):
             # otra publicacion
             driver.back()
 
-        # Si existe "siguiente pagina"
+        # Terminado de extraer datos de las publicaciones de una pagina, clicke en "siguiente pagina" si existe
         if link_paginacion != None:
-            # Clickeo en siguiente pagina
             driver.get(link_paginacion)
             print("Cambio de pagina", link_paginacion)
             paginacion_num += 1
         # No hay "siguiente pagina", por lo que, dejo de extraer datos
         else:
             no_mas_paginas = 1
+            print("No hay mas paginas")
 
     # Cierro el Web Browser Automatico dando por finalizada la extraccion de datos
     driver.close()
@@ -129,34 +137,21 @@ def main():
     # producto = Product(str(input("Ingrese producto a buscar: ")))
     producto = Product("celulares") # despues lo saco
 
-    # Defino a Chrome como Web Browser
-    opts = Options()
-    opts.add_argument("USER_AGENT=Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3")
-    driver = webdriver.Chrome('/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', chrome_options=opts)
-
-    # Creo objeto de clase MercadoLibreCrawler para tener disponible todos los metodos para hacer web scraping
-    crawler = MercadoLibreCrawler(driver, producto)
     # Valido el producto buscado tal que no sea una busqueda tan amplia
-    crawler.validacionBusqueda()
+    producto.validacionBusqueda()
+
+    # Obtengo atributos o caracteristicas mas relevantes del producto
+    producto.getAtributos()
 
     # Creo dataframes
     df_opiniones = pd.DataFrame(columns=['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes'])
-    producto.atributos = crawler.producto.getAtributos()
-    df_modelos = DataFrameCreator.CrearModelosDataFrame(producto.atributos)
+    df_modelos = DataFrameCreator.CrearModelosDataFrame(producto.atributos) #ver si puede llamar a producto.atributos dentro
 
     # Carga de datos a dataframes usando el crawler
-    df_opiniones, df_modelos = ExtractorDatos(crawler, df_opiniones, df_modelos)
+    df_opiniones, df_modelos = ExtractorDatos(df_opiniones, df_modelos)
 
     # Exporto dataframes --> implementarlo en DataFrameCreator.py
     df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
     df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
 
 main()
-
-
-""" 
-Nueva inicializacion de Web browser --> falla urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fc60dc1dc10>: Failed to establish a new connection: [Errno 61] Connection refused
-options = webdriver.ChromeOptions()
-options.add_argument('--headless')
-driver = webdriver.Chrome(executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver', options=options)
-"""

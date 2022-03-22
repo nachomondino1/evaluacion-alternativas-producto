@@ -1,7 +1,8 @@
 from selenium import webdriver
 from MercadoLibreApi import MercadoLibreApi
 from selenium.webdriver.common.by import By
-
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
 
 
 class Product():
@@ -22,6 +23,39 @@ class Product():
         self.nombre_subcat = nombre_subcat
         self.id_subcat = id_subcat
         self.atributos = atributos
+
+
+    def validacionBusqueda(self):
+        """
+        Validar la busqueda para que esta no sea muy amplia (hay un costo computacional).
+        Si la busqueda es "acotada" Mercado Libre asocia la busqueda del usuario con una categoria de producto
+        y el seria muy alto para una busqueda sin sentido
+
+        :param busqueda: Producto que quiere comprar el cliente
+        :return: Producto que quiere comprar el cliente validado, es decir, Mercado Libre le encontro categoria
+        al producto buscado
+        """
+
+        # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
+        self.HomePageUrl = self.getHomePageUrl()
+
+        # Implemento BeatifulSoup para acceder el codigo html de la pagina sin que se me abra el Chrome...
+        html = urlopen(self.HomePageUrl)
+        bs = BeautifulSoup(html, 'html.parser')
+
+        # Valido la busqueda solo si encuentro subcategoria del producto
+        tag_nombre_subcat = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"})
+        if tag_nombre_subcat == None:  # Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
+            print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
+            self.nombre = str(input("Ingrese producto a buscar: "))
+
+            # Funcion recursiva, hasta que la busqueda no sea acotada, sigue pidiendo ingreso de producto a buscar
+            self.validacionBusqueda()
+
+        # Actualizo atributo "nombre subcategoria" del producto
+        self.nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
+
+        return True
 
 
     def getHomePageUrl(self):
@@ -71,7 +105,9 @@ class Product():
             for attr in attr_otras_carac:
                 atributos.append(attr)
 
-        return atributos
+        self.atributos = atributos
+
+        return True
 
 
     def getAttrOtrasCarac(self):

@@ -1,7 +1,6 @@
 # Importo librerias
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 from utils.web_scraping.crawler import Crawler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -16,39 +15,6 @@ class MercadoLibreCrawler(Crawler):
         self.producto = producto # Deberia ser un objeto de la clase producto...
 
 
-    def validacionBusqueda(self):
-        """
-        Validar la busqueda para que esta no sea muy amplia (hay un costo computacional).
-        Si la busqueda es "acotada" Mercado Libre asocia la busqueda del usuario con una categoria de producto
-        y el seria muy alto para una busqueda sin sentido
-
-        :param busqueda: Producto que quiere comprar el cliente
-        :return: Producto que quiere comprar el cliente validado, es decir, Mercado Libre le encontro categoria
-        al producto buscado
-        """
-
-        # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
-        self.producto.HomePageUrl = self.producto.getHomePageUrl()
-
-        # Implemento BeatifulSoup para acceder el codigo html de la pagina sin que se me abra el Chrome...
-        html = urlopen(self.producto.HomePageUrl)
-        bs = BeautifulSoup(html, 'html.parser')
-
-        # Valido la busqueda solo si encuentro subcategoria del producto
-        tag_nombre_subcat = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"})
-        if tag_nombre_subcat == None:  # Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
-            print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
-            self.producto.nombre = str(input("Ingrese producto a buscar: "))
-
-            # Funcion recursiva, hasta que la busqueda no sea acotada, sigue pidiendo ingreso de producto a buscar
-            self.validacionBusqueda()
-
-        # Actualizo atributo "nombre subcategoria" del producto
-        self.producto.nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
-
-        return True
-
-
     def getPublicationsUrl(self):
         """
         Obtiene los links de cada publicacion en la pagina principal de Mercado Libre
@@ -60,6 +26,7 @@ class MercadoLibreCrawler(Crawler):
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]')))
+
         finally:
             # Busco todos los tags que contienen un link a una publicacion
             # No le puedo hacer get_attribute al ser mas de un elemento
@@ -79,7 +46,7 @@ class MercadoLibreCrawler(Crawler):
     def getPaginacionUrl(self):
         """
         Obtiene el link a la siguiente pagina principal de Mercado Libre
-        :param driver: Web browser automatico
+
         :return: Url de la siguiente pagina de Mercado Libre
         """
 
@@ -87,6 +54,7 @@ class MercadoLibreCrawler(Crawler):
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//ul[@class="ui-search-pagination andes-pagination"]')))
+
         finally:
 
             # Obtengo el url de la siguiente pagina
@@ -96,7 +64,6 @@ class MercadoLibreCrawler(Crawler):
 
             # No hay "siguiente pagina", es la ultima
             except:
-                print("No hay mas paginas")
                 url_next_page = None
 
             return url_next_page
@@ -105,7 +72,7 @@ class MercadoLibreCrawler(Crawler):
     def ClickVerTodasLasOpiniones(self):
         """
         Accede, si existe, al boton "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
-        :param driver: Web Browser Automatico
+
         :return: True si encontro el boton "Ver todas las opiniones" (y en ese caso ingreso) y False si no lo encontro
         """
         try:
@@ -213,6 +180,7 @@ class MercadoLibreCrawler(Crawler):
         opiniones_extraidas = df['content']
 
         # Veo si la primera opinion ya fue extraida
+        print(prim_opinion)
         if prim_opinion in opiniones_extraidas:
             bool = False
 
@@ -242,6 +210,7 @@ class MercadoLibreCrawler(Crawler):
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
+
         finally:
             # Para facilitar la extraccion, convierto el codigo html de la pagina de la publicacion en un objeto de la
             # clase BeautifulSoup
@@ -289,28 +258,39 @@ class MercadoLibreCrawler(Crawler):
 
         :return: id de la publicacion (en formato string)
         """
+        # Defino variable que podria utilizar para
+        construyo_id = str()
 
         # Implicit wait
         try:
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]')))
+
         finally:
             # Obtengo la url de la publicacion
             url = self.driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
 
             # Busco el id dentro de la url a partir de reglas
+            # Regla 1: URLs que son del tipo "...p/MLA<id>"
             try:
                 idx_ini = url.index('p/MLA')
                 id = url[idx_ini + 5:]
 
-            # Hago un try pues hay dos tipos de url
+            # Regla 2: URLs que son del tipo "...MLA-<id>..."
             except:
                 idx_ini = url.index('MLA-')
-                idx_fin = url.index('-')
-                id = url[idx_ini + 4:idx_fin]
+                url_restante = url[idx_ini+4:]
+
+                # Recorro cada elemento de la url
+                for elemento in url_restante:
+
+                    # Si es numero
+                    if elemento.isdigit():
+                        # Lo guardo
+                        construyo_id += elemento
+                    # Si no es numero, corto la construccion del id pues el id es numerico
+                    else:
+                        break
+
+                id = construyo_id
 
             return id
-"""
-Fallas:
-- /MLA-1126048282-
-- https://click1.mercadolibre.com.ar...
-"""
