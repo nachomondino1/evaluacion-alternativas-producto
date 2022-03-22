@@ -11,7 +11,7 @@ class MercadoLibreCrawler(Crawler):
 
     def __init__(self, driver, producto):
         """Initialize attributes of the parent class."""
-        super().__init__(driver) # no se si esta biee.
+        super().__init__(driver) # no se si esta bien
         self.producto = producto # Deberia ser un objeto de la clase producto...
 
 
@@ -158,7 +158,7 @@ class MercadoLibreCrawler(Crawler):
             d[key] = data[idx]
             idx += 1
 
-        return d
+        return d, l_content[0]
 
 
     def verificationNewOpinions(self, df):
@@ -176,13 +176,25 @@ class MercadoLibreCrawler(Crawler):
         # Extraigo la primera opinion
         prim_opinion = self.driver.find_element(By.XPATH, '//div[@class="infinite-scroll-component "]/article/p').text
 
+        if prim_opinion in df:
+            bool = False
+
+        print(prim_opinion)
+        for opinion in df:
+            if opinion == prim_opinion:
+                print(opinion)
+
+        '''
         # Obtengo lista de opiniones extraidas
         opiniones_extraidas = df['content']
 
         # Veo si la primera opinion ya fue extraida
+        print(opiniones_extraidas)
         print(prim_opinion)
+        print(prim_opinion in opiniones_extraidas)
         if prim_opinion in opiniones_extraidas:
             bool = False
+        '''
 
         return bool
 

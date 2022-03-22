@@ -10,10 +10,12 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
     Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y la API de Mercado Libre
     y los almacena en los DataFrames pasados como parametro. Representa toda la logica de extraccion.
 
+    :param producto: producto pasado por el usuario para el cual extraer informacion
     :param df_opiniones: DataFrame solo con los nombres de las columnas para ser llenado con opiniones
     :param df_modelos: DataFrame solo con los nombres de las columnas para ser llenado con datos de publicaciones
     :return: Ambos Datafranes cargados con todos los datos extraidos
     """
+    l_prim_opiniones = []
 
     # Defino a Chrome como Web Browser
     options = webdriver.ChromeOptions()
@@ -25,7 +27,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
     crawler = MercadoLibreCrawler(driver, producto)
 
     # Simplemente para que el codigo quede mas simple
-    HomePageUrl = crawler.producto.HomePageUrl
+    HomePageUrl = producto.home_page_url
     driver = crawler.driver
 
     # Defino parametros de corte de la extraccion
@@ -33,7 +35,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
     paginacion_num, paginacion_max = 1, 10
     # Parametro 2: Extraer datos hasta ultima pagina (si hay menos de 10 paginas para ese producto)
     no_mas_paginas = 0
-    # Parametro 3: Extraer datos a menos que no extraiga datos de 10 publicaciones consecutivas por no tener opiniones
+    # Parametro 3: Extraer datos a menos que no extraiga datos de 15 publicaciones consecutivas por no tener opiniones
     corte_pub_consec_sinopi, pub_consec_sinopi, pub_consec_sinopi_max = 0, 0, 15
 
     # Ingreso a pagina principal del producto en Mercado Libre
@@ -47,7 +49,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
         link_paginacion = crawler.getPaginacionUrl()
 
         # Recorro cada publicacion
-        for publicacion in links_publicaciones[:3]:
+        for publicacion in links_publicaciones:
 
             # Ingreso a una publicacion
             driver.get(publicacion)
@@ -62,7 +64,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
             if crawler.ClickVerTodasLasOpiniones() == True:
 
                 # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
-                if crawler.verificationNewOpinions(df_opiniones) == True:
+                if crawler.verificationNewOpinions(l_prim_opiniones) == True:
 
                     # Reinicio parametro de corte por publiaciones consecutivas sin opiniones pues encontro nuevas opiniones
                     pub_consec_sinopi = 0
@@ -72,7 +74,8 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 
                     # Procedo a extraccion de datos
                     # Extraigo opiniones y las guardo en df_opiniones
-                    d_opiniones_publicacion = crawler.getPublicationOpinionsData(id_publicacion)
+                    d_opiniones_publicacion, prim_opi = crawler.getPublicationOpinionsData(id_publicacion)
+                    l_prim_opiniones.append(prim_opi)
                     df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
                     print(df_opiniones)
 
@@ -93,10 +96,9 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 
             # La publicacion no tiene boton "Ver todas las opiniones" porque hay menos de 3 opiniones, o bien, no hay
             else:
-                print("PUBLICACION SIN OPINIONES")
                 # Sumo 1 a la variable "publicaciones consecutivas sin opiniones"
                 pub_consec_sinopi += 1
-                print("VERIFICAR QUE NO TIENE OPINIONES", publicacion) #para verificar que no tenga opiniones
+                print("PUBLICACION SIN OPINIONES", publicacion)
 
                 # Si llegue al maximo de "publicaciones consecutivas sin opiniones", dejar de extraer
                 if pub_consec_sinopi == pub_consec_sinopi_max:
@@ -142,14 +144,14 @@ def main():
     # Obtengo atributos o caracteristicas mas relevantes del producto
     producto.atributos = producto.getAtributos()
 
-    # Creo dataframes
+    # En base al producto a buscar, creo los dataframes
     df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()
     df_modelos = DataFrameCreator.CrearModelosDataFrame(producto.atributos) #ver si puede llamar a producto.atributos dentro
 
-    # Carga de datos a dataframes usando el crawler
+    # Carga de datos a dataframes
     df_opiniones, df_modelos = ExtractorDatos(producto, df_opiniones, df_modelos)
 
-    # Exporto dataframes --> implementarlo en DataFrameCreator.py
+    # Exporto dataframes
     df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
     df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
 

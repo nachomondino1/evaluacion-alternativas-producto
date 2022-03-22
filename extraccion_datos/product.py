@@ -8,18 +8,18 @@ from urllib.request import urlopen
 class Product():
     """ A simple model of a Mercado Libre's Product """
 
-    def __init__(self, nombre, HomePageUrl=None, nombre_subcat=None, id_subcat=None, atributos = None):
+    def __init__(self, nombre, home_page_url=None, nombre_subcat=None, id_subcat=None, atributos=None):
         """
         Defino atributos de clase Product. Las caracteristicas que tendra tod@ producto
 
         :param nombre: Nombre del producto
-        :param HomePageUrl: Pagina Principal de Mercado Libre para ese producto
+        :param home_page_url: Pagina Principal de Mercado Libre para ese producto
         :param nombre_subcat: Nombre de subcategoria de productos a la que pertenece el producto
         :param id_subcat: Id de subcategoria de productos a la que pertenece el producto
         :param atributos: Lista de atributos mas relevantes del producto
         """
         self.nombre = nombre
-        self.HomePageUrl = HomePageUrl
+        self.home_page_url = home_page_url
         self.nombre_subcat = nombre_subcat
         self.id_subcat = id_subcat
         self.atributos = atributos
@@ -27,18 +27,18 @@ class Product():
 
     def validacionBusqueda(self):
         """
-        Validar la busqueda tal que sea lo suficientemente acotada tal que se refiere a un solo producto en particular.
-        En esos casos, Mercado Libre le encuentra una subcategoria de producto.
+        Validar la busqueda implica que sea lo suficientemente acotada tal que se refiere a un solo producto en
+        particular. En esos casos, Mercado Libre le encuentra una subcategoria de producto.
 
         :return: Nombre de subcategoria del producto. Cabe resaltar, que retornara algo solo cuando la busqueda sea
-         lo suficientemente acotada tal que Mercado Libre le encuentro una subcategoria
+         lo suficientemente acotada tal que Mercado Libre le encontro una subcategoria
         """
 
         # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
-        self.HomePageUrl = self.getHomePageUrl()
+        self.home_page_url = self.getHomePageUrl()
 
         # Implemento BeatifulSoup para acceder el codigo html de la pagina sin que se me abra el Chrome...
-        html = urlopen(self.HomePageUrl)
+        html = urlopen(self.home_page_url)
         bs = BeautifulSoup(html, 'html.parser')
 
         # Valido la busqueda solo si encuentro subcategoria del producto
@@ -131,7 +131,7 @@ class Product():
         f = 0.75  # flexibilidad para aceptar atributos
 
         # Ingreso a Pagina Principal del producto a buscar
-        driver.get(self.HomePageUrl)
+        driver.get(self.home_page_url)
 
         # Busco todos los tags que contienen un link a una publicacion
         # No le puedo hacer get_attribute al ser mas de un elemento
