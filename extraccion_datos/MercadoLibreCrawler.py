@@ -10,8 +10,8 @@ class MercadoLibreCrawler(Crawler):
     """ A tool to extract data from Mercado Libre using Web Scraping """
 
     def __init__(self, driver, producto):
-        """Initialize attributes of the parent class."""
-        super().__init__(driver) # no se si esta bien
+        # super().__init__(driver) # no se si esta bien """Initialize attributes of the parent class."""
+        self.driver = driver
         self.producto = producto # Deberia ser un objeto de la clase producto...
 
 
@@ -69,22 +69,19 @@ class MercadoLibreCrawler(Crawler):
             return url_next_page
 
 
-    def ClickVerTodasLasOpiniones(self):
+    def getVerTodasLasOpinionesUrl(self):
         """
-        Accede, si existe, al boton "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
+        Obtiene, si existe, el URL del boton "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
 
-        :return: True si encontro el boton "Ver todas las opiniones" (y en ese caso ingreso) y False si no lo encontro
+        :return: URL del boton "Ver todas las opiniones", o bien, None si no existe tal boton
         """
+
         try:
-            url_ver_opiniones = self.driver.find_element(By.XPATH,'//div[@class="ui-pdp-reviews__actions__container"]/a')\
-                .get_attribute("href")
-            # Solo ingresa a la pagina si encontro el boton "Ver todas las opiniones"
-            self.driver.get(url_ver_opiniones)
-            resp = True
+            url_ver_todas_las_opi = self.driver.find_element(By.XPATH,'//div[@class="ui-pdp-reviews__actions__container"]/a').get_attribute("href")
         except:
-            resp = False
+            url_ver_todas_las_opi = None
 
-        return resp
+        return url_ver_todas_las_opi
 
 
     def getPublicationOpinionsData(self, id_publicacion):
@@ -92,7 +89,7 @@ class MercadoLibreCrawler(Crawler):
         Extrae opiniones de seccion "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
 
         :param id_publicacion: Identificador de cada publicacion
-        :return: Diccionario cuyas keys son los nombres de los campos a extraer (titulo, content, rate, fecha, likes,
+        :return: Diccionario cuyas keys son los nombres de los campos a extraer (id, titulo, content, rate, fecha, likes,
         dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese campo.
         Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
         """
@@ -117,7 +114,7 @@ class MercadoLibreCrawler(Crawler):
 
             # Extraigo Content
             try:
-                l_content.append(opinion.find_element_by_xpath('.//p').text)
+                l_content.append(opinion.find_element_by_xpath('.//p').text) # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
             except:
                 l_content.append(None)
 
@@ -158,41 +155,50 @@ class MercadoLibreCrawler(Crawler):
             d[key] = data[idx]
             idx += 1
 
-        return d, l_content[0]
+        return d
 
 
-    def verificationNewOpinions(self, df):
+    def verificationNewOpinions(self, l_prim_opiniones):
         """
         Dentro de la seccion "Ver todas las opiniones" pero antes de extraer las opiniones, verifico que sean
         opiniones nuevas (es decir, que no las haya extraido)
 
-        :param df: DataFrame cuya unidad de analisis es una opinion y las columnas son id_publicacion, titulo, content,
-        rate, fecha, likes, dislikes
+        :param l_prim_opiniones: Lista de primeras opiniones de cada publicacion ya visitada
         :return: True si son opiniones nuevas, o bien, False en caso que sean repetidas
         """
         # A priori, asumo que la opinion es nueva
         bool = True
 
-        # Extraigo la primera opinion
-        prim_opinion = self.driver.find_element(By.XPATH, '//div[@class="infinite-scroll-component "]/article/p').text
+        try:
+            prim_opinion = self.driver.find_element(By.XPATH,
+                                                        '//div[@class="infinite-scroll-component "]/article/p').text
 
-        if prim_opinion in df:
+        except:
+            print("Fallo la verificacion de opiniones nuevas. No se pudo extraer la primera opinion")
+            prim_opinion = None
+
+        # Me fijo si la primera opinion es repetida
+        if (prim_opinion in l_prim_opiniones) or (prim_opinion == None): # con la segunda condicion no estaria extrayendo las opiniones cdo falla la extraccion anterior
+            # La opinion es repetida, o bien, fallo la verificacion. En cualquier caso, devuelvo False
             bool = False
 
-        print(prim_opinion)
-        for opinion in df:
-            if opinion == prim_opinion:
-                print(opinion)
+        ''' Si VerificationOpinions() no vuelve a fallar, no implemento el Driver Wait
+        # Espero hasta que se cargue la primera opinion
+        try:
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="infinite-scroll-component "]/article/p'))) # por algun motivo falla, por mas que existe el XPATH (lo comprobe)
 
-        '''
-        # Obtengo lista de opiniones extraidas
-        opiniones_extraidas = df['content']
+        # Extraigo la primera opinion
+        finally:
+            try: #Despues lo saco
+                prim_opinion = self.driver.find_element(By.XPATH, '//div[@class="infinite-scroll-component "]/article/p').text
 
-        # Veo si la primera opinion ya fue extraida
-        print(opiniones_extraidas)
-        print(prim_opinion)
-        print(prim_opinion in opiniones_extraidas)
-        if prim_opinion in opiniones_extraidas:
+            except:
+                print(" ++ Fallo extraccion de primera opinion ++ ")
+                prim_opinion = None
+
+        # Me fijo si la primera opinion es repetida
+        if prim_opinion in l_prim_opiniones:
+            # La opinion es repetida, devuelvo False
             bool = False
         '''
 
@@ -274,39 +280,56 @@ class MercadoLibreCrawler(Crawler):
 
         :return: id de la publicacion (en formato string)
         """
-        # Defino variable que podria utilizar para
+        # Defino variable que podria utilizo para construir el id
         construyo_id = str()
 
         # Implicit wait
         try:
-            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]')))
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]'))) # a veces puede no encontrar el XPATH
+            # WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="ui-pdp-container ui-pdp-container--pdp"]')))  # seria esperar a que cargur el cuerpo de la pagina..
 
         finally:
             # Obtengo la url de la publicacion
-            url = self.driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content')
+            pageSource = self.driver.page_source
+            bs = BeautifulSoup(pageSource, 'html.parser')
+            # url = bs.find('meta', {'property': 'og:url'}).attrs['content'] # a veces falla el .attrs[] cdo no encuentra el meta.. (es raro porque el driver wait si lo encuentra)
+            url = bs.find('meta', {'property': 'og:url'})
+            # url = self.driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content') # tendria que implementar BeautifulSoup pues daria None si no lo encuentra
 
-            # Busco el id dentro de la url a partir de reglas
-            # Regla 1: URLs que son del tipo "...p/MLA<id>"
-            try:
-                idx_ini = url.index('p/MLA')
-                id = url[idx_ini + 5:]
+            # Si encontro la url
+            if url != None:
+                url = url.attrs['content']
 
-            # Regla 2: URLs que son del tipo "...MLA-<id>..."
-            except:
-                idx_ini = url.index('MLA-')
-                url_restante = url[idx_ini+4:]
+                # Busco el id dentro de la url a partir de reglas
+                # Regla 1: URLs que son del tipo "...p/MLA<id>"
+                try:
+                    regla1 = 'p/MLA'
+                    idx_ini = url.index(regla1)
+                    url_restante = url[idx_ini + len(regla1):]
 
-                # Recorro cada elemento de la url
+                # Regla 2: URLs que son del tipo "...MLA-<id>..."
+                except:
+                    regla2 = 'MLA-'
+                    idx_ini = url.index(regla2)
+                    url_restante = url[idx_ini + len(regla2):]
+
+                # Recorro cada elemento de la url restante, tener en cuenta que el id es de largo variable
                 for elemento in url_restante:
 
                     # Si es numero
                     if elemento.isdigit():
                         # Lo guardo
                         construyo_id += elemento
-                    # Si no es numero, corto la construccion del id pues el id es numerico
+                    # Si no es numero
                     else:
+                        # dejo de recorrer los elementos de la url pues el id es numerico
                         break
 
-                id = construyo_id
+                    id = construyo_id
+
+            # No encontro la URL
+            else:
+                print("No encontro la url")
+                id = None
 
             return id
