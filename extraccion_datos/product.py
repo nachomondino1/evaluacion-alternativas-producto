@@ -3,6 +3,7 @@ from MercadoLibreApi import MercadoLibreApi
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+from time import sleep
 
 
 class Product():
@@ -99,14 +100,18 @@ class Product():
         # Si la subcategoria tiene pocos atributos
         if len(atributos) < 5:
             # Le agrego atributos de seccion "Otras caracteristicas"
-            attr_otras_carac = self.getAttrOtrasCarac()
+            # attr_otras_carac = self.getAttrOtrasCarac()
+            attr_otras_carac = self.getAttrAdicionales()
             for attr in attr_otras_carac:
                 atributos.append(attr)
+
+            # Saco repetidos (tipicamente Marca y modelo)
+            atributos = set(atributos)
 
         return atributos
 
 
-    def getAttrOtrasCarac(self): #quedo medio larga la funcion..
+    def getAttrAdicionales(self): #implemento bs porque falla el driver.find_xpath al no estar visible lo que hay que extraer
         """
         Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
         Mercado Libre.
@@ -127,7 +132,96 @@ class Product():
         l_url_publicaciones = [] #  lista vacia en donde guardare los links de las publicaciones
 
         # Inicializo parametros
-        c = 10  # cantidad de publicaciones a visitar
+        c = 20  # cantidad de publicaciones a visitar
+        f = 0.75  # flexibilidad para aceptar atributos
+
+        # Ingreso a Pagina Principal del producto a buscar
+        driver.get(self.home_page_url)
+
+        # Busco todos los tags que contienen un link a una publicacion
+        # No le puedo hacer get_attribute al ser mas de un elemento
+        tag_urls_publicaciones = driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
+
+        # Recorro cada tag (cada uno contiene un link)
+        for tag_url in tag_urls_publicaciones:
+            # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+            l_url_publicaciones.append(tag_url.get_attribute("href"))
+
+        for publicacion in l_url_publicaciones[:c]:
+
+            # Ingreso a publicacion
+            driver.get(publicacion)
+
+            # Hago bs object del codigo html dentro de la publicacion
+            pageSource = driver.page_source
+            bs = BeautifulSoup(pageSource, 'html.parser')
+
+            # Publicaciones con atributos en "Ver mas Caracteristicas"
+            tags_attrs = bs.find_all('th', {'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
+
+            # Publicaciones con atributos en "Otras  Caracteristicas"
+            if tags_attrs == None:
+                tags_attrs = bs.find_all('span', {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})
+
+            # Por cada tag (que contiene un atributo)
+            for tag in tags_attrs:
+
+                # Obtengo el atributo (es el texto del tag)
+                attr = tag.text
+
+                # Si el atributo es nuevo
+                if attr not in d.keys():
+
+                    # Lo agrego y le pongo frecuencia 1
+                    d[attr] = 1
+
+                # Si el atributo no es nuevo
+                else:
+                    # Obtengo su frecuencia y le sumo 1
+                    frec = d.get(attr)
+                    d[attr] = frec + 1
+
+            # Salgo de publicacion
+            driver.back()
+
+        print(d)
+        # Obtener los atributos de mayor frecuencia que al menos este en un 75% de las publicaciones
+        for key in d.keys():
+            if d[key] > (c * f):
+                atributos.append(key)
+                print("AGREGADO:", key)
+            else:
+                print("Desechado:", key)
+
+        print('atributos:', atributos)
+        return atributos
+        
+
+
+    ''' Funcion que extria atrib adicionales solo para las public que los tenian en "Otras caracteristicas". No extria atrib de publicaciones 
+    que los tienen en "Ver mas caracteristicas".
+    def getAttrOtrasCarac(self): #quedo medio larga la funcion.. hacer que cree objeto MercadoLibreCrawler() asi llamo a getPublicationsUrl a
+        """
+        Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
+        Mercado Libre.
+
+        :return: Lista de atributos mas frecuentes en seccion "Otras caracteristicas"
+        """
+        # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
+        # Defino a Chrome como Web Browser
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
+        driver = webdriver.Chrome(
+            executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver',
+            options=options)
+
+        # Inicializo variables
+        d = {}  # diccionario donde guardare los atributos y su frecuencia
+        atributos = []  # lista donde guardare los atributos
+        l_url_publicaciones = [] #  lista vacia en donde guardare los links de las publicaciones
+
+        # Inicializo parametros
+        c = 20  # cantidad de publicaciones a visitar
         f = 0.75  # flexibilidad para aceptar atributos
 
         # Ingreso a Pagina Principal del producto a buscar
@@ -183,3 +277,4 @@ class Product():
 
         # print('atributos:', atributos)
         return atributos
+    '''

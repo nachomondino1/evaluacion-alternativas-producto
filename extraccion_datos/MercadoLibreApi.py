@@ -62,12 +62,18 @@ class MercadoLibreApi():
         # Defino manualmente los atributos (generales a la mayoria de las categorias) de relevancia 1 que no me interesan.
         attr_rel1_remove = ['Altura del paquete', 'Ancho del paquete', 'Largo del paquete', 'Peso del paquete',
                             'Código universal de producto', 'Unidades por envase', 'SKU',
-                            'Número de registro/certificación INMETRO']
+                            'Número de registro/certificación INMETRO',
+                            'Número del documento de Notificación/Comunicación previa en Anvisa',
+                            'Número de registro de producto en Anvisa',
+                            'Número de Registro Nacional de Establecimiento (RNE)',
+                            'Número de licencia del CONAMA',  'Número de inscripción de producto (RNPA)',
+                            'Número de Registro Nacional de Establecimiento (RNE)', 'Número de certificado de la AFE',
+                            'Número de legajo resolución 155/98', 'Número de inscripción de producto (RNPUD)']
 
         # Por categoria, defino manualmente los atributos de relevancia 1 que no me interesan
         attr_xcat_rel1_remove = {
-            'MLA1055': ['Versión', 'Dual SIM', 'Sello SEC', 'Homologación Anatel Nº', 'Modelo detallado', 'IMEI', 'Compañía telefónica'],
-            'MLA393366': ['Número de legajo resolución 155/98']}
+            'MLA1055': ['Versión', 'Dual SIM', 'Sello SEC', 'Homologación Anatel Nº', 'Modelo detallado', 'IMEI',
+                        'Compañía telefónica']}
 
         # Por categoria, defino manualmente los atributos de relevancia 2 o 3 (no los incluidos por default) pero que me interesan
         attr_xcat_rel2y3_add = {

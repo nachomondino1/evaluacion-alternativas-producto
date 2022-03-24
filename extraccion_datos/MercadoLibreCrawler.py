@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from utils.web_scraping.crawler import Crawler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from time import sleep
 
 
 class MercadoLibreCrawler(Crawler):
@@ -75,7 +76,9 @@ class MercadoLibreCrawler(Crawler):
 
         :return: URL del boton "Ver todas las opiniones", o bien, None si no existe tal boton
         """
-
+        # implicit or explicit wait
+        # WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]')))
+        sleep(2) # solucion rabina
         try:
             url_ver_todas_las_opi = self.driver.find_element(By.XPATH,'//div[@class="ui-pdp-reviews__actions__container"]/a').get_attribute("href")
         except:
@@ -182,26 +185,6 @@ class MercadoLibreCrawler(Crawler):
             # La opinion es repetida, o bien, fallo la verificacion. En cualquier caso, devuelvo False
             bool = False
 
-        ''' Si VerificationOpinions() no vuelve a fallar, no implemento el Driver Wait
-        # Espero hasta que se cargue la primera opinion
-        try:
-            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="infinite-scroll-component "]/article/p'))) # por algun motivo falla, por mas que existe el XPATH (lo comprobe)
-
-        # Extraigo la primera opinion
-        finally:
-            try: #Despues lo saco
-                prim_opinion = self.driver.find_element(By.XPATH, '//div[@class="infinite-scroll-component "]/article/p').text
-
-            except:
-                print(" ++ Fallo extraccion de primera opinion ++ ")
-                prim_opinion = None
-
-        # Me fijo si la primera opinion es repetida
-        if prim_opinion in l_prim_opiniones:
-            # La opinion es repetida, devuelvo False
-            bool = False
-        '''
-
         return bool
 
 
@@ -241,7 +224,7 @@ class MercadoLibreCrawler(Crawler):
                     find('span',{'class':"andes-money-amount__fraction"}).text
             except:
                 print("No encontro el precio")
-                d['precio'] = None # tendre que ver en que tipo de publicaciones no encuentra el precio
+                d['precio'] = None # en un futuro podria intentar extraer precio de las que fallan
 
             # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
             # Por campo especifico
@@ -272,64 +255,94 @@ class MercadoLibreCrawler(Crawler):
 
             return d
 
-
-    def getIdPublicacion(self):
+    def getIdPublicacion(self, url_publicacion):
         """
-        Estando dentro de una publicacion de Mercado Libre, busca automaticamente el id que identifica como unica
-        a dicha publicacion.
+        Extrae el id de una publicacion dentro de la URL de esta. En caso que no este, es porque la URL no es de las
+        comunes, y por ende, busca la URL dentro del codigo html de la publicacion. Solo en el eventual caso que no
+         encuentra la url, entonces no encontro el id.
 
-        :return: id de la publicacion (en formato string)
+        :param url_publicacion: URL de una publiacacion de Mercado Libre (en formato string)
+        :return: id de la publicacion (en formato string), o bien, None si no lo encontro
         """
-        # Defino variable que podria utilizo para construir el id
+        # Defino reglas con las que extraer el id de la url y variable en la que guardare el id
         construyo_id = str()
+        regla1 = 'p/MLA'
+        regla2 = 'MLA-'
 
-        # Implicit wait
-        try:
-            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]'))) # a veces puede no encontrar el XPATH
-            # WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="ui-pdp-container ui-pdp-container--pdp"]')))  # seria esperar a que cargur el cuerpo de la pagina..
+        # Si es una URL de la forma "www.click1.mercadolibre..."
+        if (regla1 not in url_publicacion) and (regla2 not in url_publicacion):
+            print("url con url de la forma www.click1.mercadolibre... ")
 
-        finally:
-            # Obtengo la url de la publicacion
-            pageSource = self.driver.page_source
-            bs = BeautifulSoup(pageSource, 'html.parser')
-            # url = bs.find('meta', {'property': 'og:url'}).attrs['content'] # a veces falla el .attrs[] cdo no encuentra el meta.. (es raro porque el driver wait si lo encuentra)
-            url = bs.find('meta', {'property': 'og:url'})
-            # url = self.driver.find_element(By.XPATH, '//meta[@property="og:url"]').get_attribute('content') # tendria que implementar BeautifulSoup pues daria None si no lo encuentra
+            # Reemplazo la URL
+            try:
+                # Extraigo URL de la publicacion
+                tag_url_publicacion = self.driver.find_element_by_xpath('//meta[@property="og:url"]')
 
-            # Si encontro la url
-            if url != None:
-                url = url.attrs['content']
+                # Reemplazo URL pasada por parametro por la URL extraida
+                url_publicacion = tag_url_publicacion.attrs['content']
+                print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
 
-                # Busco el id dentro de la url a partir de reglas
-                # Regla 1: URLs que son del tipo "...p/MLA<id>"
-                try:
-                    regla1 = 'p/MLA'
-                    idx_ini = url.index(regla1)
-                    url_restante = url[idx_ini + len(regla1):]
-
-                # Regla 2: URLs que son del tipo "...MLA-<id>..."
-                except:
-                    regla2 = 'MLA-'
-                    idx_ini = url.index(regla2)
-                    url_restante = url[idx_ini + len(regla2):]
-
-                # Recorro cada elemento de la url restante, tener en cuenta que el id es de largo variable
-                for elemento in url_restante:
-
-                    # Si es numero
-                    if elemento.isdigit():
-                        # Lo guardo
-                        construyo_id += elemento
-                    # Si no es numero
-                    else:
-                        # dejo de recorrer los elementos de la url pues el id es numerico
-                        break
-
-                    id = construyo_id
-
-            # No encontro la URL
-            else:
-                print("No encontro la url")
+            # Si encontro el tag donde esta la URL de la publicacion
+            except:
+                # Defino el id como None al no encontrar la URL del cual extraerlo
+                url_publicacion = None
                 id = None
+                # print("LA URL DE LA PUBLICACION ES CLICK Y ENCIMA NO ENCONTRE LA URL DENTRO DE LA PAGINA")
 
-            return id
+            ''' Fallo el driver wait pues no encontro el XPATH (con celulares habia ido bien pero fallo con notebook y con auriculares)
+            # Reemplazo la URL
+            # Implicit wait: hasta que cargue el XPATH donde esta la URL
+            try:
+                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(
+                    (By.XPATH, '//meta[@property="og:url"]')))
+
+            finally:
+                # Extraigo URL de la publicacion
+                pageSource = self.driver.page_source
+                bs = BeautifulSoup(pageSource, 'html.parser')
+                tag_url_publicacion = bs.find('meta', {'property': 'og:url'})
+
+                # Si encontro el tag donde esta la URL de la publicacion
+                if tag_url_publicacion != None:
+
+                    # Reemplazo URL pasada por parametro por la URL extraida
+                    url_publicacion = tag_url_publicacion.attrs['content']
+                    print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
+
+                # No encontro el tag
+                else:
+                    # Defino el id como None al no encontrar la URL del cual extraerlo
+                    id = None
+                    print("LA URL DE LA PUBLICACION ES CLICK Y ENCIMA NO ENCONTRE LA URL DENTRO DE LA PAGINA")
+            '''
+
+        # Si tengo la URL de la cual extraer el ID
+        if url_publicacion != None:
+
+            # Busco el id dentro de la url a partir de reglas
+            # Regla 1: URLs que son del tipo "...p/MLA<id>"
+            try:
+                idx_ini = url_publicacion.index(regla1)
+                url_restante = url_publicacion[idx_ini + len(regla1):]
+
+            # Regla 2: URLs que son del tipo "...MLA-<id>..."
+            except:
+                idx_ini = url_publicacion.index(regla2)
+                url_restante = url_publicacion[idx_ini + len(regla2):]
+
+            # Recorro cada elemento de la url restante, tener en cuenta que el id es de largo variable
+            for elemento in url_restante:
+
+                # Si es numero
+                if elemento.isdigit():
+                    # Lo guardo
+                    construyo_id += elemento
+                # Si no es numero
+                else:
+                    # dejo de recorrer los elementos de la url pues el id es numerico
+                    break
+
+            # Construido el id elemento a elemento, lo guardo en id
+            id = construyo_id
+
+        return id

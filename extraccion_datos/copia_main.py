@@ -57,73 +57,77 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
             # Obtengo id de la publicacion (que identifica como unica a cada publicacion)
             id_publicacion = crawler.getIdPublicacion(url_publicacion)
 
-            # Obtengo el URL del boton "Ver todas las opiniones"
-            url_ver_todas_las_opiniones = crawler.getVerTodasLasOpinionesUrl()
+            if id_publicacion != None: # estoy probando si falla mucho la extraccion del id (solo lo implemento en la copia del main)
 
-            # Si existe el boton "Ver todas las opiniones" y extraje el id
-            if (url_ver_todas_las_opiniones != None) and (id_publicacion != None):
+                # Obtengo el URL del boton "Ver todas las opiniones"
+                url_ver_todas_las_opiniones = crawler.getVerTodasLasOpinionesUrl()
 
-                # Clickeo en boton "Ver todas las opiniones"
-                driver.get(url_ver_todas_las_opiniones)
+                # Si existe el boton "Ver todas las opiniones" y extraje el id
+                if url_ver_todas_las_opiniones != None:
 
-                # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
-                if crawler.verificationNewOpinions(l_prim_opiniones) == True:
+                    # Clickeo en boton "Ver todas las opiniones"
+                    driver.get(url_ver_todas_las_opiniones)
 
-                    # Reinicio parametros de corte por publiaciones consecutivas sin opiniones o opiniones repetidas
-                    pub_sin_opi, pub_opi_rep = 0, 0
+                    # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
+                    if crawler.verificationNewOpinions(l_prim_opiniones) == True:
 
-                    # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
-                    # crawler.ScrollDown()
+                        # Reinicio parametros de corte por publiaciones consecutivas sin opiniones o opiniones repetidas
+                        pub_sin_opi, pub_opi_rep = 0, 0
 
-                    # Extraigo opiniones y las guardo en df_opiniones
-                    d_opiniones_publicacion = crawler.getPublicationOpinionsData(id_publicacion)
-                    df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
-                    print(df_opiniones)
+                        # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
+                        # crawler.ScrollDown()
 
-                    # Guardo la primera opinion de la publicacion para poder hacer la verificacion de opiniones nuevas
-                    l_prim_opiniones.append(d_opiniones_publicacion['content'][0])
+                        # Extraigo opiniones y las guardo en df_opiniones
+                        d_opiniones_publicacion = crawler.getPublicationOpinionsData(id_publicacion)
+                        df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
+                        print(df_opiniones)
 
-                    # Clikeo en Volver saliendo de "Ver todas las opiniones"
-                    driver.back()
+                        # Guardo la primera opinion de la publicacion para poder hacer la verificacion de opiniones nuevas
+                        l_prim_opiniones.append(d_opiniones_publicacion['content'][0])
 
-                    # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
-                    # los guardo en df_modelos
-                    d_data_modelos = crawler.getModeloData(id_publicacion, crawler.producto.atributos)
-                    df_modelos = DataFrameCreator.AgregarFilasAlDataFrame(d_data_modelos, df_modelos)
-                    print(df_modelos)
+                        # Clikeo en Volver saliendo de "Ver todas las opiniones"
+                        driver.back()
 
-                # Las opiniones se repiten con las de otra publicacion, por lo que, no extraigo nada
+                        # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
+                        # los guardo en df_modelos
+                        d_data_modelos = crawler.getModeloData(id_publicacion, crawler.producto.atributos)
+                        df_modelos = DataFrameCreator.AgregarFilasAlDataFrame(d_data_modelos, df_modelos)
+                        print(df_modelos)
+
+                    # Las opiniones se repiten con las de otra publicacion, por lo que, no extraigo nada
+                    else:
+                        # Sumo 1 al parametro de corte de opiniones repetidas
+                        pub_opi_rep += 1
+                        print("OPINIONES REPETIDAS", pub_opi_rep)
+
+                        # Si llego al maximo de publicaciones seguidas con opiniones repetidas
+                        if pub_opi_rep == pub_opi_rep_max:
+
+                            # Corto la extraccion de datos
+                            corte_pub_opi_rep = 1
+
+                        # Clikeo en Volver saliendo de "Ver todas las opiniones"
+                        driver.back()
+
+                # No existe el boton "Ver todas las opiniones" (pub con  menos de 3 opiniones, o bien, no hay)
                 else:
-                    # Sumo 1 al parametro de corte de opiniones repetidas
-                    pub_opi_rep += 1
-                    print("OPINIONES REPETIDAS", pub_opi_rep)
+                    # Sumo 1 al parametro de corte de publicaciones sin opiniones
+                    pub_sin_opi += 1
+                    print("PUBLICACION SIN OPINIONES", pub_sin_opi)
 
-                    # Si llego al maximo de publicaciones seguidas con opiniones repetidas
-                    if pub_opi_rep == pub_opi_rep_max:
+                    # Si llego al maximo de publicaciones seguidas sin opiniones
+                    if pub_sin_opi == pub_sin_opi_max:
 
                         # Corto la extraccion de datos
-                        corte_pub_opi_rep = 1
+                        corte_pub_sin_opi = 1
 
-                    # Clikeo en Volver saliendo de "Ver todas las opiniones"
-                    driver.back()
+                # Clikeo en Volver saliendo de la pagina de la publicacion y volviendo a la pagina principal
+                driver.back()
 
-            # No existe el boton "Ver todas las opiniones" (pub con  menos de 3 opiniones, o bien, no hay)
             else:
-                # Sumo 1 al parametro de corte de publicaciones sin opiniones
-                pub_sin_opi += 1
-                print("PUBLICACION SIN OPINIONES", pub_sin_opi)
+                print("FALLO EXTRACCION DE ID")
+                driver.back()
 
-                if id_publicacion != None:
-                    print("FALLO EXTRACCION DE ID")
-
-                # Si llego al maximo de publicaciones seguidas sin opiniones
-                if pub_sin_opi == pub_sin_opi_max:
-
-                    # Corto la extraccion de datos
-                    corte_pub_sin_opi = 1
-
-            # Clikeo en Volver saliendo de la pagina de la publicacion y volviendo a la pagina principal
-            driver.back()
 
         # Si existe siguiente pagina
         if url_paginacion != None:
@@ -160,7 +164,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 def main():
     # Pedido al usuario de producto a buscar y, con el, creo objeto de clase Product
     # producto = Product(str(input("Ingrese producto a buscar: ")))
-    producto = Product("auriculares") # despues lo saco
+    producto = Product("notebook") # despues lo saco
     # producto = Product("mancuernas") # despues lo saco
 
     # Valido el producto buscado tal que no sea una busqueda tan amplia
@@ -168,6 +172,7 @@ def main():
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
     producto.atributos = producto.getAtributos()
+    print(producto.atributos)
 
     # En base al producto a buscar, creo los dataframes
     df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()
