@@ -71,17 +71,15 @@ class Product():
         return url
 
 
-    def getAtributos(self):  # implemento bs porque falla el driver.find_xpath al no estar visible lo que hay que extraer
+    def getAtributos(self):
         """
-        # Ex nombre: getAttrAdicionales
         Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
         Mercado Libre.
+
         :return: Lista de atributos mas frecuentes en seccion "Otras caracteristicas"
         """
         # Inicializo parametros
         pag_a_vis = 20  # cantidad de publicaciones a visitar
-        porcentaje_pub = 0.75  # flexibilidad para aceptar atributos
-        frec_min = pag_a_vis * porcentaje_pub
 
         # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
         # Defino a Chrome como Web Browser
@@ -124,7 +122,7 @@ class Product():
             # Al parecer lo que devuelve None es find() y lo que devuelve lista vacia es find_all()
 
             # Publicaciones con atributos en "Otras  Caracteristicas"
-            if len(tags_attrs) == 0: # por ahi no esta funcionando, agrego atributos que estan en "Caracteristicas generales". No entro y deberia haberlo hecho
+            if len(tags_attrs) == 0:
                 tags_attrs = tags_attrs_carac_gen = bs.find_all('th', {'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'}) # el XPATH no esta en las pub de ver mas carac :
                 tags_attrs2 = bs.find_all('span',{'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})
 
@@ -155,168 +153,75 @@ class Product():
             driver.back()
 
         print(d)
+        print("Cant de atributos:", len(d.keys()))
 
         # IMPLEMENTO ELEGIR LOS 10 MAS FRECUENTES y que esten en EL 75% DE LAS PUB
-        atrib_desechados = []  # solo para ver que tiro
         frecuencias = list(d.values())
         frecuencias.sort()
 
         # Defino parametro de corte
         indice_frec_corte = int(len(frecuencias) * 0.8)
 
+        j = 0
+
         frec_corte = frecuencias[indice_frec_corte]
         print("Frec corte", frec_corte)
 
         for key in d.keys():
             frec = d[key]
-            if (frec >= frec_corte) and (frec >= frec_min):
-                atributos.append(key)
-            else:
-                atrib_desechados.append(key)
 
-        print('atributos agregados:', atributos, len(atributos))
-        print('atributos no agregados:', atrib_desechados, len(atrib_desechados))
-
-
-        '''
-        # IMPLEMENTO ELEGIR LOS 10 MAS FRECUENTES (EN LUGAR DE TODOS LOS QUE ESTEN EN EL 75% DE LAS PUB)
-        atrib_desechados = [] # solo para ver que tiro
-        frecuencias = list(d.values())
-        frecuencias.sort()
-        frec_corte = frecuencias[len(frecuencias)-10]
-
-        for key in d.keys():
-            frec = d[key]
             if frec >= frec_corte:
                 atributos.append(key)
             else:
-                atrib_desechados.append(key)
+                j += 1
+                pass
 
-        print('atributos:', atributos)
-        print('atributos desechados:', atrib_desechados)
-        '''
-
-        '''
-        # Obtener los atributos de mayor frecuencia que al menos este en un 75% de las publicaciones
-        for key in d.keys():
-            if d[key] > (c * f):
-                atributos.append(key)
-                print("AGREGADO:", key)
-            else:
-                print("Desechado:", key)
-
-        print('atributos:', atributos)
-        '''
+        print('atributos agregados:', atributos, len(atributos))
+        print("Cant atrib desechados por frec_corte:", j)
 
         return atributos
 
-    '''
-    def getAtributos(self): # Esta funcion la deje de usar pues deje de usar la api para la extraccion de atributos. Ahora usare getAtributos() que solo usa WebScraping
+
+''' IMPLEMENTACION EN MERCADOLIBRECRAWLERR()
+    def getAttrAdicionales(self):  # implemento bs porque falla el driver.find_xpath al no estar visible lo que hay que extraer
         """
-        Obtiene los atributos de un producto, es decir, las caracteristicas tecnicas principales.
-        En una primera instancia, llama a la API de Meli para obtener los atributos. Si son pocos, agrega atributos
-        que aparecen en seccion "Otras caracteristicas" de las publicaciones.
-
-        :return: Lista de atributos relevantes para un producto
-        """
-        # Defino hiperparametro "cantidad de atributos minimo"
-        cant_atrib_min = 8
-
-        # Obtengo datos de las categorias, sus id y sus subcategorias usando la API de mercado libre
-        api = MercadoLibreApi()
-        df_categorias = api.getCategoriasID()
-
-        # Extraigo fila del df de la subcategoria del producto
-        datos_subcategoria = df_categorias[df_categorias.nombre_subcategoria == self.nombre_subcat]
-
-        # De dicha fila me interesa solo la columna del id (numero 2)
-        self.id_subcat_prod = datos_subcategoria.iloc[0, 2]
-
-        # Segun la subcategoria del producto, busco sus atributos
-        # este proceso tarda mucho, seria ideal que se corra independiente de programa (main.py) pero no lo pude hacer en categorias.py
-        atributos = api.getAtributosSubcategoria(self.id_subcat_prod)
-        print('atributos:', atributos)
-
-        # Si la subcategoria tiene pocos atributos
-        if len(atributos) < cant_atrib_min:
-
-            # Le agrego atributos de seccion "Otras caracteristicas"
-            # attr_otras_carac = self.getAttrOtrasCarac()
-            attr_adicionales = self.getAtributosAdicionales()
-            for attr in attr_adicionales:
-                atributos.append(attr)
-
-            # Saco repetidos (tipicamente Marca y modelo)
-            atributos = set(atributos)
-
-        print("Finalmente los atributos son", atributos, len(atributos))
-
-        return atributos
-
-    def getAtributosAdicionales(self):  # implemento bs porque falla el driver.find_xpath al no estar visible lo que hay que extraer
-        """
-        # Ex nombre: getAttrAdicionales
         Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
         Mercado Libre.
+
         :return: Lista de atributos mas frecuentes en seccion "Otras caracteristicas"
         """
-        # Inicializo parametros
-        pag_a_vis = 20  # cantidad de publicaciones a visitar
-        porcentaje_pub = 0.75  # flexibilidad para aceptar atributos
-        frec_min = pag_a_vis * porcentaje_pub
-
-        # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
-        # Defino a Chrome como Web Browser
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-        driver = webdriver.Chrome(
-            executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver',
-            options=options)
-
         # Inicializo variables
         d = {}  # diccionario donde guardare los atributos y su frecuencia
         atributos = []  # lista donde guardare los atributos
-        l_url_publicaciones = []  # lista vacia en donde guardare los links de las publicaciones
+
+        # Inicializo parametros
+        c = 20  # cantidad de publicaciones a visitar
+        f = 0.75  # flexibilidad para aceptar atributos
 
         # Ingreso a Pagina Principal del producto a buscar
-        driver.get(self.home_page_url)
+        self.driver.get(self.producto.home_page_url)
 
-        # Busco todos los tags que contienen un link a una publicacion
-        # No le puedo hacer get_attribute al ser mas de un elemento
-        tag_urls_publicaciones = driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
+        # Obtengo urls de publicaciones
+        l_url_publicaciones = self.getPublicationsUrl()
 
-        # Recorro cada tag (cada uno contiene un link)
-        for tag_url in tag_urls_publicaciones:
-            # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
-            l_url_publicaciones.append(tag_url.get_attribute("href"))
-
-        for publicacion in l_url_publicaciones[:pag_a_vis]:
+        # Recorro cada publicacion
+        for publicacion in l_url_publicaciones[:c]:
 
             # Ingreso a publicacion
-            driver.get(publicacion)
+            self.driver.get(publicacion)
 
             # Hago bs object del codigo html dentro de la publicacion
-            pageSource = driver.page_source
+            pageSource = self.driver.page_source
             bs = BeautifulSoup(pageSource, 'html.parser')
 
             # Publicaciones con atributos en "Ver mas Caracteristicas"
             tags_attrs = bs.find_all('th', {
                 'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
-            # RECONTRA OJO, PENSE QUE SI UN BS NO ENCONTRABA EL XPATH DEVOLVIA NONE Y QUE SI HACIE IF BS== NONE DEBERIA DAR TRUE PERO NO. TE DEVUELVE FALSE PUES EL BS ES UNA LISTA VACIA
-            # esto pueede ser la puta razon por la que falla varias cosas dee mi codigo comopor ej url_paginacion
-            # Al parecer lo que devuelve None es find() y lo que devuelve lista vacia es find_all()
 
             # Publicaciones con atributos en "Otras  Caracteristicas"
-            if len(tags_attrs) == 0:  # por ahi no esta funcionando, agrego atributos que estan en "Caracteristicas generales". No entro y deberia haberlo hecho
-                tags_attrs = tags_attrs_carac_gen = bs.find_all('th', {
-                    'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'})  # el XPATH no esta en las pub de ver mas carac :
-                tags_attrs2 = bs.find_all('span',
-                                          {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})
-
-                for elemento in tags_attrs2:  # Pruebo unir los tags....
-                    tags_attrs.append(elemento)
-
-                print("Atributos en otras carac", tags_attrs)
+            if tags_attrs == None:
+                tags_attrs = bs.find_all('span',
+                                         {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})
 
             # Por cada tag (que contiene un atributo)
             for tag in tags_attrs:
@@ -337,30 +242,17 @@ class Product():
                     d[attr] = frec + 1
 
             # Salgo de publicacion
-            driver.back()
+            self.driver.back()
 
         print(d)
-
-        # IMPLEMENTO ELEGIR LOS 10 MAS FRECUENTES y que esten en EL 75% DE LAS PUB
-        atrib_desechados = []  # solo para ver que tiro
-        frecuencias = list(d.values())
-        frecuencias.sort()
-
-        # Defino parametro de corte
-        indice_frec_corte = int(len(frecuencias) * 0.8)
-
-        frec_corte = frecuencias[indice_frec_corte]
-        print("Frec corte", frec_corte)
-
+        # Obtener los atributos de mayor frecuencia que al menos este en un 75% de las publicaciones
         for key in d.keys():
-            frec = d[key]
-            if (frec >= frec_corte) and (frec >= frec_min):
+            if d[key] > (c * f):
                 atributos.append(key)
+                print("AGREGADO:", key)
             else:
-                atrib_desechados.append(key)
+                print("Desechado:", key)
 
-        print('atributos agregados:', atributos, len(atributos))
-        print('atributos no agregados:', atrib_desechados, len(atrib_desechados))
-
+        print('atributos:', atributos)
         return atributos
     '''

@@ -162,7 +162,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 def main():
     # Pedido al usuario de producto a buscar y, con el, creo objeto de clase Product
     # producto = Product(str(input("Ingrese producto a buscar: ")))
-    producto = Product("Smartband") # despues lo saco
+    producto = Product("Fundas de celular") # despues lo saco
     # producto = Product("mancuernas") # despues lo saco
 
     # Valido el producto buscado tal que no sea una busqueda tan amplia
@@ -170,6 +170,7 @@ def main():
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
     producto.atributos = producto.getAtributos()
+
 
     # En base al producto a buscar, creo los dataframes
     df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()
