@@ -52,7 +52,7 @@ class MercadoLibreCrawler(Crawler):
         """
 
         # Implicit wait: hasta que aparezca la seccion en donde cambio de pagina
-        try:
+        try: #esta fallando en la carga? pues no encuntrs la url cuando deberia encontrarla...
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//ul[@class="ui-search-pagination andes-pagination"]')))
 
@@ -62,6 +62,7 @@ class MercadoLibreCrawler(Crawler):
             try:
                 url_next_page = self.driver.find_element_by_xpath(
                 './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+                print("Encontro siguiente pagina", url_next_page)
 
             # No hay "siguiente pagina", es la ultima
             except:
@@ -236,24 +237,37 @@ class MercadoLibreCrawler(Crawler):
                 attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
                                            text=campo_especifico)
 
+                # print("Fijate que encuentra el th pero como esta en carac gen, no lo extrae pues no tiene nextsibling", attr)
+                # FALTA IMPLEMENTAR EXTRACCION DE VALORES DE SECCION "CARACTERISTICAS GENERALES". EL TH ESTA BIEN PEOR NO TIENE NEXT SIBLING
+                # En realidad si tiene next sibling... Esto parece estar bien, lo que esta mal es que por alguna razon no busca todos los atributos...
+                # el problema es que en las publicaciones que tienene atributos en "caracteristicas generales" y en "otras caracteristicas" solo extrae de "caracteristicas generales" pues el attr no es None
+
+
                 # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
                 if attr != None:
                     valor = attr.nextSibling.text
                     attr = attr.text
                     d[attr] = valor
+                    # print("Atributo:", attr,"Valor:", valor)
+
 
                 # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
                 # y su valor en el diccionario
-                elif attr_otras_carac != None:
+                elif attr_otras_carac != None: # era un elif pero lo tuve que hacer if porque -->  el problema es que en las publicaciones que tienene atributos en "caracteristicas generales" y en "otras caracteristicas" solo extrae de "caracteristicas generales" pues el attr no es None
                     valor = attr_otras_carac.nextSibling.text
                     attr_otras_carac = attr_otras_carac.text
                     d[attr_otras_carac] = valor[2:]
+                    # print("Atributo:", attr_otras_carac,"Valor:", valor)
+
 
                 # Si no existe el tag en ninguna seccion, entonces guardo el atributo con valor None en el diccionario
                 else:
                     d[campo_especifico] = None
+                    # print("Atributo:", campo_especifico,"Valor:", None)
 
+            print("Fila a cargar", d)
             return d
+
 
     def getIdPublicacion(self, url_publicacion):
         """
@@ -288,33 +302,6 @@ class MercadoLibreCrawler(Crawler):
                 url_publicacion = None
                 id = None
                 # print("LA URL DE LA PUBLICACION ES CLICK Y ENCIMA NO ENCONTRE LA URL DENTRO DE LA PAGINA")
-
-            ''' Fallo el driver wait pues no encontro el XPATH (con celulares habia ido bien pero fallo con notebook y con auriculares)
-            # Reemplazo la URL
-            # Implicit wait: hasta que cargue el XPATH donde esta la URL
-            try:
-                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(
-                    (By.XPATH, '//meta[@property="og:url"]')))
-
-            finally:
-                # Extraigo URL de la publicacion
-                pageSource = self.driver.page_source
-                bs = BeautifulSoup(pageSource, 'html.parser')
-                tag_url_publicacion = bs.find('meta', {'property': 'og:url'})
-
-                # Si encontro el tag donde esta la URL de la publicacion
-                if tag_url_publicacion != None:
-
-                    # Reemplazo URL pasada por parametro por la URL extraida
-                    url_publicacion = tag_url_publicacion.attrs['content']
-                    print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
-
-                # No encontro el tag
-                else:
-                    # Defino el id como None al no encontrar la URL del cual extraerlo
-                    id = None
-                    print("LA URL DE LA PUBLICACION ES CLICK Y ENCIMA NO ENCONTRE LA URL DENTRO DE LA PAGINA")
-            '''
 
         # Si tengo la URL de la cual extraer el ID
         if url_publicacion != None:

@@ -68,7 +68,9 @@ class MercadoLibreApi():
                             'Número de Registro Nacional de Establecimiento (RNE)',
                             'Número de licencia del CONAMA',  'Número de inscripción de producto (RNPA)',
                             'Número de Registro Nacional de Establecimiento (RNE)', 'Número de certificado de la AFE',
-                            'Número de legajo resolución 155/98', 'Número de inscripción de producto (RNPUD)']
+                            'Número de legajo resolución 155/98', 'Número de inscripción de producto (RNPUD)',
+                            'Número de registro de producto en MAPA', 'Número de habilitación de la empresa alimentaria'
+                            ]
 
         # Por categoria, defino manualmente los atributos de relevancia 1 que no me interesan
         attr_xcat_rel1_remove = {

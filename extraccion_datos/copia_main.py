@@ -44,7 +44,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 
         # Extraigo URLs de cada una de las publicaciones de una pagina de Mercado Libre. Tambien de la paginacion.
         url_publicaciones = crawler.getPublicationsUrl()
-        url_paginacion = crawler.getPaginacionUrl() #probe a ponerlo a bajo pero corto por no haberr mas paginas en la 5, para mi fallo la carga de  la pagina.
+        url_paginacion = crawler.getPaginacionUrl() #probe a ponerlo a bajo pero corto por no haber mas paginas en la 5, para mi fallo la carga de la pagina.
 
         # Recorro cada publicacion
         for url_publicacion in url_publicaciones:
@@ -57,8 +57,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
             # Obtengo id de la publicacion (que identifica como unica a cada publicacion)
             id_publicacion = crawler.getIdPublicacion(url_publicacion)
 
-            if id_publicacion != None: # estoy probando si falla mucho la extraccion del id (solo lo implemento en la copia del main)
-
+            if id_publicacion != None:
                 # Obtengo el URL del boton "Ver todas las opiniones"
                 url_ver_todas_las_opiniones = crawler.getVerTodasLasOpinionesUrl()
 
@@ -128,7 +127,6 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
                 print("FALLO EXTRACCION DE ID")
                 driver.back()
 
-
         # Si existe siguiente pagina
         if url_paginacion != None:
 
@@ -172,7 +170,6 @@ def main():
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
     producto.atributos = producto.getAtributos()
-    print(producto.atributos)
 
     # En base al producto a buscar, creo los dataframes
     df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()
