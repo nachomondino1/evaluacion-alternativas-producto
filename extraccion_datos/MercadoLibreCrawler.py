@@ -64,11 +64,11 @@ class MercadoLibreCrawler(Crawler):
             try:
                 url_next_page = self.driver.find_element_by_xpath(
                 './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
-                print("Encontro siguiente pagina", url_next_page)
 
             # No hay "siguiente pagina", es la ultima
             except:
                 url_next_page = None
+                print("NO ENCONTRO SIGUIENTE PAGINA")
 
             return url_next_page
 
@@ -239,19 +239,12 @@ class MercadoLibreCrawler(Crawler):
                 attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
                                            text=campo_especifico)
 
-                # print("Fijate que encuentra el th pero como esta en carac gen, no lo extrae pues no tiene nextsibling", attr)
-                # FALTA IMPLEMENTAR EXTRACCION DE VALORES DE SECCION "CARACTERISTICAS GENERALES". EL TH ESTA BIEN PEOR NO TIENE NEXT SIBLING
-                # En realidad si tiene next sibling... Esto parece estar bien, lo que esta mal es que por alguna razon no busca todos los atributos...
-                # el problema es que en las publicaciones que tienene atributos en "caracteristicas generales" y en "otras caracteristicas" solo extrae de "caracteristicas generales" pues el attr no es None
-
-
                 # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
                 if attr != None:
                     valor = attr.nextSibling.text
                     attr = attr.text
                     d[attr] = valor
                     # print("Atributo:", attr,"Valor:", valor)
-
 
                 # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
                 # y su valor en el diccionario
@@ -261,13 +254,12 @@ class MercadoLibreCrawler(Crawler):
                     d[attr_otras_carac] = valor[2:]
                     # print("Atributo:", attr_otras_carac,"Valor:", valor)
 
-
                 # Si no existe el tag en ninguna seccion, entonces guardo el atributo con valor None en el diccionario
                 else:
                     d[campo_especifico] = None
                     # print("Atributo:", campo_especifico,"Valor:", None)
 
-            print("Fila a cargar", d)
+            # print("Fila a cargar", d)
             return d
 
 
@@ -291,14 +283,25 @@ class MercadoLibreCrawler(Crawler):
 
             # Reemplazo la URL
             try:
+                # Implemento explicit wait????
+                # sleep(2) #tal vez no termina de cargar la pagina...
+
+                pageSource = self.driver.page_source
+                bs = BeautifulSoup(pageSource, 'html.parser')
+                url_publicacion = bs.find('meta', {'property': 'og:url'}).attrs['content']
+                # print("INTENTO DE EXTRAER CON BS (REZAR QUE NO SEA NONE):", url_publicacion)
+
+                ''' Don driver.find() no lo encuentra
                 # Extraigo URL de la publicacion
                 tag_url_publicacion = self.driver.find_element_by_xpath('//meta[@property="og:url"]')
 
                 # Reemplazo URL pasada por parametro por la URL extraida
                 url_publicacion = tag_url_publicacion.attrs['content']
+                '''
+
                 print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
 
-            # Si encontro el tag donde esta la URL de la publicacion
+            # Si no encontro el tag donde esta la URL de la publicacion
             except:
                 # Defino el id como None al no encontrar la URL del cual extraerlo
                 url_publicacion = None

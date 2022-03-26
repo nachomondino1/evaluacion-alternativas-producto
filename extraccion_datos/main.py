@@ -27,20 +27,19 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
     driver = crawler.driver
 
     # Defino parametros de corte de la extraccion
-    pag_num, pag_max = 1, 10                                                # param 1: Hasta pagina 10 de Mercado libre
+    pag_num, pag_max = 0, 11                                                # param 1: Hasta pagina 10 de Mercado libre
     no_mas_paginas = 0                                                      # param 2: Hasta ultima pagina (cuando hay menos de 10)
-    porc_min_ult_pag_extraidas, cant_ult_pag, malas_ult_pag = 0.1, 40, 0    # param 3: % de las ultimas 50 paginas en las que entro
+    porc_min_ult_pag_extraidas, cant_ult_pag, ult_pag_sin_data = 0.1, 30, 0 # param 3: De las ultimas <cant_ult_pag> paginas, pido extraer datos en al menos <porc_min_ult_pag> de ellas
     historico_paginas = []
 
     # Defino lista en la que incluire las primeras opiniones de cada publicacion. Ayudara a no extraer opiniones repetidas
     l_prim_opiniones = []
-    l_l_publicaciones = set() # sacar luego de correr pruebas
 
     # Ingreso a pagina principal del producto en Mercado Libre
     driver.get(producto.home_page_url)
 
     # Mientras que no se cumpla alguno de los tres parametro de corte
-    while (pag_num < pag_max) and (no_mas_paginas == 0) and (malas_ult_pag == 0):
+    while (pag_num < pag_max) and (no_mas_paginas == 0) and (ult_pag_sin_data == 0):
 
         # Extraigo URLs de cada una de las publicaciones de una pagina de Mercado Libre. Tambien de la paginacion.
         url_publicaciones = crawler.getPublicationsUrl()
@@ -48,10 +47,9 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 
         # Recorro cada publicacion
         for url_publicacion in url_publicaciones:
-            l_l_publicaciones.add(url_publicacion) #es para ver si el crawler ingresa a un link repetido o siempre es nueevo. Su largo deberia ser 50, 100, 150, y asi
-            print("Publicacion numero:", len(l_l_publicaciones), url_publicacion)
+            print("Publicacion numero:", len(historico_paginas), url_publicacion) # Por lo menos para las pruebas es util, saber el nro de publicacion y el link
 
-            # intento de usar solo un parametro...
+            # A priori, asumo que no pude extraer datos de la publicacion
             pagina_extraida = False
 
             # Clickeo en una publicacion
@@ -60,64 +58,60 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
             # Obtengo id de la publicacion (que identifica como unica a cada publicacion)
             id_publicacion = crawler.getIdPublicacion(url_publicacion)
 
-            if id_publicacion != None: #tomar decision si dejarlo aca o no
-                # Obtengo el URL del boton "Ver todas las opiniones"
-                url_ver_todas_las_opiniones = crawler.getVerTodasLasOpinionesUrl()
+            # Obtengo el URL del boton "Ver todas las opiniones"
+            url_ver_todas_las_opiniones = crawler.getVerTodasLasOpinionesUrl()
 
-                # Si existe el boton "Ver todas las opiniones" y extraje el id
-                if url_ver_todas_las_opiniones != None:
+            # Si existe el boton "Ver todas las opiniones" y extraje el id
+            if url_ver_todas_las_opiniones != None:
 
-                    # Clickeo en boton "Ver todas las opiniones"
-                    driver.get(url_ver_todas_las_opiniones)
+                # Clickeo en boton "Ver todas las opiniones"
+                driver.get(url_ver_todas_las_opiniones)
 
-                    # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
-                    if crawler.verificationNewOpinions(l_prim_opiniones) == True:
+                # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
+                if crawler.verificationNewOpinions(l_prim_opiniones) == True:
 
-                        # Seteo a 1 pagina extraida
-                        pagina_extraida = True
+                    # Seteo a 1 pagina extraida
+                    pagina_extraida = True
 
-                        # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
-                        # crawler.ScrollDown()
+                    # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
+                    # crawler.ScrollDown()
 
-                        # Extraigo opiniones y las guardo en df_opiniones
-                        d_opiniones_publicacion = crawler.getPublicationOpinionsData(id_publicacion)
-                        df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
-                        print(df_opiniones)
+                    # Extraigo opiniones y las guardo en df_opiniones
+                    d_opiniones_publicacion = crawler.getPublicationOpinionsData(id_publicacion)
+                    df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
+                    print(df_opiniones)
 
-                        # Guardo la primera opinion de la publicacion para poder hacer la verificacion de opiniones nuevas
-                        l_prim_opiniones.append(d_opiniones_publicacion['content'][0])
+                    # Guardo la primera opinion de la publicacion para poder hacer la verificacion de opiniones nuevas
+                    l_prim_opiniones.append(d_opiniones_publicacion['content'][0])
 
-                        # Clikeo en Volver saliendo de "Ver todas las opiniones"
-                        driver.back()
+                    # Clikeo en Volver saliendo de "Ver todas las opiniones"
+                    driver.back()
 
-                        # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
-                        # los guardo en df_modelos
-                        d_data_modelos = crawler.getModeloData(id_publicacion, crawler.producto.atributos)
-                        df_modelos = DataFrameCreator.AgregarFilasAlDataFrame(d_data_modelos, df_modelos)
-                        print(df_modelos)
+                    # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
+                    # los guardo en df_modelos
+                    d_data_modelos = crawler.getModeloData(id_publicacion, crawler.producto.atributos)
+                    df_modelos = DataFrameCreator.AgregarFilasAlDataFrame(d_data_modelos, df_modelos)
+                    print(df_modelos)
 
-                    # Las opiniones se repiten con las de otra publicacion, por lo que, no extraigo nada
-                    else:
-                        print("OPINIONES REPETIDAS")
-
-                        # Clikeo en Volver saliendo de "Ver todas las opiniones"
-                        driver.back()
-
-                # No existe el boton "Ver todas las opiniones" (pub con  menos de 3 opiniones, o bien, no hay)
+                # Las opiniones se repiten con las de otra publicacion, por lo que, no extraigo nada
                 else:
-                    print("PUBLICACION SIN OPINIONES")
+                    print("OPINIONES REPETIDAS")
 
-                # Clikeo en Volver saliendo de la pagina de la publicacion y volviendo a la pagina principal
-                driver.back()
+                    # Clikeo en Volver saliendo de "Ver todas las opiniones"
+                    driver.back()
 
+            # No existe el boton "Ver todas las opiniones" (pub con  menos de 3 opiniones, o bien, no hay)
             else:
-                print("FALLO EXTRACCION DE ID")
-                driver.back()
+                print("PUBLICACION SIN OPINIONES")
 
+            # Clikeo en Volver saliendo de la pagina de la publicacion y volviendo a la pagina principal
+            driver.back()
+
+            #  VERIFICO QUE TENGA SENTIDO SEGUIR EXTRAYENDO DATOS
             # Agrego un boolean segun si extraje o no la publicacion
             historico_paginas.append(pagina_extraida)
 
-            # Si no es la primera pagina
+            # Si no es la primera pagina (pues en la primera pagina, podria ser que las primeras publicaciones falle la extraccion y el porcentaje seria 0 y por ende cortarria)
             if pag_num > 1:
 
                 # Selecciono los boolean de las ultimas x paginas
@@ -135,12 +129,11 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
                 if porc_ult_pag_extraidas < porc_min_ult_pag_extraidas:
 
                     # Dejo de extraer datos
-                    malas_ult_pag = 1
+                    ult_pag_sin_data = 1
                     break
 
-        # Si existe siguiente pagina
-        if url_paginacion != None:
-
+        # HAGO CLICK EN "SIGUIENTE PAGINA"
+        try:
             # Clikeo en "Siguiente pagina" tras haber visitado todas las publicaciones de una pagina
             driver.get(url_paginacion)
             print("Cambio de pagina", url_paginacion, pag_num)
@@ -148,17 +141,17 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
             # Sumo 1 a parametro de corte de cantidad de paginas visitadas
             pag_num += 1
 
-        # Si no existe siguiente pagina
-        else:
+        except:
             # Corto la extraccion de datos
+            print("Intento descubrir por que falla esto (deberia ser None):", url_paginacion)
             no_mas_paginas = 1
             print("No hay mas paginas")
 
     # Cierro el Web Browser Automatico dando por finalizada la extraccion de datos
     driver.close()
 
-    # Explico por que razon finalizo la extraccion de datos
-    if malas_ult_pag == 1:
+    # Explico razon por la que finalizo la extraccion de datos
+    if ult_pag_sin_data == 1:
         print("Corto pues el Crawler ingreso al {} de las ultimas {} paginas".format(porc_ult_pag_extraidas, cant_ult_pag))
     elif no_mas_paginas == 1:
         print("Corto por no haber mas paginas. Se recorrieron {} paginas".format(pag_num))
