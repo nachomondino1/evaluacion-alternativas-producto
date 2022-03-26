@@ -17,7 +17,6 @@ Pseudocodigo de lo que quisiera que haga:
 """
 
 # Importo Librerias
-from extraccion_datos.MercadoLibreApi import MercadoLibreApi
 
 
 # 1.- Extrae los datos mediante web scraping para esa busqueda o los busca (uso directorio de web scraping)
