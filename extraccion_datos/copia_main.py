@@ -3,7 +3,7 @@ from selenium import webdriver
 import DataFrameCreator
 from MercadoLibreCrawler import MercadoLibreCrawler
 from MercadoLibreCrawler import Product
-
+from time import sleep
 
 def ExtractorDatos(producto, df_opiniones, df_modelos):
     """
@@ -29,7 +29,7 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
     # Defino parametros de corte de la extraccion
     pag_num, pag_max = 0, 11                                                # param 1: Hasta pagina 10 de Mercado libre
     no_mas_paginas = 0                                                      # param 2: Hasta ultima pagina (cuando hay menos de 10)
-    porc_min_ult_pag_extraidas, cant_ult_pag, ult_pag_sin_data = 0.3, 40, 0 # param 3: De las ultimas <cant_ult_pag> paginas, pido extraer datos en al menos <porc_min_ult_pag> de ellas
+    porc_min_ult_pag_extraidas, cant_ult_pag, ult_pag_sin_data = 0.1, 40, 0 # param 3: De las ultimas <cant_ult_pag> paginas, pido extraer datos en al menos <porc_min_ult_pag> de ellas
     historico_paginas = []
 
     urls_sin_opiniones = [] # es una prueba
@@ -42,6 +42,9 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 
     # Mientras que no se cumpla alguno de los tres parametro de corte
     while (pag_num < pag_max) and (no_mas_paginas == 0) and (ult_pag_sin_data == 0):
+
+        # Explicit wait
+        sleep(2)
 
         # Extraigo URLs de cada una de las publicaciones de una pagina de Mercado Libre. Tambien de la paginacion.
         url_publicaciones = crawler.get_URL_publicaciones()
@@ -130,11 +133,11 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
                 # print("Porcentaje de extraidas de ultimas", porc_ult_pag_extraidas)
 
                 # Si el porcentaje de ultimas paginas extraidas es menor al porcentaje minimo
-                if porc_ult_pag_extraidas < porc_min_ult_pag_extraidas:
+                # if porc_ult_pag_extraidas < porc_min_ult_pag_extraidas:
 
                     # Dejo de extraer datos
-                    ult_pag_sin_data = 1
-                    break
+                    # ult_pag_sin_data = 1
+                    # break
 
         pag_num += 1
 

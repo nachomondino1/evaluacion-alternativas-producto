@@ -13,30 +13,29 @@ class MercadoLibreCrawler(Crawler):
     """ A tool to extract data from Mercado Libre using Web Scraping """
 
     def __init__(self, driver, producto):
-        # super().__init__(driver) # no se si esta bien """Initialize attributes of the parent class."""
-        self.driver = driver
-        self.producto = producto # Deberia ser un objeto de la clase producto...
+        """Initialize attributes of the parent class."""
+        super().__init__(driver)  # si falla,  # self.driver = driver
+        self.producto = producto  # Deberia ser un objeto de la clase producto...
 
-
-    def getPublicationsUrl(self):
+    def get_URL_publicaciones(self):
         """
-        Obtiene los links de cada publicacion en la pagina principal de Mercado Libre
+        Obtiene las URLs de cada una de las publicaciones de una pagina principal de Mercado Libre
 
-        :return: Lista de links de las publicaciones en la pagina principal
+        :return: Lista de URLs de las publicaciones de una pagina principal
         """
+        # Defino lista vacia en donde guardare los links de las publicaciones
+        l_url_publicaciones = []
 
-        # Implicit wait: Extraigo recien cuando carga la pagina tal que encuentra el tag donde se encuentran las url
+        # Espero hasta que aparece el tag en donde se encuentran las URLs
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]')))
 
+        # finalmente
         finally:
-            # Busco todos los tags que contienen un link a una publicacion
-            # No le puedo hacer get_attribute al ser mas de un elemento
-            tag_urls_publicaciones = self.driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')
-
-            # Defino lista vacia en donde guardare los links de las publicaciones
-            l_url_publicaciones = []
+            # Busco los tags que contienen una URL de una publicacion
+            tag_urls_publicaciones = self.driver.find_elements(By.XPATH,
+                                                               '//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
 
             # Recorro cada tag (cada uno contiene un link)
             for tag_url in tag_urls_publicaciones:
@@ -45,52 +44,52 @@ class MercadoLibreCrawler(Crawler):
 
             return l_url_publicaciones
 
-
-    def getPaginacionUrl(self):
+    def get_URL_paginacion(self):
         """
-        Obtiene el link a la siguiente pagina principal de Mercado Libre
+        Obtiene, si existe, la URL a la siguiente pagina principal de Mercado Libre
 
-        :return: Url de la siguiente pagina de Mercado Libre
+        :return: URL de la siguiente pagina de Mercado Libre (en formato string), o bien, None si no la encontro
         """
+        print("ENTRA A FUNCION GET_URL_PAGINACION")
 
-        # Implicit wait: hasta que aparezca la seccion en donde cambio de pagina
-        try: #esta fallando en la carga? pues no encuntrs la url cuando deberia encontrarla...
+        # Espero hasta que encuentre la seccion donde hago cambio de pagina
+        try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//ul[@class="ui-search-pagination andes-pagination"]')))
 
         finally:
-
-            # Obtengo el url de la siguiente pagina
+            # Intento extraer con el driver
             try:
                 url_next_page = self.driver.find_element_by_xpath(
-                './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+                    './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
 
-            # No hay "siguiente pagina", es la ultima
+            # Si falla
             except:
                 url_next_page = None
                 print("NO ENCONTRO SIGUIENTE PAGINA")
 
+            # Si funciona, documentar que implemente BeautifulSoup pues raramente fallaba con el driver.find()... Era muy raro pues supuestamente encontraba el link pero igual cortaba por no haber mas paginas.
             return url_next_page
 
-
-    def getVerTodasLasOpinionesUrl(self):
+    def get_URL_VerTodasLasOpiniones(self):
         """
         Obtiene, si existe, el URL del boton "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
 
         :return: URL del boton "Ver todas las opiniones", o bien, None si no existe tal boton
         """
-        # implicit or explicit wait
-        # WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:url"]')))
-        sleep(2) # solucion rabina
+
+        # intento extraer el boton con driver
         try:
-            url_ver_todas_las_opi = self.driver.find_element(By.XPATH,'//div[@class="ui-pdp-reviews__actions__container"]/a').get_attribute("href")
+            url = self.driver.find_element(By.XPATH, '//div[@class="ui-pdp-reviews__actions__container"]/a') \
+                .get_attribute("href")
+
+        # Si falla
         except:
-            url_ver_todas_las_opi = None
+            url = None
 
-        return url_ver_todas_las_opi
+        return url
 
-
-    def getPublicationOpinionsData(self, id_publicacion):
+    def get_Data_OpinionesPub(self, id_publicacion):
         """
         Extrae opiniones de seccion "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
 
@@ -101,33 +100,34 @@ class MercadoLibreCrawler(Crawler):
         """
 
         # Inicializo el diccionario en donde guardare las listas con los datos extraidos
-        d = {'id_publicacion': None, 'title': None, 'content': None,'rate': None, 'likes': None, 'dislikes': None}
+        d = {'id_publicacion': None, 'title': None, 'content': None, 'rate': None, 'likes': None, 'dislikes': None}
 
         # Inicializo una lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
         l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []
 
-        # Obtengo tags donde cada uno contiene una opinion
-        opiniones_publicacion = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]/article')
+        # Busco tags que contienen una opinion
+        tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]/article')
 
-        # Recorro cada opinion
-        for opinion in opiniones_publicacion:
+        # Recorro cada tag
+        for tag in tags_opiniones:
 
             # Extraigo Title
             try:
-                l_title.append(opinion.find_element_by_xpath('.//h2').text)
+                l_title.append(tag.find_element_by_xpath('.//h2').text)
             except:
                 l_title.append(None)
 
             # Extraigo Content
             try:
-                l_content.append(opinion.find_element_by_xpath('.//p').text) # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
+                l_content.append(tag.find_element_by_xpath(
+                    './/p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
             except:
                 l_content.append(None)
 
             # Extraigo Rate
             try:
                 n = 0
-                stars = opinion.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
+                stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
 
                 # Recorro cada una de las 5 estrellas
                 for star in stars:
@@ -140,10 +140,10 @@ class MercadoLibreCrawler(Crawler):
             except:
                 l_rate.append(None)
 
-            #Extraigo Likes y dislikes
+            # Extraigo Likes y dislikes
             try:
-                l_likes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
-                l_dislikes.append(int(opinion.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
+                l_likes.append(int(tag.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
+                l_dislikes.append(int(tag.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
             except:
                 l_likes.append(None)
                 l_dislikes.append(None)
@@ -164,7 +164,7 @@ class MercadoLibreCrawler(Crawler):
         return d
 
 
-    def verificationNewOpinions(self, l_prim_opiniones):
+    def verificacion_opiniones_nuevas(self, l_prim_opiniones):
         """
         Dentro de la seccion "Ver todas las opiniones" pero antes de extraer las opiniones, verifico que sean
         opiniones nuevas (es decir, que no las haya extraido)
@@ -177,21 +177,22 @@ class MercadoLibreCrawler(Crawler):
 
         try:
             prim_opinion = self.driver.find_element(By.XPATH,
-                                                        '//div[@class="infinite-scroll-component "]/article/p').text
+                                                    '//div[@class="infinite-scroll-component "]/article/p').text
 
         except:
             print("Fallo la verificacion de opiniones nuevas. No se pudo extraer la primera opinion")
             prim_opinion = None
 
         # Me fijo si la primera opinion es repetida
-        if (prim_opinion in l_prim_opiniones) or (prim_opinion == None): # con la segunda condicion no estaria extrayendo las opiniones cdo falla la extraccion anterior
+        if (prim_opinion in l_prim_opiniones) or (
+                prim_opinion == None):  # con la segunda condicion no estaria extrayendo las opiniones cdo falla la extraccion anterior
             # La opinion es repetida, o bien, fallo la verificacion. En cualquier caso, devuelvo False
             bool = False
 
         return bool
 
 
-    def getModeloData(self, id_publicacion, campos_especificos):
+    def get_Data_Modelos(self, id_publicacion, campos_especificos):
         """
         De una sola publicacion, extrae el precio de ésta y, segun la subcategoria del producto, cada campo especifico
         por ejemplo tamaño de pantalla o resolucion de camara para publicaciones de la subcategoria "Celulares y
@@ -223,11 +224,11 @@ class MercadoLibreCrawler(Crawler):
 
             # EXTRAIGO VALOR DE PRECIO
             try:
-                d['precio'] = bs.find('div',{'class':"ui-pdp-price__second-line"}).\
-                    find('span',{'class':"andes-money-amount__fraction"}).text
+                d['precio'] = bs.find('div', {'class': "ui-pdp-price__second-line"}). \
+                    find('span', {'class': "andes-money-amount__fraction"}).text
             except:
                 print("No encontro el precio")
-                d['precio'] = None # en un futuro podria intentar extraer precio de las que fallan
+                d['precio'] = None  # en un futuro podria intentar extraer precio de las que fallan
 
             # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
             # Por campo especifico
@@ -236,7 +237,8 @@ class MercadoLibreCrawler(Crawler):
                 # Obtengo el tag, si existe, donde esta el atributo (en particular, uno de los que me interesa). Puede
                 # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
                 attr = bs.find('th', text=campo_especifico)
-                attr_otras_carac = bs.find('span', {'class':"ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
+                attr_otras_carac = bs.find('span',
+                                           {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
                                            text=campo_especifico)
 
                 # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
@@ -248,7 +250,7 @@ class MercadoLibreCrawler(Crawler):
 
                 # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
                 # y su valor en el diccionario
-                elif attr_otras_carac != None: # era un elif pero lo tuve que hacer if porque -->  el problema es que en las publicaciones que tienene atributos en "caracteristicas generales" y en "otras caracteristicas" solo extrae de "caracteristicas generales" pues el attr no es None
+                elif attr_otras_carac != None:  # era un elif pero lo tuve que hacer if porque -->  el problema es que en las publicaciones que tienene atributos en "caracteristicas generales" y en "otras caracteristicas" solo extrae de "caracteristicas generales" pues el attr no es None
                     valor = attr_otras_carac.nextSibling.text
                     attr_otras_carac = attr_otras_carac.text
                     d[attr_otras_carac] = valor[2:]
@@ -263,7 +265,7 @@ class MercadoLibreCrawler(Crawler):
             return d
 
 
-    def getIdPublicacion(self, url_publicacion):
+    def get_IdPublicacion(self, url_publicacion):
         """
         Extrae el id de una publicacion dentro de la URL de esta. En caso que no este, es porque la URL no es de las
         comunes, y por ende, busca la URL dentro del codigo html de la publicacion. Solo en el eventual caso que no
@@ -283,21 +285,12 @@ class MercadoLibreCrawler(Crawler):
 
             # Reemplazo la URL
             try:
-                # Implemento explicit wait????
+                # Explicit wait
                 # sleep(2) #tal vez no termina de cargar la pagina...
 
                 pageSource = self.driver.page_source
                 bs = BeautifulSoup(pageSource, 'html.parser')
                 url_publicacion = bs.find('meta', {'property': 'og:url'}).attrs['content']
-                # print("INTENTO DE EXTRAER CON BS (REZAR QUE NO SEA NONE):", url_publicacion)
-
-                ''' Don driver.find() no lo encuentra
-                # Extraigo URL de la publicacion
-                tag_url_publicacion = self.driver.find_element_by_xpath('//meta[@property="og:url"]')
-
-                # Reemplazo URL pasada por parametro por la URL extraida
-                url_publicacion = tag_url_publicacion.attrs['content']
-                '''
 
                 print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
 
@@ -340,6 +333,7 @@ class MercadoLibreCrawler(Crawler):
         return id
 
 
+
 class Product():
     """ A simple model of a Mercado Libre's Product """
 
@@ -360,7 +354,8 @@ class Product():
         self.atributos = atributos
 
 
-    def validacionBusqueda(self): # ojo fallo cuando puse una busqueda erronea al ppio y luego una bien. Dice que no encontro el XPATH y que nombre_subcat esta haciendo un get attribute a un Nonetype
+    def validacion_busqueda(
+            self):  # ojo fallo cuando puse una busqueda erronea al ppio y luego una bien. Dice que no encontro el XPATH y que nombre_subcat esta haciendo un get attribute a un Nonetype
         """
         Validar la busqueda implica que sea lo suficientemente acotada tal que se refiere a un solo producto en
         particular. En esos casos, Mercado Libre le encuentra una subcategoria de producto.
@@ -370,7 +365,7 @@ class Product():
         """
 
         # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
-        self.home_page_url = self.getHomePageUrl()
+        self.home_page_url = self.get_URL_HomePage()
 
         # Implemento BeatifulSoup para acceder el codigo html de la pagina sin que se me abra el Chrome...
         html = urlopen(self.home_page_url)
@@ -383,7 +378,7 @@ class Product():
             self.nombre = str(input("Ingrese producto a buscar: "))
 
             # Funcion recursiva, hasta que la busqueda no sea acotada, sigue pidiendo ingreso de producto a buscar
-            self.validacionBusqueda()
+            self.validacion_busqueda()
 
         # Extraigo el nombre de la subcateegoria a la que pertenece el producto
         nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
@@ -391,7 +386,7 @@ class Product():
         return nombre_subcat
 
 
-    def getHomePageUrl(self):
+    def get_URL_HomePage(self):
         """
         Busca URL de la Pagina principal de Mercado Libre de un producto (a partir del nombre de este)
 
@@ -407,7 +402,7 @@ class Product():
         return url
 
 
-    def getAtributos(self): #terminar de agregar notas
+    def get_Atributos(self):  # terminar de agregar notas
         """
         Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
         Mercado Libre.
@@ -452,14 +447,17 @@ class Product():
             bs = BeautifulSoup(pageSource, 'html.parser')
 
             # Publicaciones con atributos en "Ver mas Caracteristicas"
-            tags_attrs = bs.find_all('th', {'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
+            tags_attrs = bs.find_all('th', {
+                'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
 
             # Publicaciones con atributos en "Otras  Caracteristicas"
-            if len(tags_attrs) == 0: # un find_all() devuelve una lista vacia en lugar de None
-                tags_attrs = bs.find_all('th', {'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'}) # el XPATH no esta en las pub de ver mas carac :
-                tags_attrs2 = bs.find_all('span',{'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})
+            if len(tags_attrs) == 0:  # un find_all() devuelve una lista vacia en lugar de None
+                tags_attrs = bs.find_all('th', {
+                    'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'})  # el XPATH no esta en las pub de ver mas carac :
+                tags_attrs2 = bs.find_all('span',
+                                          {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})
 
-                for elemento in tags_attrs2: #Pruebo unir los tags....
+                for elemento in tags_attrs2:  # Pruebo unir los tags....
                     tags_attrs.append(elemento)
 
                 print("Atributos en otras carac", tags_attrs)
@@ -493,7 +491,7 @@ class Product():
 
         # Defino parametro de corte
         percentil_frec = 0.2
-        idx = int(len(frecuencias)*(1 - percentil_frec))
+        idx = int(len(frecuencias) * (1 - percentil_frec))
 
         j = 0
 
