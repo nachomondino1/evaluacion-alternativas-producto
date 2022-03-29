@@ -24,13 +24,15 @@ class MercadoLibreCrawler(Crawler):
 
         :return: Lista de URLs de las publicaciones de una pagina principal
         """
+        # print("Tal vez no se carga el driver", self.driver.page_source) --> ESTA MAL, EL DRIVER.GET() NO AVANZA HASTA QUE SE CARGA TODA LA PAGINA
+
         # Defino lista vacia en donde guardare los links de las publicaciones
         l_url_publicaciones = []
 
         # Espero hasta que aparece el tag en donde se encuentran las URLs
         try:
             WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]')))
+                EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]/a')))
 
         # finalmente
         finally:
@@ -46,38 +48,6 @@ class MercadoLibreCrawler(Crawler):
             return l_url_publicaciones
 
 
-    def get_URL_paginacion2(self, pag_max):
-        """
-        Obtiene, si existe, la URL a la siguiente pagina principal de Mercado Libre
-
-        :return: URL de la siguiente pagina de Mercado Libre (en formato string), o bien, None si no la encontro
-        """
-        # print("ENTRA A FUNCION GET_URL_PAGINACION")
-        # Espero hasta que encuentre la seccion donde hago cambio de pagina
-
-        # intento funcion que extrae todos los url de la paginacion y luego los recorro en un for en main.py
-
-        l_url_paginacion = []
-
-        html = urlopen(self.producto.home_page_url)
-        bs = BeautifulSoup(html, 'html.parser')
-
-        for i in range(pag_max):
-
-            try:
-                url_paginacion = bs.find("li", {'class': 'andes-pagination__button andes-pagination__button--next'}).a.attrs['href']
-                l_url_paginacion.append(url_paginacion)
-
-                html = urlopen(url_paginacion)
-                bs = BeautifulSoup(html, 'html.parser')
-
-            except: # si no hay mas paginas...
-                pass
-
-        print(l_url_paginacion, len(l_url_paginacion))
-        return l_url_paginacion
-
-
     def get_URL_paginacion(self):
         """
         Obtiene, si existe, la URL a la siguiente pagina principal de Mercado Libre
@@ -86,7 +56,17 @@ class MercadoLibreCrawler(Crawler):
         """
         # print("ENTRA A FUNCION GET_URL_PAGINACION")
         # Espero hasta que encuentre la seccion donde hago cambio de pagina
+        try:
+            url_next_page = self.driver.find_element_by_xpath(
+                '//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+            # url_next_page = driver.find_element(By.XPATH, '//a[contains(@href, "Desde") and @title = "Siguiente"]').get_attribute('href')
 
+        # Si falla
+        except:
+            url_next_page = None
+            print("NO ENCONTRO SIGUIENTE PAGINA")
+
+        ''' ultima implementacion, pruebo sin el webdriverwait
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//ul[@class="ui-search-pagination andes-pagination"]')))
@@ -102,11 +82,9 @@ class MercadoLibreCrawler(Crawler):
             except:
                 url_next_page = None
                 print("NO ENCONTRO SIGUIENTE PAGINA")
-
-            # Si funciona, documentar que implemente BeautifulSoup pues raramente fallaba con el driver.find()... Era muy raro pues supuestamente encontraba el link pero igual cortaba por no haber mas paginas.
-
-
         '''
+
+        """
         pageSource = self.driver.page_source
         bs = BeautifulSoup(pageSource, 'html.parser')
         try:
@@ -128,7 +106,7 @@ class MercadoLibreCrawler(Crawler):
                 pass
 
             #print("FALLO BS PARA OBTENER LA URL DE LA PAGINACION, pruebo get_URL_pag", self.driver.find_element_by_xpath('//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href'))
-        '''
+        """
         return url_next_page
 
 
@@ -574,22 +552,88 @@ class Product():
         return atributos
 
 
-''' Fallido intento de implementar click en lugar de driver.get()
-    def click(self, url):
+''' Fallido intento de get_URL_paginacion que extraia mientras visitaba cada pagina..
+
+    def alternativa_get_URL_paginacion(self, pag_max): #si funciona, cambiar nombre a get_urls_pag_y_pub()
         """
-        Hace click en la url pasada por parametro.
+        Obtiene las URL de las paginas principales de Mercado Libre a visitar
 
-        :param url: URL a la cual se quiere acceder (en formato string)
-        :return: Web Browser automatico ingresa a URL, o bien, None si no existe la URl
+        :return: Lista de URLs de las paginas de Mercado Libre (en formato string)
         """
 
-        # Intento clickear en URL
-        try:
-            # print("URL a ingresar: ", url)
-            return self.driver.get(url)
+        # Defino lista donde guardare las URLs
+        l_url_paginacion = []
 
-        except:
-            print("No encontro URL")
-            return None
+        # Obtengo html de la primera pagina principal
+        html = urlopen(self.producto.home_page_url)
+        bs = BeautifulSoup(html, 'html.parser')
 
+        # Por cada pagina a visitar
+        for i in range(pag_max):
+
+            try:
+                url_paginacion = bs.find("li", {'class': 'andes-pagination__button andes-pagination__button--next'}).a.attrs['href']
+                l_url_paginacion.append(url_paginacion)
+
+                # Cambio de pagina
+                html = urlopen(url_paginacion)
+                bs = BeautifulSoup(html, 'html.parser')
+
+            except: # si no hay mas paginas...
+                pass
+
+        # verr si dejo esto, es para explicar si no hay mas paginas..
+        if len(l_url_paginacion) == pag_max:
+            print("En principio, se recorreran {} paginas".format(len(l_url_paginacion)))
+        else:
+            print("Se deberian recorrer {} pero se recorreran {} paginas pues no hay mas".format(pag_max, len(l_url_paginacion)))
+
+        return l_url_paginacion
+
+
+    def alternativa_get_URL_pub_y_pag(self, pag_max): #si funciona, cambiar nombre a get_urls_pag_y_pub()
+        """
+        Obtiene las URL de las paginas principales de Mercado Libre a visitar
+
+        :return: Lista de URLs de las paginas de Mercado Libre (en formato string)
+        """
+
+        # Defino lista donde guardare las URLs
+        l_url_paginacion = []
+        l_url_publicaciones = []
+
+        # Obtengo html de la primera pagina principal
+        html = urlopen(self.producto.home_page_url)
+        bs = BeautifulSoup(html, 'html.parser')
+
+
+        # Por cada pagina a visitar
+        for i in range(pag_max):
+
+            try:
+                url_paginacion = bs.find("li", {'class': 'andes-pagination__button andes-pagination__button--next'}).a.attrs['href']
+                l_url_paginacion.append(url_paginacion)
+
+                # pruebo a obtener urls de publicaciones
+                tag_urls_publicaciones = bs.find_all('div', {'class', 'ui-search-result__image'})
+
+                for tag_url in tag_urls_publicaciones: # lo tuve que agregar porque falla la busqueda de urls
+                    # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+                    l_url_publicaciones.append(tag_url.a.attrs["href"])
+
+                # Cambio de pagina
+                html = urlopen(url_paginacion)
+                bs = BeautifulSoup(html, 'html.parser')
+
+            except: # si no hay mas paginas...
+                pass
+
+        # verr si dejo esto, es para explicar si no hay mas paginas..
+        if len(l_url_paginacion) == pag_max:
+            print("En principio, se recorreran {} paginas".format(len(l_url_paginacion)))
+        else:
+            print("Se deberian recorrer {} pero se recorreran {} paginas pues no hay mas".format(pag_max, len(l_url_paginacion)))
+
+        return l_url_paginacion, l_url_publicaciones
+    
 '''

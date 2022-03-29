@@ -46,7 +46,6 @@ def explicacion_corte(pag_num, pag_max, no_mas_paginas, ult_pub_sin_data):
 
     :param pag_num: Numero de ultima pagina visitada
     :param pag_max: Numero maximo de paginas a visitar
-    :param no_mas_paginas: 1 si no hay siguiente pagina y 0 en caso contrario
     :param ult_pub_sin_data: 1 si extraje muy pocos datos de las ultimas publicaciones y 0 en caso contrario
     :return:
     """
@@ -63,6 +62,10 @@ def explicacion_corte(pag_num, pag_max, no_mas_paginas, ult_pub_sin_data):
     else: # ult_pub_sin_data == 1:
         # print("Corto pues el Crawler ingreso al {} de las ultimas {} paginas".format(porc_ult_pag_extraidas, cant_ult_pag))
         print("Corto pues el Crawler ingreso a muy pocas de las publicaciones")
+
+    '''    
+    
+    '''
 
 
 
