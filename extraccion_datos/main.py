@@ -3,6 +3,8 @@ from selenium import webdriver
 import DataFrameCreator
 from MercadoLibreCrawler import MercadoLibreCrawler
 from MercadoLibreCrawler import Product
+import corte_extraccion_datos as corte
+from time import sleep
 
 
 def ExtractorDatos(producto, df_opiniones, df_modelos):
@@ -29,34 +31,38 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
     # Defino parametros de corte de la extraccion
     pag_num, pag_max = 0, 11                                                # param 1: Hasta pagina 10 de Mercado libre
     no_mas_paginas = 0                                                      # param 2: Hasta ultima pagina (cuando hay menos de 10)
-    porc_min_ult_pag_extraidas, cant_ult_pag, ult_pag_sin_data = 0.3, 40, 0 # param 3: De las ultimas <cant_ult_pag> paginas, pido extraer datos en al menos <porc_min_ult_pag> de ellas
+    porc_min_ult_pub_extraidas, cant_ult_pub, ult_pub_sin_data = 0.2, 30, 0 # param 3: De las ultimas <cant_ult_pub> paginas, pido extraer datos en al menos <porc_min_ult_pub> de ellas
     historico_paginas = []
-
-    urls_sin_opiniones = [] # es una prueba
+    urls_sin_opiniones = [] # lo saco cdo deje de probar el get_URL_vertodaslasopi
 
     # Defino lista en la que incluire las primeras opiniones de cada publicacion. Ayudara a no extraer opiniones repetidas
     l_prim_opiniones = []
 
     # Ingreso a pagina principal del producto en Mercado Libre
-    driver.get(producto.home_page_url)
+    driver.get(producto.home_page_url)     # driver.get(producto.home_page_url)
+
+    # Obtengo URL de las paginas a visitar
+    l_url_paginacion = crawler.get_URL_paginacion2(pag_max)
 
     # Mientras que no se cumpla alguno de los tres parametro de corte
-    while (pag_num < pag_max) and (no_mas_paginas == 0) and (ult_pag_sin_data == 0):
+    # while (pag_num < pag_max) and (no_mas_paginas == 0) and (ult_pub_sin_data == 0): # aca pondria el for
+    for url_paginacion in l_url_paginacion:
 
         # Extraigo URLs de cada una de las publicaciones de una pagina de Mercado Libre. Tambien de la paginacion.
+        # sleep(5) # Es solo para probar si el problema es que no termina de cargar la pagina... Siempre es mejor implementar WebDriverWait.
+        # crawler.ScrollDown() # asi me aseguro de que se cargue la pagina...
         url_publicaciones = crawler.get_URL_publicaciones()
-        url_paginacion = crawler.get_URL_paginacion() #probe a ponerlo abajo pero corto por no haber mas paginas en la 5, para mi fallo la carga de la pagina.
+        # url_paginacion = crawler.get_URL_paginacion() # probe a ponerlo abajo pero corto por no haber mas paginas en la 5, para mi fallo la carga de la pagina.
         print(url_paginacion)
 
         # Recorro cada publicacion
         for url_publicacion in url_publicaciones:
-            print("Publicacion numero:", len(historico_paginas), url_publicacion) # Por lo menos para las pruebas es util, saber el nro de publicacion y el link
+            print("Publicacion numero:", len(historico_paginas), ". URL:", url_publicacion) # Por lo menos para las pruebas es util, saber el nro de publicacion y el link
 
-            # A priori, asumo que no pude extraer datos de la publicacion
-            pagina_extraida = False
+            pagina_extraida = 0 #  A priori, asumo que no pude extraer datos de la publicacion --> si funciona lambda, no hace falta...
 
             # Clickeo en una publicacion
-            driver.get(url_publicacion)
+            driver.get(url_publicacion) # driver.get(url_publicacion)
 
             # Obtengo id de la publicacion (que identifica como unica a cada publicacion)
             id_publicacion = crawler.get_IdPublicacion(url_publicacion)
@@ -65,16 +71,16 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
             url_ver_todas_las_opiniones = crawler.get_URL_VerTodasLasOpiniones()
 
             # Si existe el boton "Ver todas las opiniones" y extraje el id
-            if url_ver_todas_las_opiniones != None:
+            if url_ver_todas_las_opiniones is not None:
 
                 # Clickeo en boton "Ver todas las opiniones"
-                driver.get(url_ver_todas_las_opiniones)
+                driver.get(url_ver_todas_las_opiniones) # driver.get(url_ver_todas_las_opiniones)
 
                 # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
-                if crawler.verificacion_opiniones_nuevas(l_prim_opiniones) == True:
+                if crawler.verificacion_opiniones_nuevas(l_prim_opiniones):
 
                     # Seteo a 1 pagina extraida
-                    pagina_extraida = True
+                    pagina_extraida = 1
 
                     # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
                     # crawler.ScrollDown()
@@ -105,82 +111,35 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 
             # No existe el boton "Ver todas las opiniones" (pub con  menos de 3 opiniones, o bien, no hay)
             else:
-                urls_sin_opiniones.append(url_publicacion)
+                urls_sin_opiniones.append(url_publicacion) # lo saco cdo deje de probar el get_URL_vertodaslasopi
                 print("PUBLICACION SIN OPINIONES")
 
             # Clikeo en Volver saliendo de la pagina de la publicacion y volviendo a la pagina principal
             driver.back()
 
-            #  VERIFICO QUE TENGA SENTIDO SEGUIR EXTRAYENDO DATOS
-            # Agrego un boolean segun si extraje o no la publicacion
-            historico_paginas.append(pagina_extraida)
-
-            # Si no es la primera pagina (pues en la primera pagina, podria ser que las primeras publicaciones falle la extraccion y el porcentaje seria 0 y por ende cortarria)
-            if pag_num > 1:
-
-                # Selecciono los boolean de las ultimas x paginas
-                ultimas_paginas = historico_paginas[-cant_ult_pag:]
-                # print("Ultimas {}:".format(cant_ult_pag), ultimas_paginas)
-
-                # Cantidad de ultimas paginas que logre extraer datos
-                cant_ult_pag_extraidas = sum(ultimas_paginas)
-
-                # Defino porcentaje de las ultimas paginas que logre extraer datos
-                porc_ult_pag_extraidas =  cant_ult_pag_extraidas / cant_ult_pag
-                # print("Porcentaje de extraidas de ultimas", porc_ult_pag_extraidas)
-
-                # Si el porcentaje de ultimas paginas extraidas es menor al porcentaje minimo
-                if porc_ult_pag_extraidas < porc_min_ult_pag_extraidas:
-
-                    # Dejo de extraer datos
-                    ult_pag_sin_data = 1
-                    break
-
-        pag_num += 1
+            #  Verifico parametro de corte 3, en el que corto si las ultimas publicaciones no tienen datos
+            historico_paginas.append(pagina_extraida) # Agrego un boolean segun si extraje o no la publicacion
+            ult_pub_sin_data = corte.ultimas_pub_sin_data(historico_paginas, porc_min_ult_pub_extraidas, cant_ult_pub)
 
         # HAGO CLICK EN "SIGUIENTE PAGINA"
-        try:
-            # Clikeo en "Siguiente pagina" tras haber visitado todas las publicaciones de una pagina
-            print("URL a ingresar: ", url_paginacion) #esto lo hace
-            driver.get(url_paginacion) # esto tambien
-
-        except:
-            # Va a la funcion get_URL_paginacion, printea la putiada y corta...
-            print("LA CONCHA DE TU MADRE")
-            print("Esta lista esta vacia?", url_publicaciones, "En ese caso no recorreria publicaciones")
-            # Corto la extraccion de datos
-            break
-        print('+++++++++++++++++++++')
-
+        driver.get(url_paginacion)
         '''
-        if ult_pag_sin_data == 0:
-            try:
-                # Clikeo en "Siguiente pagina" tras haber visitado todas las publicaciones de una pagina
-                driver.get(url_paginacion)
-                print("Cambio de pagina", url_paginacion, pag_num)
-
-                # Sumo 1 a parametro de corte de cantidad de paginas visitadas
-                pag_num += 1
-
-            except:
-                # Corto la extraccion de datos
-                print("Intento descubrir por que falla esto (deberia ser None):", url_paginacion)
-                no_mas_paginas = 1
-                print("No hay mas paginas")
+        # HAGO CLICK EN "SIGUIENTE PAGINA"
+        if url_paginacion is not None:
+            driver.get(url_paginacion) # por algun motivo falla crawler.click(url_paginacion) aunque en el fondo haga lo mismo
+            pag_num += 1
+        else:
+            no_mas_paginas = 1
         '''
+
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     # Cierro el Web Browser Automatico dando por finalizada la extraccion de datos
     driver.close()
+    print(urls_sin_opiniones) # lo saco cdo deje de probar el get_URL_vertodaslasopi
 
-    print(urls_sin_opiniones)
-
-    # Explico razon por la que finalizo la extraccion de datos
-    if ult_pag_sin_data == 1:
-        print("Corto pues el Crawler ingreso al {} de las ultimas {} paginas".format(porc_ult_pag_extraidas, cant_ult_pag))
-    elif no_mas_paginas == 1:
-        print("Corto por no haber mas paginas. Se recorrieron {} paginas".format(pag_num))
-    else:
-        print("Corto porque se visitaron las {} primeras paginas".format(pag_max))
+    # Explico la razon por la que corto la extraccion de datos
+    corte.explicacion_corte(pag_num, pag_max, no_mas_paginas, ult_pub_sin_data)
 
     return df_opiniones, df_modelos
 
@@ -188,24 +147,109 @@ def ExtractorDatos(producto, df_opiniones, df_modelos):
 def main():
     # Pedido al usuario de producto a buscar y, con el, creo objeto de clase Product
     # producto = Product(str(input("Ingrese producto a buscar: ")))
-    producto = Product("celulares") # despues lo saco
+    producto = Product("auriculares") # despues lo saco
 
     # Valido el producto buscado tal que no sea una busqueda tan amplia
     producto.nombre_subcat = producto.validacion_busqueda()
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
     # producto.atributos = producto.getAtributos()
-    producto.atributos = ['Marca', 'Modelo', 'Color', 'Resolución de la cámara trasera principal', 'Resolución de la cámara frontal principal', 'Con cámara', 'Cantidad de cámaras traseras', 'Con teclado QWERTY físico', 'Modelo del procesador', 'Es Dual SIM', 'Cantidad de ranuras para tarjeta SIM', 'Memoria interna', 'Memoria RAM', 'Tamaño de la pantalla', 'Tipo de resolución de la pantalla ', 'Resolución de la pantalla', 'Tecnología de la pantalla', 'Con pantalla táctil', 'Capacidad de la batería', 'Altura x Ancho x Profundidad', 'Red', 'Con conector USB', 'Con Wi-Fi', 'Con GPS', 'Con Bluetooth']
 
-    # En base al producto a buscar, creo los dataframes
+    # celulares
+    # producto.atributos = ['Marca', 'Modelo', 'Color', 'Resolución de la cámara trasera principal', 'Resolución de la cámara frontal principal', 'Con cámara', 'Cantidad de cámaras traseras', 'Con teclado QWERTY físico', 'Modelo del procesador', 'Es Dual SIM', 'Cantidad de ranuras para tarjeta SIM', 'Memoria interna', 'Memoria RAM', 'Tamaño de la pantalla', 'Tipo de resolución de la pantalla ', 'Resolución de la pantalla', 'Tecnología de la pantalla', 'Con pantalla táctil', 'Capacidad de la batería', 'Altura x Ancho x Profundidad', 'Red', 'Con conector USB', 'Con Wi-Fi', 'Con GPS', 'Con Bluetooth']
+
+    # auriculares
+    producto.atributos = ['Marca', 'Modelo', 'Color', 'Con micrófono', 'Con micrófono desmontable', 'Con micrófono flexible', 'Formato del auricular', 'Es inalámbrico', 'Con Bluetooth']
+
+    # En base al producto a buscar, creo los data
     df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()
     df_modelos = DataFrameCreator.CrearModelosDataFrame(producto.atributos)
 
-    # Carga de datos a dataframes
+    # Carga de datos a data
     df_opiniones, df_modelos = ExtractorDatos(producto, df_opiniones, df_modelos)
 
-    # Exporto dataframes
-    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
-    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+    # Exporto data
+    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+
 
 main()
+
+
+
+
+
+
+
+''' 
+ULTIMAS PAGINAS SIN DATA
+# Si no es la primera pagina (pues en la primera pagina, podria ser que las primeras publicaciones falle la extraccion y el porcentaje seria 0 y por ende cortarria)
+if pag_num > 1:
+
+    # Selecciono los boolean de las ultimas x paginas
+    ultimas_paginas = historico_paginas[-cant_ult_pag:]
+    # print("Ultimas {}:".format(cant_ult_pag), ultimas_paginas)
+
+    # Cantidad de ultimas paginas que logre extraer datos
+    cant_ult_pag_extraidas = sum(ultimas_paginas)
+
+    # Defino porcentaje de las ultimas paginas que logre extraer datos
+    porc_ult_pag_extraidas =  cant_ult_pag_extraidas / cant_ult_pag
+    # print("Porcentaje de extraidas de ultimas", porc_ult_pag_extraidas)
+
+    # Si el porcentaje de ultimas paginas extraidas es menor al porcentaje minimo
+    if porc_ult_pag_extraidas < porc_min_ult_pag_extraidas:
+
+        # Dejo de extraer datos
+        ult_pag_sin_data = 1
+        break
+'''
+
+'''
+PAGINACION
+
+try:
+    # Clikeo en "Siguiente pagina" tras haber visitado todas las publicaciones de una pagina
+    print("URL a ingresar: ", url_paginacion)  # esto lo hace
+    driver.get(url_paginacion)  # esto tambien
+
+except:
+    # Va a la funcion get_URL_paginacion, printea la putiada y corta...
+    # print("LA CONCHA DE TU MADRE")
+    # print("Esta lista esta vacia?", url_publicaciones, "En ese caso no recorreria publicaciones")
+    # Corto la extraccion de datos
+    print("RECURRO A USAR BS PARA SEGUIR")
+    driver.get(URL_SUPLENTE)
+    # break
+print('+++++++++++++++++++++')
+
+
+EX EX IMPLEMENTACION
+if ult_pag_sin_data == 0:
+    try:
+        # Clikeo en "Siguiente pagina" tras haber visitado todas las publicaciones de una pagina
+        driver.get(url_paginacion)
+        print("Cambio de pagina", url_paginacion, pag_num)
+
+        # Sumo 1 a parametro de corte de cantidad de paginas visitadas
+        pag_num += 1
+
+    except:
+        # Corto la extraccion de datos
+        print("Intento descubrir por que falla esto (deberia ser None):", url_paginacion)
+        no_mas_paginas = 1
+        print("No hay mas paginas")
+
+'''
+
+
+'''
+EXPLICACION DE CORTE DEL CRAWLER
+# Explico razon por la que finalizo la extraccion de datos
+# if ult_pub_sin_data == 1:
+# print("Corto pues el Crawler ingreso al {} de las ultimas {} paginas".format(porc_ult_pag_extraidas, cant_ult_pag))
+if no_mas_paginas == 1:
+    print("Corto por no haber mas paginas. Se recorrieron {} paginas".format(pag_num))
+else:
+    print("Corto porque se visitaron las {} primeras paginas".format(pag_max))
+'''

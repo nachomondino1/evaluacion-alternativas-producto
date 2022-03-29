@@ -99,7 +99,7 @@ def checkNoneValues(df):
 
 def main():
     # Levanto el dataframe
-    path = '/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/extraccion_datos/df_modelos_celulares.xlsx'
+    path = '/data/df_extraccion_datos/df_modelos_celulares.xlsx'
 
     df_modelos= pd.read_excel(path)
 

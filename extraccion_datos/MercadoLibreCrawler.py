@@ -17,6 +17,7 @@ class MercadoLibreCrawler(Crawler):
         super().__init__(driver)  # si falla,  # self.driver = driver
         self.producto = producto  # Deberia ser un objeto de la clase producto...
 
+
     def get_URL_publicaciones(self):
         """
         Obtiene las URLs de cada una de las publicaciones de una pagina principal de Mercado Libre
@@ -44,15 +45,48 @@ class MercadoLibreCrawler(Crawler):
 
             return l_url_publicaciones
 
+
+    def get_URL_paginacion2(self, pag_max):
+        """
+        Obtiene, si existe, la URL a la siguiente pagina principal de Mercado Libre
+
+        :return: URL de la siguiente pagina de Mercado Libre (en formato string), o bien, None si no la encontro
+        """
+        # print("ENTRA A FUNCION GET_URL_PAGINACION")
+        # Espero hasta que encuentre la seccion donde hago cambio de pagina
+
+        # intento funcion que extrae todos los url de la paginacion y luego los recorro en un for en main.py
+
+        l_url_paginacion = []
+
+        html = urlopen(self.producto.home_page_url)
+        bs = BeautifulSoup(html, 'html.parser')
+
+        for i in range(pag_max):
+
+            try:
+                url_paginacion = bs.find("li", {'class': 'andes-pagination__button andes-pagination__button--next'}).a.attrs['href']
+                l_url_paginacion.append(url_paginacion)
+
+                html = urlopen(url_paginacion)
+                bs = BeautifulSoup(html, 'html.parser')
+
+            except: # si no hay mas paginas...
+                pass
+
+        print(l_url_paginacion, len(l_url_paginacion))
+        return l_url_paginacion
+
+
     def get_URL_paginacion(self):
         """
         Obtiene, si existe, la URL a la siguiente pagina principal de Mercado Libre
 
         :return: URL de la siguiente pagina de Mercado Libre (en formato string), o bien, None si no la encontro
         """
-        print("ENTRA A FUNCION GET_URL_PAGINACION")
-
+        # print("ENTRA A FUNCION GET_URL_PAGINACION")
         # Espero hasta que encuentre la seccion donde hago cambio de pagina
+
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//ul[@class="ui-search-pagination andes-pagination"]')))
@@ -61,7 +95,8 @@ class MercadoLibreCrawler(Crawler):
             # Intento extraer con el driver
             try:
                 url_next_page = self.driver.find_element_by_xpath(
-                    './/li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+                    '//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+                # url_next_page = driver.find_element(By.XPATH, '//a[contains(@href, "Desde") and @title = "Siguiente"]').get_attribute('href')
 
             # Si falla
             except:
@@ -69,7 +104,33 @@ class MercadoLibreCrawler(Crawler):
                 print("NO ENCONTRO SIGUIENTE PAGINA")
 
             # Si funciona, documentar que implemente BeautifulSoup pues raramente fallaba con el driver.find()... Era muy raro pues supuestamente encontraba el link pero igual cortaba por no haber mas paginas.
-            return url_next_page
+
+
+        '''
+        pageSource = self.driver.page_source
+        bs = BeautifulSoup(pageSource, 'html.parser')
+        try:
+            url_paginacion = bs.find('li', {'class': "andes-pagination__button andes-pagination__button--next"}).a.attrs['href']
+        except:
+            try:
+                print(bs.find('li', {'class': "andes-pagination__button andes-pagination__button--next"}))
+            except:
+                pass
+
+            try:
+                print(bs.find('li', {'class': "andes-pagination__button andes-pagination__button--next"}).a)
+            except:
+                pass
+
+            try:
+                print(bs.find('li', {'class': "andes-pagination__button andes-pagination__button--next"}).a.attrs['href'])
+            except:
+                pass
+
+            #print("FALLO BS PARA OBTENER LA URL DE LA PAGINACION, pruebo get_URL_pag", self.driver.find_element_by_xpath('//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href'))
+        '''
+        return url_next_page
+
 
     def get_URL_VerTodasLasOpiniones(self):
         """
@@ -88,6 +149,7 @@ class MercadoLibreCrawler(Crawler):
             url = None
 
         return url
+
 
     def get_Data_OpinionesPub(self, id_publicacion):
         """
@@ -333,7 +395,6 @@ class MercadoLibreCrawler(Crawler):
         return id
 
 
-
 class Product():
     """ A simple model of a Mercado Libre's Product """
 
@@ -511,3 +572,24 @@ class Product():
         print("Cant atrib desechados por frec_corte:", j)
 
         return atributos
+
+
+''' Fallido intento de implementar click en lugar de driver.get()
+    def click(self, url):
+        """
+        Hace click en la url pasada por parametro.
+
+        :param url: URL a la cual se quiere acceder (en formato string)
+        :return: Web Browser automatico ingresa a URL, o bien, None si no existe la URl
+        """
+
+        # Intento clickear en URL
+        try:
+            # print("URL a ingresar: ", url)
+            return self.driver.get(url)
+
+        except:
+            print("No encontro URL")
+            return None
+
+'''
