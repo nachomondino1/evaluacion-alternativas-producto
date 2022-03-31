@@ -21,32 +21,31 @@ def data_extractor(producto, df_opiniones, df_modelos):
 
     # Defino a Chrome como Web Browser
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless') # Hace que no se abra un web browser en tu compu
+    options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
     driver = webdriver.Chrome(executable_path='./chromedriver', options=options)
 
     # Creo objeto de clase MercadoLibreCrawler para tener disponible todos los metodos para hacer web scraping
     crawler = MercadoLibreCrawler(driver, producto)
 
     # Defino parametros de corte de la extraccion
-    pag_num, PAG_MAX = 0, 41                                                # param 1: Hasta pagina 10 de Mercado libre
-    no_mas_paginas = 0                                                      # param 2: Hasta ultima pagina
-    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.3, 40, 0 # param 3: De las ultimas <CANT_ULT_PUB> paginas, pido extraer datos en al menos <porc_min_ult_pub> de ellas
+    pag_num, PAG_MAX = 0, 25                                                 # param 1: Hasta pagina 10 de Mercado libre
+    no_mas_paginas = 0                                                       # param 2: Hasta ultima pagina
+    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.1, 30, 0  # param 3: De las ultimas <CANT_ULT_PUB> paginas, pido extraer datos en al menos <porc_min_ult_pub> de ellas
 
 
     # Defino lista en la que incluire las primeras opiniones de cada publicacion. Ayudara a no extraer opiniones repetidas
     l_prim_opiniones = []
     historico_paginas = []
-    urls_sin_opiniones = []  # lo saco cdo deje de probar el get_URL_vertodaslasopi
-    SLEEP_MIN, SLEEP_MAX = 1, 3
-    despues_sacar = []
+    SLEEP_MIN, SLEEP_MAX = 2, 4
 
     # Ingreso a pagina principal del producto en Mercado Libre
-    crawler.driver.get(producto.home_page_url) # hasta que no se carga toda la pagina, no sigue...
+    crawler.driver.get(producto.home_page_url)  # hasta que no se carga toda la pagina, no sigue...
 
     # Mientras que los parametros de corte no lo indiquen
     while (pag_num < PAG_MAX) and (no_mas_paginas == 0) and (ult_pub_sin_data == 0):
 
         # Extraigo URLs de cada una de las publicaciones de una pagina de Mercado Libre.
+        sleep(random.uniform(8, 10))  # Intentando humanizar mis acciones y en parte esperar a carga de nueva pagina
         urls_publicaciones = crawler.get_publications_url()
         url_paginacion = crawler.get_pagination_url()
         print("Cantidad de pubs:", len(urls_publicaciones))
@@ -55,7 +54,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
         for url_publicacion in urls_publicaciones:
             print("Publicacion numero:", len(historico_paginas), ". URL:", url_publicacion) # Por lo menos para las pruebas es util, saber el nro de publicacion y el link
 
-            pagina_extraida = 0 #  A priori, asumo que no pude extraer datos de la publicacion --> si funciona lambda, no hace falta...
+            pagina_extraida = 0  # A priori, asumo que no pude extraer datos de la publicacion
 
             # Clickeo en una publicacion
             crawler.driver.get(url_publicacion) # driver.get(url_publicacion)
@@ -69,9 +68,8 @@ def data_extractor(producto, df_opiniones, df_modelos):
             # Si existe el boton "Ver todas las opiniones" y extraje el id
             if url_ver_todas_las_opiniones is not None:
 
-                sleep(random.uniform(SLEEP_MIN, SLEEP_MAX)) # intentando humanizar mis acciones...
-
                 # Clickeo en boton "Ver todas las opiniones"
+                sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
                 crawler.driver.get(url_ver_todas_las_opiniones) # driver.get(url_ver_todas_las_opiniones)
 
                 # Si las opiniones son nuevas (En meli, ≠ publicaciones pueden tener = opiniones)
@@ -80,14 +78,12 @@ def data_extractor(producto, df_opiniones, df_modelos):
                     # Seteo a 1 pagina extraida
                     pagina_extraida = 1
 
-                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # intentando humanizar mis acciones...
-
                     # Hago Scroll down para cargar todas las opiniones (pues son nuevas y las quiero extraer)
-                    # crawler.ScrollDown()
-
-                    # sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # intentando humanizar mis acciones...
+                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
+                    crawler.ScrollDown()
 
                     # Extraigo opiniones y las guardo en df_opiniones
+                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
                     d_opiniones_publicacion = crawler.get_publication_opinions_data(id_publicacion)
                     df_opiniones = DataFrameCreator.AgregarFilasAlDataFrame(d_opiniones_publicacion, df_opiniones)
                     print(df_opiniones)
@@ -97,10 +93,10 @@ def data_extractor(producto, df_opiniones, df_modelos):
 
                     # Clikeo en Volver saliendo de "Ver todas las opiniones"
                     crawler.driver.back()
-                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # intentando humanizar mis acciones...
 
                     # Extraigo datos de la publicacion (notar que solo lo extraigo si las opiniones son nuevas) y
                     # los guardo en df_modelos
+                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
                     d_data_modelos = crawler.get_modelo_data(id_publicacion, crawler.producto.atributos)
                     df_modelos = DataFrameCreator.AgregarFilasAlDataFrame(d_data_modelos, df_modelos)
                     print(df_modelos)
@@ -114,49 +110,31 @@ def data_extractor(producto, df_opiniones, df_modelos):
 
             # No existe el boton "Ver todas las opiniones" (pub con  menos de 3 opiniones, o bien, no hay)
             else:
-                urls_sin_opiniones.append(url_publicacion) # lo saco cdo deje de probar el get_URL_vertodaslasopi
                 print("PUBLICACION SIN OPINIONES")
 
             # Clikeo en Volver saliendo de la pagina de la publicacion y volviendo a la pagina principal
             crawler.driver.back()
-            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # intentando humanizar mis acciones...
 
             #  Verifico parametro de corte 3, en el que corto si las ultimas publicaciones no tienen datos
             historico_paginas.append(pagina_extraida) # Agrego un boolean segun si extraje o no la publicacion
-            despues_sacar2 = corte.ultimas_pub_sin_data(historico_paginas, despues_sacar) # solo ahora para defini hiper..
 
-            bool = True
-            for lista in despues_sacar2:
-                for listas in despues_sacar:
-                    if lista != listas:
-                        pass
-                    else:
-                        bool = False
-                        break
-                if bool:
-                    despues_sacar.append(lista)
-
-            '''
             if corte.ultimas_pub_sin_data(historico_paginas, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
                 ult_pub_sin_data = True
                 break
-            '''
 
         print("Proxima pagina a relevar: ", url_paginacion)
         # HAGO CLICK EN "SIGUIENTE PAGINA"
         if url_paginacion is not None:
+            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
             crawler.driver.get(url_paginacion)
             pag_num += 1
-            sleep(random.uniform(8, 10)) #esperar a que se cargue la nueva pagina?, para evadir deteccion de web scraper.
         else:
             no_mas_paginas = 1
 
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-
     # Cierro el Web Browser Automatico dando por finalizada la extraccion de datos
     crawler.driver.close()
-    print(urls_sin_opiniones) # lo saco cdo deje de probar el get_URL_vertodaslasopi
 
     # Explico la razon por la que corto la extraccion de datos
     corte.explicacion_corte(pag_num, PAG_MAX, no_mas_paginas, ult_pub_sin_data)
@@ -167,22 +145,13 @@ def data_extractor(producto, df_opiniones, df_modelos):
 def main():
     # Pedido al usuario de producto a buscar y, con el, creo objeto de clase Product
     # producto = Product(str(input("Ingrese producto a buscar: ")))
-    producto = Product("TV") # despues lo saco
+    producto = Product("celulares") # despues lo saco
 
     # Valido el producto buscado tal que no sea una busqueda tan amplia
     producto.search_validation()
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
-    # producto.atributos = producto.getAtributos()
-
-    # celulares
-    # producto.atributos = ['Marca', 'Modelo', 'Color', 'Resolución de la cámara trasera principal', 'Resolución de la cámara frontal principal', 'Con cámara', 'Cantidad de cámaras traseras', 'Con teclado QWERTY físico', 'Modelo del procesador', 'Es Dual SIM', 'Cantidad de ranuras para tarjeta SIM', 'Memoria interna', 'Memoria RAM', 'Tamaño de la pantalla', 'Tipo de resolución de la pantalla ', 'Resolución de la pantalla', 'Tecnología de la pantalla', 'Con pantalla táctil', 'Capacidad de la batería', 'Altura x Ancho x Profundidad', 'Red', 'Con conector USB', 'Con Wi-Fi', 'Con GPS', 'Con Bluetooth']
-
-    # auriculares
-    producto.atributos = ['Marca', 'Modelo']
-
-    # fundas celular
-    # producto.atributos = ['Marca del Celular', 'Modelo del Celular']
+    producto.atributos = producto.get_atributos()
 
     # En base al producto a buscar, creo los data
     df_opiniones = DataFrameCreator.CrearOpinionsDataFrame()

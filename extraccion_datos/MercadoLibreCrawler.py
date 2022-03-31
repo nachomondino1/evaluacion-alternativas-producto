@@ -172,8 +172,6 @@ class MercadoLibreCrawler(Crawler):
             prim_opinion = self.driver.find_element(By.XPATH,
                                                     '//div[@class="infinite-scroll-component "]/article/p').text
 
-            print(prim_opinion)
-
             # Si la opinion es nueva, return True
             if prim_opinion not in l_prim_opiniones:
                 return True
@@ -397,9 +395,7 @@ class Product():
         # Defino a Chrome como Web Browser
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-        driver = webdriver.Chrome(
-            executable_path='/Users/nachomondino/PycharmProjects/Utils/web_scraping_browsers/chromedriver',
-            options=options)
+        driver = webdriver.Chrome(executable_path='./chromedriver', options=options)
 
         # Inicializo variables
         d = {}  # diccionario donde guardare los atributos y su frecuencia
