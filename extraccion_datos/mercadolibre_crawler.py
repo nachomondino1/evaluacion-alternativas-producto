@@ -2,6 +2,7 @@
 from utils.web_scraping.crawler import Crawler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
@@ -15,7 +16,6 @@ class MercadoLibreCrawler(Crawler):
         """Initialize attributes of the parent class."""
         super().__init__(driver)  # si falla,  # self.driver = driver
         self.producto = producto  # Deberia ser un objeto de la clase producto...
-
 
     def get_publications_url(self):
         """
@@ -44,7 +44,6 @@ class MercadoLibreCrawler(Crawler):
 
             return l_url_publicaciones
 
-
     def get_pagination_url(self):
         """
         Obtiene, si existe, la URL a la siguiente pagina principal de Mercado Libre
@@ -58,12 +57,11 @@ class MercadoLibreCrawler(Crawler):
             # url_next_page = driver.find_element(By.XPATH, '//a[contains(@href, "Desde") and @title = "Siguiente"]').get_attribute('href') #XPATH alternativo
 
         # Si no la encuentra, seteo URL a None
-        except:
+        except NoSuchElementException:
             url_next_page = None
             print("NO ENCONTRO SIGUIENTE PAGINA")
 
         return url_next_page
-
 
     def get_ver_todas_las_opiniones_url(self):
         """
@@ -77,20 +75,19 @@ class MercadoLibreCrawler(Crawler):
                 .get_attribute("href")
 
         # Si no la encuentra, seteo URL a None
-        except:
+        except NoSuchElementException:
             url = None
 
         return url
-
 
     def get_publication_opinions_data(self, id_publicacion):
         """
         Extrae opiniones de seccion "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
 
         :param id_publicacion: Identificador de cada publicacion
-        :return: Diccionario cuyas keys son los nombres de los campos a extraer (id, titulo, content, rate, fecha, likes,
-        dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese campo.
-        Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
+        :return: Diccionario cuyas keys son los nombres de los campos a extraer (id, titulo, content, rate, fecha,
+        likes, dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese
+        campo. Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
         """
 
         # Inicializo el diccionario en donde guardare las listas con los datos extraidos
@@ -108,14 +105,14 @@ class MercadoLibreCrawler(Crawler):
             # Extraigo Title
             try:
                 l_title.append(tag.find_element_by_xpath('.//h2').text)
-            except:
+            except NoSuchElementException:
                 l_title.append(None)
 
             # Extraigo Content
             try:
                 l_content.append(tag.find_element_by_xpath(
                     './/p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
-            except:
+            except NoSuchElementException:
                 l_content.append(None)
 
             # Extraigo Rate
@@ -131,14 +128,14 @@ class MercadoLibreCrawler(Crawler):
                         # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
                         break
                 l_rate.append(n)
-            except:
+            except NoSuchElementException:
                 l_rate.append(None)
 
             # Extraigo Likes y dislikes
             try:
                 l_likes.append(int(tag.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
                 l_dislikes.append(int(tag.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
-            except:
+            except NoSuchElementException:
                 l_likes.append(None)
                 l_dislikes.append(None)
 
@@ -156,7 +153,6 @@ class MercadoLibreCrawler(Crawler):
             idx += 1
 
         return d
-
 
     def verification_new_opinions(self, l_prim_opiniones):
         """
@@ -181,10 +177,9 @@ class MercadoLibreCrawler(Crawler):
                 return False
 
         # Si no lo encontro (no deberia pero puede pasar), retorno False
-        except:
+        except NoSuchElementException:
             print("Fallo la verificacion de opiniones nuevas. No se pudo extraer la primera opinion")
             return False
-
 
     def get_modelo_data(self, id_publicacion, campos_especificos):
         """
@@ -212,15 +207,15 @@ class MercadoLibreCrawler(Crawler):
         finally:
             # Para facilitar la extraccion, convierto el codigo html de la pagina de la publicacion en un objeto de la
             # clase BeautifulSoup
-            pageSource = self.driver.page_source
-            bs = BeautifulSoup(pageSource, "html.parser")
+            page_source = self.driver.page_source
+            bs = BeautifulSoup(page_source, "html.parser")
 
             # EXTRAIGO VALOR DE PRECIO
             try:
                 precio = bs.find('div', {'class': "ui-pdp-price__second-line"}).find('span', {'class': "andes-money-amount__fraction"}).text
                 data['precio'] = precio
 
-            except:
+            except NoSuchElementException:
                 print("No encontro el precio")
                 data['precio'] = None  # en un futuro podria intentar extraer precio de las que fallan, son muy pocos
 
@@ -232,18 +227,18 @@ class MercadoLibreCrawler(Crawler):
                 # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
                 tag_attr = bs.find('th', text=campo_especifico)
                 tag_attr_otras_carac = bs.find('span',
-                                           {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
-                                           text=campo_especifico)
+                                               {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
+                                               text=campo_especifico)
 
                 # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
-                if tag_attr != None:
+                if tag_attr is not None:
                     attr, valor = tag_attr.text, tag_attr.nextSibling.text
                     data[attr] = valor
                     # print("Atributo:", attr,"Valor:", valor)
 
                 # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
                 # y su valor en el diccionario
-                elif tag_attr_otras_carac != None:
+                elif tag_attr_otras_carac is not None:
                     attr, valor = tag_attr_otras_carac.text, tag_attr_otras_carac.nextSibling.text
                     data[attr] = valor[2:]
                     # print("Atributo:", attr_otras_carac,"Valor:", valor)
@@ -256,7 +251,6 @@ class MercadoLibreCrawler(Crawler):
             # print("Fila a cargar", d)
             return data
 
-
     def get_publication_id(self, url_publicacion):
         """
         Extrae el id de una publicacion dentro de la URL de esta. En caso que no este, es porque la URL no es de las
@@ -267,7 +261,7 @@ class MercadoLibreCrawler(Crawler):
         :return: id de la publicacion (en formato string), o bien, None si no lo encontro
         """
         # Defino reglas con las que extraer el id de la url y variable en la que guardare el id
-        id = str()
+        id_pub = str()
         regla1 = 'p/MLA'
         regla2 = 'MLA-'
 
@@ -305,16 +299,16 @@ class MercadoLibreCrawler(Crawler):
             # Si es numero
             if elemento.isdigit():
                 # Lo guardo
-                id += elemento
+                id_pub += elemento
             # Si no es numero
             else:
                 # dejo de recorrer los elementos de la url pues el id es numerico
                 break
 
-        return id
+        return id_pub
 
 
-class Product():
+class Product:
     """ A simple model of a Mercado Libre's Product """
 
     def __init__(self, nombre, home_page_url=None, nombre_subcat=None, id_subcat=None, atributos=None):
@@ -333,37 +327,37 @@ class Product():
         self.id_subcat = id_subcat
         self.atributos = atributos
 
-
     def search_validation(self):  # ojo fallo cuando puse una busqueda erronea al ppio y luego una bien. Dice que no encontro el XPATH y que nombre_subcat esta haciendo un get attribute a un Nonetype
         """
-        Validar la busqueda implica que sea lo suficientemente acotada tal que se refiere a un solo producto en
+        Valida la busqueda, es decir, que sea lo suficientemente acotada tal que se refiera a un solo producto en
         particular. En esos casos, Mercado Libre le encuentra una subcategoria de producto.
+        En caso que la busqueda no sea valida, pedira un producto hasta el primero que sea valido.
 
-        :return: ??
-        Nombre de subcategoria del producto. Cabe resaltar, que retornara algo solo cuando la busqueda sea
-         lo suficientemente acotada tal que Mercado Libre le encontro una subcategoria
+        :return: Funcion sin retorno
         """
-        # Obtengo URL semilla (en este caso, la pagina principal de mercado libre)
+        # DEFINO PAGINA PRINCIPAL DEL PRODUCTO
         self.home_page_url = self.get_home_page_url()
 
-        # Implemento BeatifulSoup para acceder el codigo html de la pagina sin que se me abra el Chrome...
+        # ACCEDO AL CODIGO HTML DE LA PAGINA PRINCIPAL DEL PRODUCTO
         html = urlopen(self.home_page_url)
         bs = BeautifulSoup(html, 'html.parser')
 
-        # Obtengo tag donde esta la subcategoria del producto
+        # BUSCO TAG DONDE ESTA LA SUBCATEGORIA DEL PRODUCTO
         tag_nombre_subcat = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"})
 
+        # SI NO ENCONTRE EL TAG DE LA SUBCATEGORIA (PRODUCTO NO VALIDO)
         if tag_nombre_subcat is None:  # Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
             print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
+
+            # PIDO NUEVO PRODUCTO
             self.nombre = str(input("Ingrese producto a buscar: "))
 
-            # Funcion recursiva, hasta que la busqueda no sea acotada, sigue pidiendo ingreso de producto a buscar
+            # VUELVO A LLAMAR A LA FUNCION (RECURSIVA)
             self.search_validation()
 
         else:
-            # Extraigo el nombre de la subcateegoria a la que pertenece el producto
+            # DEFINO EL NOMBRE DE LA SUBCATEGORIA A LA QUE PERTENECE EL PRODUCTO
             self.nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
-
 
     def get_home_page_url(self):
         """
@@ -371,8 +365,7 @@ class Product():
 
         :return: URL en formato string (string pues asi es como lo necesita el driver.get(url))
         """
-
-        # Implemento reglas que  siguen las url de mercado libre tras introducir un producto en su barra de busquedas
+        # Implemento reglas que siguen las url de mercado libre tras introducir un producto en su barra de busquedas
         a = self.nombre.replace(" ", "-")
         b = self.nombre.replace(" ", "%20")
 
@@ -380,22 +373,20 @@ class Product():
         url = 'https://listado.mercadolibre.com.ar/' + a + "#D[A:" + b + "]"
         return url
 
-
-    def get_atributos(self):  # terminar de agregar notas
+    def get_atributos(self):  # esta hecha un desastre
         """
-        Obtiene atributos de un producto mas frecuentes en seccion "Otras caracteristicas" de las publicaciones de
-        Mercado Libre.
+        Obtiene los atributos mas frecuentes de un producto en las publicaciones de Mercado Libre.
 
-        :return: Lista de atributos mas frecuentes en seccion "Otras caracteristicas"
+        :return: Lista de atributos mas frecuentes
         """
-        # Inicializo parametros
-        pag_a_vis = 20  # cantidad de publicaciones a visitar
+        # INICIALIZO PARAMETROS DE CORTE, DRIVER Y VARIABLES
+        PAG_A_VISITAR = 20  # cantidad de publicaciones a visitar
+        PERCENTIL_FREC = 0.2
 
         # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
-        # Defino a Chrome como Web Browser
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-        driver = webdriver.Chrome(executable_path='./chromedriver', options=options)
+        driver = webdriver.Chrome(executable_path='./chromedriver', options=options)  # Defino a Chrome como Web Browser
 
         # Inicializo variables
         d = {}  # diccionario donde guardare los atributos y su frecuencia
@@ -414,9 +405,10 @@ class Product():
             # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
             l_url_publicaciones.append(tag_url.get_attribute("href"))
 
-        for publicacion in l_url_publicaciones[:pag_a_vis]:
+        # POR CADA PUBLICACION
+        for publicacion in l_url_publicaciones[:PAG_A_VISITAR]:
 
-            # Ingreso a publicacion
+            # INGRESO A PUBLICACION
             driver.get(publicacion)
 
             # Hago bs object del codigo html dentro de la publicacion
@@ -459,6 +451,7 @@ class Product():
 
             # Salgo de publicacion
             driver.back()
+        driver.close()
 
         print(d)
         print("Cant de atributos:", len(d.keys()))
@@ -467,9 +460,7 @@ class Product():
         frecuencias.sort()
 
         # Defino parametro de corte
-        percentil_frec = 0.2
-        idx = int(len(frecuencias) * (1 - percentil_frec))
-
+        idx = int(len(frecuencias) * (1 - PERCENTIL_FREC))
         j = 0
 
         frec_corte = frecuencias[idx]
@@ -488,166 +479,3 @@ class Product():
         print("Cant atrib desechados por frec_corte:", j)
 
         return atributos
-
-
-'''
-    def get_publication_id(self, url_publicacion):
-        """
-        Extrae el id de una publicacion dentro de la URL de esta. En caso que no este, es porque la URL no es de las
-        comunes, y por ende, busca la URL dentro del codigo html de la publicacion. Solo en el eventual caso que no
-        encuentra la url, entonces no encontro el id.
-
-        :param url_publicacion: URL de una publiacacion de Mercado Libre (en formato string)
-        :return: id de la publicacion (en formato string), o bien, None si no lo encontro
-        """
-        # Defino reglas con las que extraer el id de la url y variable en la que guardare el id
-        construyo_id = str()
-        regla1 = 'p/MLA'
-        regla2 = 'MLA-'
-
-        # Si es una URL de la forma "www.click1.mercadolibre..."
-        if (regla1 not in url_publicacion) and (regla2 not in url_publicacion):
-            print("URL de la forma www.click1.mercadolibre... ")
-
-            # Reemplazo la URL
-            try:
-                # Explicit wait
-                # sleep(2) #tal vez no termina de cargar la pagina...
-
-                pageSource = self.driver.page_source
-                bs = BeautifulSoup(pageSource, 'html.parser')
-                url_publicacion = bs.find('meta', {'property': 'og:url'}).attrs['content']
-
-                print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
-
-            # Si no encontro el tag donde esta la URL de la publicacion
-            except:
-                # Defino el id como None al no encontrar la URL del cual extraerlo
-                url_publicacion = None
-                id = None
-                print("LA URL DE LA PUBLICACION ES CLICK Y ENCIMA NO ENCONTRE LA URL DENTRO DE LA PAGINA")
-
-        # Si tengo la URL de la cual extraer el ID
-        if url_publicacion != None:
-
-            # Busco el id dentro de la url a partir de reglas
-            # Regla 1: URLs que son del tipo "...p/MLA<id>"
-            try:
-                idx_ini = url_publicacion.index(regla1)
-                url_restante = url_publicacion[idx_ini + len(regla1):]
-
-            # Regla 2: URLs que son del tipo "...MLA-<id>..."
-            except:
-                idx_ini = url_publicacion.index(regla2)
-                url_restante = url_publicacion[idx_ini + len(regla2):]
-
-            # Recorro cada elemento de la url restante, tener en cuenta que el id es de largo variable
-            for elemento in url_restante:
-
-                # Si es numero
-                if elemento.isdigit():
-                    # Lo guardo
-                    construyo_id += elemento
-                # Si no es numero
-                else:
-                    # dejo de recorrer los elementos de la url pues el id es numerico
-                    break
-
-            # Construido el id elemento a elemento, lo guardo en id
-            id = construyo_id
-
-        return id
-
-'''
-
-
-
-
-
-
-
-''' Fallido intento de get_URL_paginacion que extraia mientras visitaba cada pagina..
-
-    def alternativa_get_URL_paginacion(self, pag_max): #si funciona, cambiar nombre a get_urls_pag_y_pub()
-        """
-        Obtiene las URL de las paginas principales de Mercado Libre a visitar
-
-        :return: Lista de URLs de las paginas de Mercado Libre (en formato string)
-        """
-
-        # Defino lista donde guardare las URLs
-        l_url_paginacion = []
-
-        # Obtengo html de la primera pagina principal
-        html = urlopen(self.producto.home_page_url)
-        bs = BeautifulSoup(html, 'html.parser')
-
-        # Por cada pagina a visitar
-        for i in range(pag_max):
-
-            try:
-                url_paginacion = bs.find("li", {'class': 'andes-pagination__button andes-pagination__button--next'}).a.attrs['href']
-                l_url_paginacion.append(url_paginacion)
-
-                # Cambio de pagina
-                html = urlopen(url_paginacion)
-                bs = BeautifulSoup(html, 'html.parser')
-
-            except: # si no hay mas paginas...
-                pass
-
-        # verr si dejo esto, es para explicar si no hay mas paginas..
-        if len(l_url_paginacion) == pag_max:
-            print("En principio, se recorreran {} paginas".format(len(l_url_paginacion)))
-        else:
-            print("Se deberian recorrer {} pero se recorreran {} paginas pues no hay mas".format(pag_max, len(l_url_paginacion)))
-
-        return l_url_paginacion
-
-
-    def alternativa_get_URL_pub_y_pag(self, pag_max): #si funciona, cambiar nombre a get_urls_pag_y_pub()
-        """
-        Obtiene las URL de las paginas principales de Mercado Libre a visitar
-
-        :return: Lista de URLs de las paginas de Mercado Libre (en formato string)
-        """
-
-        # Defino lista donde guardare las URLs
-        l_url_paginacion = []
-        l_url_publicaciones = []
-
-        # Obtengo html de la primera pagina principal
-        html = urlopen(self.producto.home_page_url)
-        bs = BeautifulSoup(html, 'html.parser')
-
-
-        # Por cada pagina a visitar
-        for i in range(pag_max):
-
-            try:
-                url_paginacion = bs.find("li", {'class': 'andes-pagination__button andes-pagination__button--next'}).a.attrs['href']
-                l_url_paginacion.append(url_paginacion)
-
-                # pruebo a obtener urls de publicaciones
-                tag_urls_publicaciones = bs.find_all('div', {'class', 'ui-search-result__image'})
-
-                for tag_url in tag_urls_publicaciones: # lo tuve que agregar porque falla la busqueda de urls
-                    # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
-                    l_url_publicaciones.append(tag_url.a.attrs["href"])
-
-                # Cambio de pagina
-                html = urlopen(url_paginacion)
-                bs = BeautifulSoup(html, 'html.parser')
-
-            except: # si no hay mas paginas...
-                pass
-
-        # verr si dejo esto, es para explicar si no hay mas paginas..
-        if len(l_url_paginacion) == pag_max:
-            print("En principio, se recorreran {} paginas".format(len(l_url_paginacion)))
-        else:
-            print("Se deberian recorrer {} pero se recorreran {} paginas pues no hay mas".format(pag_max, len(l_url_paginacion)))
-
-        return l_url_paginacion, l_url_publicaciones
-    
-'''
