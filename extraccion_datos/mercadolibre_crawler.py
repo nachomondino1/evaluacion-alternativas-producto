@@ -8,13 +8,14 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
+from time import sleep
 
 class MercadoLibreCrawler(Crawler):
     """ A tool to extract data from Mercado Libre using Web Scraping """
 
     def __init__(self, driver, producto):
         """Initialize attributes of the parent class."""
-        super().__init__(driver)  # si falla,  # self.driver = driver
+        super().__init__(driver)  # si dejase de ser hija de Crawler(), haria self.driver = driver
         self.producto = producto  # Deberia ser un objeto de la clase producto...
 
     def get_publications_url(self):
@@ -23,24 +24,25 @@ class MercadoLibreCrawler(Crawler):
 
         :return: Lista de URLs de las publicaciones de una pagina principal
         """
-        # Defino lista vacia en donde guardare los links de las publicaciones
+        # DEFINO LISTA VACIA DONDE GUARDARE LAS URLs DE LAS PUBLICACIONES
         l_url_publicaciones = []
 
-        # Espero hasta que aparece el tag en donde se encuentran las URLs
+        # ESPERO HASTA ENCONTRAR LOS TAGS QUE CONTIENEN LAS URLs
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]/a')))
 
-        # finalmente
+        # FINALMENTE
         finally:
-            # Busco los tags que contienen una URL de una publicacion
+            # OBTENGO LOS TAGS
             tag_urls_publicaciones = self.driver.find_elements(By.XPATH,
                                                                '//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
 
-            # Recorro cada tag (cada uno contiene un link)
+            # POR CADA TAG DE LOS TAGS
             for tag_url in tag_urls_publicaciones:
-                # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
-                l_url_publicaciones.append(tag_url.get_attribute("href"))
+
+                # OBTENGO URL
+                l_url_publicaciones.append(tag_url.get_attribute("href"))  # es el valor del atributo href del tag
 
             return l_url_publicaciones
 
@@ -50,14 +52,16 @@ class MercadoLibreCrawler(Crawler):
 
         :return: URL de la siguiente pagina de Mercado Libre (en formato string), o bien, None si no la encontro
         """
-        # Intento obtener URL de la siguiente pagina
+        # INTENTO OBTENER URL DE LA SIGUIENTE PAGINA
         try:
             url_next_page = self.driver.find_element_by_xpath(
                 '//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
             # url_next_page = driver.find_element(By.XPATH, '//a[contains(@href, "Desde") and @title = "Siguiente"]').get_attribute('href') #XPATH alternativo
 
-        # Si no la encuentra, seteo URL a None
+        # SI NO LA ENCONTRE
         except NoSuchElementException:
+
+            # SETEO URL A NONE
             url_next_page = None
             print("NO ENCONTRO SIGUIENTE PAGINA")
 
@@ -69,13 +73,15 @@ class MercadoLibreCrawler(Crawler):
 
         :return: URL del boton "Ver todas las opiniones", o bien, None si no existe tal boton
         """
-        # Intento obtener la URL de seccion "Ver todas las opiniones"
+        # INTENTO OBTENER URL DE "VER TODAS LAS OPINIONES"
         try:
             url = self.driver.find_element(By.XPATH, '//div[@class="ui-pdp-reviews__actions__container"]/a') \
                 .get_attribute("href")
 
-        # Si no la encuentra, seteo URL a None
+        # SI NO LA ENCONTRE
         except NoSuchElementException:
+
+            # SETEO URL A NONE
             url = None
 
         return url
@@ -89,56 +95,49 @@ class MercadoLibreCrawler(Crawler):
         likes, dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese
         campo. Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
         """
+        # INICIALIZO VARIABLES
+        campos_a_extraer = ['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes']
+        l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []  # lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
+        d = {}  # diccionario en donde guardare las listas con los datos extraidos
+        num_stars = 0
 
-        # Inicializo el diccionario en donde guardare las listas con los datos extraidos
-        d = {'id_publicacion': None, 'title': None, 'content': None, 'rate': None, 'likes': None, 'dislikes': None}
+        # OBTENGO TAGS QUE CONTIENEN UNA OPINION
+        tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]//article')
 
-        # Inicializo una lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
-        l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []
-
-        # Busco tags que contienen una opinion
-        tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]/article')
-
-        # Recorro cada tag
+        # POR CADA TAG DE LOS TAGS
         for tag in tags_opiniones:
 
-            # Extraigo Title
+            # INTENTO EXTRAER TODOS LOS CAMPOS QUE QUIERO
             try:
-                l_title.append(tag.find_element_by_xpath('.//h2').text)
-            except NoSuchElementException:
-                l_title.append(None)
+                # Extraigo Title
+                l_title.append(tag.find_element_by_xpath('.//h3').text)
 
-            # Extraigo Content
-            try:
+                # Extraigo Content
                 l_content.append(tag.find_element_by_xpath(
                     './/p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
-            except NoSuchElementException:
-                l_content.append(None)
 
-            # Extraigo Rate
-            try:
-                n = 0
+                # Extraigo Rate
                 stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
-
                 # Recorro cada una de las 5 estrellas
                 for star in stars:
                     if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
-                        n += 1
+                        num_stars += 1
                     else:
                         # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
                         break
-                l_rate.append(n)
-            except NoSuchElementException:
-                l_rate.append(None)
+                l_rate.append(num_stars)
 
-            # Extraigo Likes y dislikes
-            try:
-                l_likes.append(int(tag.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
-                l_dislikes.append(int(tag.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
-            except NoSuchElementException:
-                l_likes.append(None)
-                l_dislikes.append(None)
+                # Extraigo Likes y dislikes
+                l_likes.append(int(tag.find_element_by_xpath('.//button[@data-testid="like-button"]').text))
+                l_dislikes.append(int(tag.find_element_by_xpath('.//button[@data-testid="dislike-button"]').text))
 
+            # FALLO EXTRACCION DE ALGUN CAMPO
+            except NoSuchElementException:
+                print("Fallo extraccion de al menos un campo. Probablemente cambio el codigo html de la pagina "
+                      "(como ya ha pasado) ")
+                pass
+
+        # GUARDO DATOS EXTRAIDOS
         # Creo lista de id_publicacion segun la cantidad de opiniones
         for i in range(len(l_title)):  # podria haber puesto cualquier campo en lugar de title
             l_id_publicacion.append(id_publicacion)
@@ -146,11 +145,9 @@ class MercadoLibreCrawler(Crawler):
         # Creo lista que contiene todas las listas con los datos extraidos
         data = [l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes]
 
-        # Por cada campo a extraer, guardo su lista en el diccionario
-        idx = 0
-        for key in d.keys():
-            d[key] = data[idx]
-            idx += 1
+        # Guardo los datos propiamente
+        for i in range(len(campos_a_extraer)):
+            d[campos_a_extraer[i]] = data[i]
 
         return d
 
@@ -165,8 +162,8 @@ class MercadoLibreCrawler(Crawler):
         """
         # Intento obtener primera opinion de la publicacion
         try:
-            prim_opinion = self.driver.find_element(By.XPATH,
-                                                    '//div[@class="infinite-scroll-component "]/article/p').text
+            prim_opinion = self.driver.find_element(By.XPATH,'//div[@class="infinite-scroll-component "]//p').text
+            # print("Primera opinion", prim_opinion)
 
             # Si la opinion es nueva, return True
             if prim_opinion not in l_prim_opiniones:
@@ -187,64 +184,65 @@ class MercadoLibreCrawler(Crawler):
         para publicaciones del producto "celulares", algunos campos especificos pueden ser tamaño de pantalla,
         resolucion de camara, entre otros.
 
-        :param id_publicacion: Identificador de publicacion
+        :param id_publicacion: Identificador de publicacion (unico cmapo previamente extraiado)
         :param campos_especificos: Lista de campos especificos (o "atributos") del producto de Mercado Libre que deseo
         extraer. Por ejemplo, "tamano de pantalla" para el producto "celulares". Su largo dependera de cada producto.
         :return: Diccionario cuyas keys son cada campo a extraer de una publicacion (no solo son los atributos) y cuyos
         value son el valor que toma el respectivo campo para una publicacion en particular. Uso diccionario por la
         facilidad que representa transformarlo en fila/s de un DataFrame.
         """
-        # Defino el diccionario donde guardare los campos a extraer y su valor para una publicacion. Agrego al
-        # diccionario el unico campo que extraigo por fuera de esta funcion
+        # DEFINO DICCIONARIO DONDE GUARDARE DATOS. AGREGO EL UNICO CAMPO PREVIAMENTE EXTRAIDO.
         data = {'id_publicacion': id_publicacion}
 
-        # Implicit wait: hasta que aparezca la seccion "Caracteristicas principales"
+        # ESPERO HASTA QUE APAREZCA LA SECCION "CARACTERISTICAS PRINCIPALES"
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
 
-        # finalmente
+        # FINALMENTE
         finally:
-            # Para facilitar la extraccion, convierto el codigo html de la pagina de la publicacion en un objeto de la
-            # clase BeautifulSoup
+            # OBTENGO CODIGO HTML DE LA PUBLICACION USANDO BEAUTIFUL SOUP
             page_source = self.driver.page_source
             bs = BeautifulSoup(page_source, "html.parser")
 
-            # EXTRAIGO VALOR DE PRECIO
+            # EXTRAIGO VALOR DE PRECIO PARA LA PUBLICACION CORRESPONDIENTE
             try:
-                precio = bs.find('div', {'class': "ui-pdp-price__second-line"}).find('span', {'class': "andes-money-amount__fraction"}).text
-                data['precio'] = precio
+                data['precio'] = bs.find('div', {'class': "ui-pdp-price__second-line"}).find('span', {'class': "andes-money-amount__fraction"}).text
 
             except NoSuchElementException:
-                print("No encontro el precio")
+                print("Fallo extraccion de campo 'precio'")
                 data['precio'] = None  # en un futuro podria intentar extraer precio de las que fallan, son muy pocos
 
-            # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS
-            # Por campo especifico
+            # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS PARA LA PUBLICACION CORRESPONDIENTE
+            # Por campo especifico de los campos especificos (pasados como parametro)
             for campo_especifico in campos_especificos:
 
-                # Obtengo el tag, si existe, donde esta el atributo (en particular, uno de los que me interesa). Puede
-                # encontrarse en la seccion "Caracteristicas principales", o bien, en "Otras caracteristicas"
+                # Obtengo el tag que lo contiene. Este podria estar en seccion "Caracteristicas pricipales" o en
+                # "Otras caracteristicas"
                 tag_attr = bs.find('th', text=campo_especifico)
                 tag_attr_otras_carac = bs.find('span',
                                                {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
                                                text=campo_especifico)
 
-                # Si existe el tag, entonces guardo el atributo y su valor en el diccionario
+                # Si el tag esta en "Ver mas caracteristicas" o "Caracteristicas pricipales"
                 if tag_attr is not None:
+
+                    # Guardo el atributo y su valor en el diccionario
                     attr, valor = tag_attr.text, tag_attr.nextSibling.text
                     data[attr] = valor
                     # print("Atributo:", attr,"Valor:", valor)
 
-                # Si no existe el tag, puede que se encuentre en "Otras caracteristicas" y entonces guardo el atributo
-                # y su valor en el diccionario
+                # Si no esta en seccion anterior pero esta en seccion "Otras caracteristicas"
                 elif tag_attr_otras_carac is not None:
+
+                    # Guardo el atributo y su valor en el diccionario
                     attr, valor = tag_attr_otras_carac.text, tag_attr_otras_carac.nextSibling.text
                     data[attr] = valor[2:]
                     # print("Atributo:", attr_otras_carac,"Valor:", valor)
 
-                # Si no existe el tag en ninguna seccion, entonces guardo el atributo con valor None en el diccionario
+                # Si no esta en ningun seccion
                 else:
+                    # Guardo el atributo con valor None en el diccionario
                     data[campo_especifico] = None
                     # print("Atributo:", campo_especifico,"Valor:", None)
 
@@ -253,47 +251,47 @@ class MercadoLibreCrawler(Crawler):
 
     def get_publication_id(self, url_publicacion):
         """
-        Extrae el id de una publicacion dentro de la URL de esta. En caso que no este, es porque la URL no es de las
-        comunes, y por ende, busca la URL dentro del codigo html de la publicacion. Solo en el eventual caso que no
-        encuentra la url, entonces no encontro el id.
+        Extrae el id de una publicacion dentro de la URL de esta. En caso que el id no este en la URL, es porque la URL
+        no es de las comunes, y por ende, buscare la URL correcta dentro del codigo html de la publicacion. Solo en el
+        eventual caso que no encuentra la nueva URL, entonces no encuentra el id.
 
         :param url_publicacion: URL de una publiacacion de Mercado Libre (en formato string)
         :return: id de la publicacion (en formato string), o bien, None si no lo encontro
         """
-        # Defino reglas con las que extraer el id de la url y variable en la que guardare el id
+        # DEFINO REGLAS CON LAS QUE EXTRAER EL ID Y VARIABLE DONDE LO GUARDARE
+        regla1, regla2 = 'p/MLA', 'MLA-'
         id_pub = str()
-        regla1 = 'p/MLA'
-        regla2 = 'MLA-'
 
-        # Si es una URL de la forma "www.click1.mercadolibre..."
+        # SI LA URL NO CONTIENE EL ID (URL de la forma "www.click1.mercadolibre...")
         if (regla1 not in url_publicacion) and (regla2 not in url_publicacion):
             print("URL de la forma www.click1.mercadolibre... ")
 
-            # Reemplazo la URL
+            # INTENTO REEMPLAZAR LA URL POR LA URL CORRECTA
             try:
                 pageSource = self.driver.page_source
                 bs = BeautifulSoup(pageSource, 'html.parser')
                 url_publicacion = bs.find('meta', {'property': 'og:url'}).attrs['content']
                 print("LA URL DE LA PUBLICACION ES CLICK PERO ENCONTRE LA URL DENTRO DE LA PAGINA")
 
-            # Si no encontro el tag donde esta la URL de la publicacion
+            # SI NO ENCONTRE LA URL CORRECTA
             except:
+                # RETORNO NONE (no encontre el id de la publicacion)
                 # Defino el id como None al no encontrar la URL del cual extraerlo
                 print("LA URL DE LA PUBLICACION ES CLICK Y ENCIMA NO ENCONTRE LA URL DENTRO DE LA PAGINA")
                 return None
 
-        # Busco el id dentro de la url a partir de reglas
-        # Regla 1: URLs que son del tipo "...p/MLA<id>"
+        # BUSCO EL ID DENTRO DE LA URL A PARTIR DE LAS REGLAS
+        # Busco indice donde comienza el id en pubs que siguen la regla 1 (URLs que son del tipo "...p/MLA<id>")
         try:
             idx_ini = url_publicacion.index(regla1)
             url_restante = url_publicacion[idx_ini + len(regla1):]
 
-        # Regla 2: URLs que son del tipo "...MLA-<id>..."
+        # Busco indice donde comienza el id en pubs que siguen la regla 2 (URLs que son del tipo "...MLA-<id>...")
         except:
             idx_ini = url_publicacion.index(regla2)
             url_restante = url_publicacion[idx_ini + len(regla2):]
 
-        # Recorro cada elemento de la url restante, tener en cuenta que el id es de largo variable
+        # Desde el indice, recorro cada elemento que sigue en la url (id es de largo variable)
         for elemento in url_restante:
 
             # Si es numero
@@ -313,7 +311,7 @@ class Product:
 
     def __init__(self, nombre, home_page_url=None, nombre_subcat=None, id_subcat=None, atributos=None):
         """
-        Defino atributos de clase Product. Las caracteristicas que tendra tod@ producto
+        Defino atributos de clase Product. Las caracteristicas que tendra cualquier producto
 
         :param nombre: Nombre del producto
         :param home_page_url: Pagina Principal de Mercado Libre para ese producto
@@ -361,18 +359,125 @@ class Product:
 
     def get_home_page_url(self):
         """
-        Busca URL de la Pagina principal de Mercado Libre de un producto (a partir del nombre de este)
+        Busca URL de la Pagina principal de un producto en Mercado Libre
 
         :return: URL en formato string (string pues asi es como lo necesita el driver.get(url))
         """
-        # Implemento reglas que siguen las url de mercado libre tras introducir un producto en su barra de busquedas
-        a = self.nombre.replace(" ", "-")
-        b = self.nombre.replace(" ", "%20")
+        # DEFINO REGLAS QUE SIGUE LA URL DE LA PAGINA PRINCIPAL DE UN PRODUCTO EN MERCADO LIBRE
+        # si el producto tiene mas de una palabra, reemplazo espacios en blanco por guiones
+        reg1 = self.nombre.replace(" ", "-")
 
-        # Defino url del producto agregando las reglas
-        url = 'https://listado.mercadolibre.com.ar/' + a + "#D[A:" + b + "]"
-        return url
+        # si el producto tiene mas de una palabra, reemplazo espacios en blanco por string "%20"
+        reg2 = self.nombre.replace(" ", "%20")
 
+        return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
+
+    def get_product_attributes(self):
+        """
+        Obtiene los atributos mas frecuentes de un producto en las publicaciones de Mercado Libre.
+
+        :return: Lista de atributos mas frecuentes
+        """
+        # INICIALIZO PARAMETROS DE CORTE, DRIVER Y VARIABLES
+        PAG_A_VISITAR = 20  # cantidad de publicaciones a visitar
+        PERCENTIL_FREC = 0.2
+
+        # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
+        driver = webdriver.Chrome(executable_path='./chromedriver', options=options)  # Defino a Chrome como Web Browser
+
+        # Inicializo variables
+        d = {}  # diccionario donde guardare los atributos y su frecuencia
+        atributos = []  # lista donde guardare los atributos
+        l_url_publicaciones = []  # lista vacia en donde guardare los links de las publicaciones
+
+        # INGRESO A PAGINA PRINCIPAL DEL PRODUCTO A BUSCAR
+        driver.get(self.home_page_url)
+
+        # EXTRAIGO URLS DE PUBLICACIONES (recordar que 1 pag tiene entre 50 y 55 pubs)
+        # Busco todos los tags que contienen un link a una publicacion
+        tag_urls_publicaciones = driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
+
+        # Recorro cada tag (cada uno contiene un link)
+        for tag_url in tag_urls_publicaciones:
+            # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
+            l_url_publicaciones.append(tag_url.get_attribute("href"))
+
+        # POR CADA PUBLICACION
+        for publicacion in l_url_publicaciones[:PAG_A_VISITAR]:
+
+            # INGRESO A PUBLICACION
+            driver.get(publicacion)
+
+            # OBTENGO CODIGO HTML DE LA PUBLICACION USANDO LIBRERIA BEAUTIFULSOUP
+            pageSource = driver.page_source
+            bs = BeautifulSoup(pageSource, 'html.parser')
+
+            # BUSCO, EN EL CODIGO HTML, TAGS QUE CONTIENEN UN ATRIBUTO
+            # para publicaciones tipo 1 (atributos en seccion oculta "Ver mas caracteristicas")
+            tags_attrs = bs.find_all('th', {
+                'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
+
+            # para publicaciones tipo 2 (atributos en secciones "Caracteristicas ppales" y "Otras caracteristicas"). Solo si la pub no es de tipo 1
+            if len(tags_attrs) == 0:  # un find_all() devuelve una lista vacia en lugar de None
+                tags_attrs = bs.find_all('th', {
+                    'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'})  # Busco en seccion "Caracteristicas principales"
+                tags_attrs2 = bs.find_all('span',
+                                          {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})  # Busco en seccion "Otras caracteristicas"
+
+                # Uno tags de ambas secciones
+                for elemento in tags_attrs2:
+                    tags_attrs.append(elemento)
+
+                print("Atributos en otras carac", tags_attrs)
+
+            # POR CADA TAG (que contiene un atributo)
+            for tag in tags_attrs:
+
+                # OBTENGO EL ATRIBUTO (es el texto del tag)
+                attr = tag.text
+
+                # LE SUMO 1 A SU FRECUENCIA
+                # si el atributo es nuevo
+                if attr not in d.keys():
+                    # Lo agrego y le pongo frecuencia 1
+                    d[attr] = 1
+
+                # Si el atributo no es nuevo
+                else:
+                    # Obtengo su frecuencia y le sumo 1
+                    frec = d.get(attr)
+                    d[attr] = frec + 1
+
+            # CLICKEO EN BOTON "VOLVER" PARA SALIR DE PUBLICACION
+            driver.back()
+
+        # FINALIZADA LA EXTRACCION, CIERRO EL WEB BROWSER AUTOMATICO
+        driver.close()
+
+        # SELECCIONO LOS ATRIBUTOS MAS FRECUENTES
+        # obtengo frecuencia de corte
+        frecuencias = list(d.values())
+        frecuencias.sort()
+        idx_frec_corte = int(len(frecuencias) * (1 - PERCENTIL_FREC))
+        frec_corte = frecuencias[idx_frec_corte]
+
+        # selecciono los atributos mas frecuentes propiamente
+        for key in d.keys():
+            frec = d[key]
+
+            if frec >= frec_corte:
+                atributos.append(key)
+
+        # RESUMO LOS RESULTADOS DE LA EXTRACCION DE ATRIBUTOS
+        print("Los {} atributos y su frecuencia (cortare en frec {}):".format(len(d.keys()), frec_corte), d)
+        print('Los {} atributos mas frecuentes:'.format(len(atributos)), atributos)
+
+        return atributos
+
+
+'''
     def get_atributos(self):  # esta hecha un desastre
         """
         Obtiene los atributos mas frecuentes de un producto en las publicaciones de Mercado Libre.
@@ -479,3 +584,153 @@ class Product:
         print("Cant atrib desechados por frec_corte:", j)
 
         return atributos
+'''
+
+''' EX IMPLEMENTACION DE get_publication_opinions_data() con un solo try-except por cada campo a extraer.
+    def get_publication_opinions_data(self, id_publicacion):
+        """
+        Extrae opiniones de seccion "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
+
+        :param id_publicacion: Identificador de cada publicacion
+        :return: Diccionario cuyas keys son los nombres de los campos a extraer (id, titulo, content, rate, fecha,
+        likes, dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese
+        campo. Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
+        """
+        # INICIALIZO VARIABLES
+        campos_a_extraer = ['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes']
+        l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []  # lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
+        d = {}  # diccionario en donde guardare las listas con los datos extraidos
+        num_stars = 0
+
+        # OBTENGO TAGS QUE CONTIENEN UNA OPINION
+        tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]//article')
+
+        # POR CADA TAG DE LOS TAGS
+        for tag in tags_opiniones:
+
+            # INTENTO EXTRAER TODOS LOS CAMPOS QUE QUIERO
+            # Extraigo Title
+            try:
+                l_title.append(tag.find_element_by_xpath('.//h3').text)
+            except NoSuchElementException:
+                l_title.append(None)
+
+            # Extraigo Content
+            try:
+                l_content.append(tag.find_element_by_xpath(
+                    './/p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
+            except NoSuchElementException:
+                l_content.append(None)
+    
+            # Extraigo Rate
+            try:
+                stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
+
+                # Recorro cada una de las 5 estrellas
+                for star in stars:
+                    if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
+                        num_stars += 1
+                    else:
+                        # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
+                        break
+                l_rate.append(num_stars)
+            except NoSuchElementException:
+                l_rate.append(None)
+
+            # Extraigo Likes y dislikes
+            try:
+                l_likes.append(int(tag.find_element_by_xpath('.//button[@data-testid="like-button"]').text))
+                l_dislikes.append(int(tag.find_element_by_xpath('.//button[@data-testid="dislike-button"]').text))
+            except NoSuchElementException:
+                l_likes.append(None)
+                l_dislikes.append(None)
+
+        # GUARDO DATOS EXTRAIDOS
+        # Creo lista de id_publicacion segun la cantidad de opiniones
+        for i in range(len(l_title)):  # podria haber puesto cualquier campo en lugar de title
+            l_id_publicacion.append(id_publicacion)
+
+        # Creo lista que contiene todas las listas con los datos extraidos
+        data = [l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes]
+
+        # Guardo los datos propiamente
+        for i in range(len(campos_a_extraer)):
+            d[campos_a_extraer[i]] = data[i]
+
+        return d
+'''
+
+
+
+
+''' intento de nueva implmentacion 
+def get_publication_opinions_data(self, id_publicacion):
+       """
+       Extrae opiniones de seccion "Ver todas las opiniones" dentro de una publicacion de Mercado Libre
+
+       :param id_publicacion: Identificador de cada publicacion
+       :return: Diccionario cuyas keys son los nombres de los campos a extraer (id, titulo, content, rate, fecha,
+       likes, dislikes) y los values son una lista (pues una publicacion tiene varias opiniones) de valores para ese
+       campo. Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
+       """
+       # INICIALIZO VARIABLES
+       campos_a_extraer = ['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes']
+       l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []  # lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
+       d = {}  # diccionario en donde guardare las listas con los datos extraidos
+       num_stars = 0
+
+       # OBTENGO TAGS QUE CONTIENEN UNA OPINION
+       tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]//article')
+       print(tags_opiniones)  # esto NO funciona....
+
+       # POR CADA TAG DE LOS TAGS
+       for tag in tags_opiniones:
+
+           # INTENTO EXTRAER TODOS LOS CAMPOS QUE QUIERO
+           try:
+               # Extraigo Title
+               l_title.append(tag.find_element_by_xpath('.//h2').text)
+
+               # Extraigo Content
+               l_content.append(tag.find_element_by_xpath(
+                   './/p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
+
+               # Extraigo Rate
+               stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
+               # Recorro cada una de las 5 estrellas
+               for star in stars:
+                   if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
+                       num_stars += 1
+                   else:
+                       # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
+                       break
+               l_rate.append(num_stars)
+
+               # Extraigo Likes
+               l_likes.append(int(tag.find_element_by_xpath('.//a[@data-testid="like-button"]').text))
+
+               # Extraigo Dislikes
+               l_dislikes.append(int(tag.find_element_by_xpath('.//a[@data-testid="dislike-button"]').text))
+
+           except NoSuchElementException:
+               print("Fallo la extraccion de uno de los campos para dataframe de opiniones")
+               return None
+
+       # GUARDO DATOS EXTRAIDOS
+       # Creo lista de id_publicacion segun la cantidad de opiniones
+       for i in range(len(l_title)):  # podria haber puesto cualquier campo en lugar de title
+           l_id_publicacion.append(id_publicacion)
+
+       # Creo lista que contiene todas las listas con los datos extraidos
+       data = [l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes]
+
+       print(data)
+
+       # Guardo los datos propiamente
+       for i in range(len(campos_a_extraer)):
+           d[campos_a_extraer[i]] = data[i]
+
+       print(d)
+
+       return d
+'''
