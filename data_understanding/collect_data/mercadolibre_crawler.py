@@ -1,5 +1,5 @@
 # Importo librerias
-from utils.web_scraping.crawler import Crawler
+from data_understanding.utils.web_scraping.crawler import Crawler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
@@ -8,7 +8,6 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
-from time import sleep
 
 class MercadoLibreCrawler(Crawler):
     """ A tool to extract data from Mercado Libre using Web Scraping """
@@ -385,7 +384,7 @@ class Product:
         # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-        driver = webdriver.Chrome(executable_path='./chromedriver', options=options)  # Defino a Chrome como Web Browser
+        driver = webdriver.Chrome(executable_path='chromedriver', options=options)  # Defino a Chrome como Web Browser
 
         # Inicializo variables
         d = {}  # diccionario donde guardare los atributos y su frecuencia

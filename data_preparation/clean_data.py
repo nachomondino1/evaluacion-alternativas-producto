@@ -1,8 +1,7 @@
 # Importo librerias
 import pandas as pd
 
-
-def checkValores(df):
+def delete_attr_x_values(df):
 
     cant_atributos = len(df.columns)
     cant_valores_posibles = len(df)
@@ -60,7 +59,7 @@ def checkValores(df):
     return df
 
 
-def checkNoneValues(df):
+def delete_none_values(df):
     print(df)
 
     # Columna
@@ -97,7 +96,7 @@ def checkNoneValues(df):
     return df
 
 
-def main():
+def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
     # Levanto el dataframe
     path = '/data/df_extraccion_datos/df_modelos_celulares.xlsx'
 
@@ -110,7 +109,7 @@ def main():
         print(df_modelos[atributo].value_counts())
 
     # checkValores(df_modelos) # tengo que decirle que no se fije en precio, id_pub, marca ni modelo.
-    checkNoneValues(df_modelos)
+    delete_none_values(df_modelos)
 
 main()
 

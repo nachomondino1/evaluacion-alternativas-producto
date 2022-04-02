@@ -2,6 +2,12 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/crisp_phases/data_understanding/utils/palabras-diccionario-rae-completo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/crisp_phases/data_understanding/utils/web_scraping" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/crisp_phases/modelling/utils/palabras-diccionario-rae-completo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/data_understanding/utils/palabras-diccionario-rae-completo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/data_understanding/utils/web_scraping" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/modelling/utils/palabras-diccionario-rae-completo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/utils/palabras-diccionario-rae-completo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/utils/web_scraping" vcs="Git" />
   </component>

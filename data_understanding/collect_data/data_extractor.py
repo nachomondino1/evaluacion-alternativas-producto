@@ -4,7 +4,6 @@ from time import sleep
 from selenium import webdriver
 import dataframe_creator as df_creator
 from mercadolibre_crawler import MercadoLibreCrawler
-from mercadolibre_crawler import Product
 import corte_extraccion_datos
 
 
@@ -20,18 +19,27 @@ def data_extractor(producto, df_opiniones, df_modelos):
     """
     # CREO OBJETO "CRAWLER" DE CLASE MercadoLibreCrawler(), ASI TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-    driver = webdriver.Chrome(executable_path='./chromedriver', options=options)  # Defino a Chrome como Web Browser
+    # options.setPageLoadStrategy(PageLoadStrategy.NONE)
+    options.add_argument("start-maximized")
+    options.add_argument("enable-automation")
+    options.add_argument("--headless") # Hace que no se abra un web browser en tu compu
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-browser-side-navigation")
+    options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(executable_path='chromedriver', options=options)  # Defino a Chrome como Web Browser
     crawler = MercadoLibreCrawler(driver, producto)
 
     # DEFINO PARAMETROS DE CORTE, TIEMPOS DE ESPERA Y VARIABLES UTILES
     # Defino parametros de corte de la extraccion
-    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.1, 30, 0  # param 1: De las ultimas <CANT_ULT_PUB> paginas, pido extraer  datos en al menos <porc_min_ult_pub> de ellas
+    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.2, 30, 0  # param 1: De las ultimas <CANT_ULT_PUB> paginas, pido extraer  datos en al menos <porc_min_ult_pub> de ellas
     pag_num, PAG_MAX = 0, 25  # param 2: Hasta pagina <PAG_MAX>, o bien, hasta la ultima
     no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
+    url_sin_opi = [] #prueba
 
     # Defino tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    SLEEP_MIN, SLEEP_MAX = 2, 4
+    SLEEP_MIN, SLEEP_MAX = 0.5, 1
 
     # Defino variables utiles
     l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
@@ -57,7 +65,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
 
             # CLICKEO EN LA PUBLICACION
             crawler.driver.get(url_publicacion)
-            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX)) # Intentando humanizar mis acciones...
+            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
             # OBTENGO SU IDENTIFICADOR DE PUBLICACION ("id_publicacion")
             id_publicacion = crawler.get_publication_id(url_publicacion)
@@ -86,7 +94,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
                     l_prim_opiniones.append(d_opiniones_publicacion['content'][0])  # Guardo la primera opinion de la
                     # publicacion para poder hacer la verificacion de opiniones nuevas
                     df_opiniones = df_creator.add_lines_to_dataframe(d_opiniones_publicacion, df_opiniones)
-                    print(df_opiniones)
+                    # print(df_opiniones)
 
                     # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
                     crawler.driver.back()
@@ -95,7 +103,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
                     # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_modelos")
                     d_data_modelos = crawler.get_modelo_data(id_publicacion, crawler.producto.atributos)
                     df_modelos = df_creator.add_lines_to_dataframe(d_data_modelos, df_modelos)
-                    print(df_modelos)
+                    # print(df_modelos)
 
                 # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN), ENTONCES NO EXTRAIGO NADA.
                 else:
@@ -107,6 +115,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
             # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones), ENTONCES NO EXTRAIGO NADA
             else:
                 print("PUBLICACION SIN OPINIONES")
+                url_sin_opi.append(url_publicacion)
 
             # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
             crawler.driver.back()
@@ -136,7 +145,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
             # CORTO LA EXTRACCION DE DATOS (PARAMETRO DE CORTE 3)
             no_mas_paginas = True
 
-        print("++++++++++++++++++++++++++++++++++++ CAMBIO DE PUBLICACION ++++++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++++ CAMBIO DE PAGINA ++++++++++++++++++++++++++++++++++++")
 
     # FINALIZADA LA EXTRACCION, CIERRO EL WEB BROWSER AUTOMATICO
     crawler.driver.close()
@@ -144,9 +153,11 @@ def data_extractor(producto, df_opiniones, df_modelos):
     # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
     corte_extraccion_datos.explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
 
+    print(url_sin_opi)
+
     return df_opiniones, df_modelos
 
-
+'''
 def main():
     # Pedido al usuario de producto a buscar y, con el, creo objeto de clase Product
     # producto = Product(str(input("Ingrese producto a buscar: ")))
@@ -171,3 +182,4 @@ def main():
 
 
 main()
+'''
