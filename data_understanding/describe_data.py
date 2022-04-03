@@ -13,21 +13,18 @@ def getting_to_know_data(df):
     df.info()
 
     # Showing Basics Statistics
-    # df.describe()  # basic descriptive statistics for all numeric columns
-    df.describe(include=object)  # basic descriptive statistics for all columns
-
-    # Exploring dataset
-    # df["Marca"].value_counts()  # puedo usarlo paracualquier columna
+    df.describe()  # basic descriptive statistics for all numeric columns
+    # df.describe(include=object)  # basic descriptive statistics for all columns
 
 
 def main():
-    df_mod = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx")
-    df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx")
+    df_mod = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_notebook.xlsx")
+    df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_notebook.xlsx")
 
     # Describe dataframe modelos
     getting_to_know_data(df_mod)
 
     # Describe dataframe opiniones
-    getting_to_know_data(df_opi)
+    # getting_to_know_data(df_opi)
 
 main()
