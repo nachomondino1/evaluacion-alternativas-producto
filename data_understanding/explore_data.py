@@ -2,21 +2,31 @@
 import pandas as pd
 
 
-def delete_repeated_rows(df):
+def check_repeated_rows(df):
+    """
+    Revisa si un Dataframe tiene filas repetidas e imprime los resultados por pantalla
+    :param df: Dataframe a revisar
+    :return: funcion sin retorno
+    """
     # Defino cantidad de filas
     cant_filas = df.shape[0]
-    print("Originalmente el dataframe tenia {} filas.".format(cant_filas), end=" ")
+    print("Originalmente el dataframe tiene {} filas.".format(cant_filas), end=" ")
 
     # Elimino filas duplicadas
     df = df.drop_duplicates()
 
     # Defino nueva cantidad de filas
     cant_filas = df.shape[0]
-    print("Tras eliminar filas duplicadas, el dataframe tiene {} filas".format(cant_filas))
-    return df
+    print("Tras revision, eliminaria filas duplicadas tal que el dataframe tendria {} filas".format(cant_filas))
 
 
 def id_unique_verification(df_mod, df_opi):
+    """
+    Verifica unicidad del id en cada dataframe e indica su cantidad
+    :param df_mod: Dataframe modelos
+    :param df_opi: Dataframe opiniones
+    :return: funcion sin retorno
+    """
     print("Deberia haber {} ids unicos".format(len(df_mod)))
     print("Hay {} ids unicos en opiniones Dataframe".format(len(df_opi['id_publicacion'].unique())))
     print("Hay {} ids unicos en modelos Dataframe".format(len(df_mod['id_publicacion'].unique())))
@@ -24,6 +34,15 @@ def id_unique_verification(df_mod, df_opi):
 
 
 def n_opi_per_value(df_mod, df_opi):
+    """
+    Crea un Dataframe que permite visualizar por campo especifico, cada valor que toma dicho campo, la
+    cantidad de publicaciones en las que el campo toma cada valor y la suma de la cantidad de opiniones que juntan
+    esas publicaciones.
+
+    :param df_mod: Dataframe modelos
+    :param df_opi: Dataframe opiniones
+    :return: exporta archivo excel con Dataframe
+    """
     # Defino cantidad de opiniones por id_publicacion
     cant_opi_x_id = df_opi['id_publicacion'].value_counts()
     # print(cant_opi_x_id)
@@ -42,32 +61,28 @@ def n_opi_per_value(df_mod, df_opi):
 
         # Por valor de los valores del campo
         for valor in valores_campo:
-            # print(valor)
 
             # obtengo dataframe filtrado por valor
             df_un_val = df_mod[df_mod[campo_esp] == valor]
-            # print(df_un_val)
             ids_val = df_un_val['id_publicacion']
-            # print(ids_val)
             cant_opi = 0
 
             # Por id de los id cuyos <campo especifico> toma <valor>
             for id in ids_val:
-                # print(id)
 
                 # obtener cantidad de opiniones de esos ids
                 # Sumar y obtener la cantidad de opiniones para ese valor
                 cant_opi += cant_opi_x_id.loc[id]
 
-            # print(valor, cant_opi)
             # Guardo datos del valor y su cantidad de opiniones
             new_df = pd.DataFrame(data={"campo_esp": campo_esp, "valor": valor, "cant_pub": valores_campo_y_frec[valor],
                                         "cant_opi_pubs": cant_opi}, index=[0])
             df = pd.concat([df, new_df])
 
+    # Exporto archivo excel con los datos recabados
     path = '/Users/nachomondino/Desktop/df_campo_valores.xlsx'
     print("Se guarda el archivo en {}".format(path))
-    df.to_excel(path, 'Hoja de datos', index=False)
+    return df.to_excel(path, 'Hoja de datos', index=False)
 
 
 def main():
@@ -86,11 +101,11 @@ def main():
     # filas repetidas sin tener en cuenta el id_pub
     print("DATAFRAME OPINIONES")
     # delete_repeated_rows(df_opi.iloc[:, 1:])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
-    delete_repeated_rows(df_opi['content'])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
+    check_repeated_rows(df_opi['content'])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
 
     # filas repetidas sin tener en cuenta el id_pub y precio
     print("DATAFRAME MODELOS")
-    delete_repeated_rows(df_mod.iloc[:, 2:])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
+    check_repeated_rows(df_mod.iloc[:, 2:])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
     print()
 
     # 3) CANTIDAD DE OPINIONES POR VALOR DE CADA CAMPO ESPECIFICO

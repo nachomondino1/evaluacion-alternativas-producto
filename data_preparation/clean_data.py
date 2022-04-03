@@ -1,6 +1,47 @@
 # Importo librerias
 import pandas as pd
 
+
+def delete_repeated_rows(df):  #
+    """
+     La funcion debe obteneer los indices de las filas a borrar
+
+    :param df: Dataframe al cual revisar valores duplicados
+    :return: Lista de indices de las filas del dataframe a borrar
+    """
+    # Defino lista donde guardar los indices de las filas a borrar
+    idx = []
+
+    # Defino cantidad de filas
+    cant_filas = df.shape[0]
+    print("Originalmente el dataframe tenia {} filas.".format(cant_filas), end=" ")
+
+    # Elimino filas duplicadas
+    df = df.drop_duplicates()
+
+    for i in range(len(df)):
+        if i not in df.index:
+            idx.append(i)
+
+    # Defino nueva cantidad de filas
+    cant_filas = df.shape[0]
+    print("Tras eliminar las filas duplicadas, el dataframe tiene {} filas".format(cant_filas))
+
+    return idx
+
+def check_numeric_columns():
+
+    # Por cada columna (campo especifico) de las columnas del df
+        # Por cada valor de la columna
+            # ver si tiene numeros
+
+    pass
+
+def categorize_numeric(): # esta funcion deberia recibir una columna y discretizarla (teniendo en cuentas las unidades)
+
+    pass
+
+
 def delete_attr_x_values(df):
 
     cant_atributos = len(df.columns)
@@ -59,57 +100,28 @@ def delete_attr_x_values(df):
     return df
 
 
-def delete_none_values(df):
-    print(df)
-
-    # Columna
-
-    # Fila
-    porc_max_none = 0.01
-
-    cant_col = len(df.columns)
-
-    # Recorro cada fila del df
-    for i in range(len(df)):
-        cont = 0
-
-        # Recorro cada columna del df
-        for j in range(cant_col):
-
-            # si la celda tiene el valor None
-            if df.iloc[i, j]== "NaN": # No esta entrando aca... el problema es que dice nan
-                print(df.iloc[i, j]) # se deberian imprimir los nan
-
-                # Sumo 1 al contador de None
-                cont = 1
-
-        # Terminado de recorrer las columnas de una fila, defino porcentaje de None de dicha fila
-        porc_none = cont / cant_col
-
-        # Si hay mas None de los tolerados
-        if porc_none > porc_max_none:
-
-            # Elimino fila
-            df = df.drop(df.iloc[i:])
-
-    print(df)
-    return df
-
-
 def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
     # Levanto el dataframe
-    path = '/data/df_extraccion_datos/df_modelos_celulares.xlsx'
+    df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
+    df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
 
-    df_modelos= pd.read_excel(path)
+    # 1) ELIMINO NONE VALUES
+    # ver si implemento borrado de campos especificos con muchos none value o no... a priori, no lo hago.
+    df_opiniones.dropna() # solo borraria alguna fila por si no tiene title...
 
-    print(df_modelos)
+    # 2) ELIMINO FILAS REPETIDAS --> ojo que tiene que ser sin id...
+    df_opiniones = df_opiniones.drop(delete_repeated_rows(df_opiniones['content']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
+    df_modelos = df_modelos.drop(delete_repeated_rows(df_modelos.iloc[:, 2:]))  # elimino duplicados sin tener en cuenta las columna de id y precio
+    print(df_opiniones.shape)
+    print(df_modelos.shape)
 
-    # Imprimo frecuencia de valores
-    for atributo in df_modelos.columns:
-        print(df_modelos[atributo].value_counts())
+    # 3) CATEGORIZO VARIABLES NUMERICAS
+    # categorize_numeric()
 
-    # checkValores(df_modelos) # tengo que decirle que no se fije en precio, id_pub, marca ni modelo.
-    delete_none_values(df_modelos)
+
+    # 4) ELIMINO CAMPOS ESPECIFICOS SEGUN CANTIDAD DE VALORES Y CANTIDAD DE OPINIONES POR VALOR
+    # delete_attr_x_values(df_modelos)
+
 
 main()
 
@@ -142,3 +154,44 @@ Contar valores unicos de columnas.
 
 Ver si precio lo entiende como int o como str. 
 """
+
+
+''' ANTES DE DECIDIR QUE NO IBA A BORRAR FILAS DEL DF_MODELOS
+def delete_none_values(df):
+    # ELIMINO FILAS CON MUCHOS NONE VALUES
+    df_copia = df.copy()  #tuve que haceer copia porque quedaba out of bounds
+
+    porc_max_none = 0.20
+    cant_col = len(df.columns)
+
+    # Recorro cada fila del df
+    for i in range(len(df)):
+        none_values_fila = 0
+        print("Nueva fila, numero {}".format(i))
+
+        # Recorro cada columna del df
+        for j in range(cant_col):
+
+            # si la celda tiene el valor None
+            if str(df.iloc[i, j]) == 'nan':
+                print(df.iloc[i, j])  # se deberian imprimir los nan
+
+                # Sumo 1 al contador de None
+                none_values_fila += 1
+
+        # Terminado de recorrer las columnas de una fila, defino porcentaje de None de dicha fila
+        porc_none = none_values_fila / cant_col
+
+        # Si hay mas None de los tolerados
+        if porc_none > porc_max_none:
+            # Elimino fila
+            print("Elimino fila numero {} pues tienen el {:.0f}% de sus valores None".format(i, porc_none*100))
+            df_copia = df_copia.drop(i, axis=0)
+            print(df_copia.shape)
+
+    # ELIMINO COLUMNAS CON MUCHOS NONE VALUES
+    # falta implementar
+    return df
+
+
+'''
