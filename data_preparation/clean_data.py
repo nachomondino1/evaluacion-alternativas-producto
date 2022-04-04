@@ -1,8 +1,8 @@
 # Importo librerias
 import pandas as pd
+from sklearn.preprocessing import KBinsDiscretizer
 
-
-def delete_repeated_rows(df):  #
+def delete_repeated_rows(df):
     """
      La funcion debe obteneer los indices de las filas a borrar
 
@@ -29,20 +29,128 @@ def delete_repeated_rows(df):  #
 
     return idx
 
-def check_numeric_columns():
+
+def find_numeric_columns(df):
+    print("+++ INICIALIZO REVISION DE COLUMNAS NUMERICAS +++")
+
+    # Devuelve lista de columnas numericas?
+    l_columnas_numericas = []
 
     # Por cada columna (campo especifico) de las columnas del df
+    for columna in df.columns:
+        print("COLUMNA: ", columna)
+
+        valores = list(df[columna])
+        nuevos_valores = []
+
+        columna_numerica = True
+        unidades = set()
+
         # Por cada valor de la columna
-            # ver si tiene numeros
+        for valor in df[columna]:
 
-    pass
+            try:
+                # separo el valor segun espacios (requiero que numero y string esten separados)
+                lista_palabras_valor = valor.split()
+                cant_num = 0
 
-def categorize_numeric(): # esta funcion deberia recibir una columna y discretizarla (teniendo en cuentas las unidades)
+                # por cada palabra
+                for palabra in lista_palabras_valor:
 
-    pass
+                    # Si la palabra es un numero
+                    try:
+                        valor_numerico = float(palabra)
+                        cant_num += 1
+
+                    # Si la palabra no es un numero
+                    except ValueError:
+                        unidades.add(palabra)
+                        pass
+
+                # Al terminar de revisar palabras del valor, veo cuantos numeros encontre
+                if cant_num > 1:
+                    print("No es numerica. Valor que contiene dos o mas numeros:", valor)
+                    columna_numerica = False
+                    break
+
+                elif cant_num == 0:
+                    print("No es numerica. Valor que no contiene numeros:", valor)
+                    columna_numerica = False
+                    break
+
+                else:
+                    # print('EL VALOR {} CONTIENE NUMERO'.format(valor))
+                    nuevos_valores.append(valor_numerico)
+                    pass
+
+            # Excepto si el valor es un none value
+            except AttributeError:
+                nuevos_valores.append(valor)
+                # print("Deberia ser nan:", valor)
+
+        if columna_numerica:
+            l_columnas_numericas.append(columna_numerica)
+            print("Es numerica!")
+            print("Unidades:", unidades)
+
+            # OJO TENGO QUE PONER CONDICION DE QUE TENGA MUCHOS VALORES UNICOS
+            if len(df[columna].value_counts()) > len(df[columna])**0.5:
+
+                # Si tiene una sola unidad
+                if len(unidades) == 0:
+                    columna_discretizada = categorize_numeric_column(columna=df[columna])
+                    df[columna] = columna_discretizada
+
+                elif len(unidades) == 1:
+                    # reeemplazo columna
+                    df[columna] = df[columna].replace(valores, nuevos_valores)
+
+                    # Discretizo columna
+                    columna_discretizada = categorize_numeric_column(columna=df[columna])
+                    df[columna] = columna_discretizada
+
+                # Si tiene mas de una unidad
+                else:
+                    print("No la puedo discretizar pues tiene mas de una unidad")
+
+            else:
+                print("La columna ya toma valores discretos, por lo que, no hace falta discretizar")
+
+        print()
+
+    print("Las columnas numericas son: {}".format(l_columnas_numericas))
+    return df
+
+def categorize_numeric_column(columna): # esta funcion deberia recibir una columna y discretizarla (teniendo en cuentas las unidades)
+    valores = list(columna)
+    valores_limite_max = []
+    valor_min = min(valores)
+
+    num_intervalos = round(len(valores)**0.5)
+    rango = max(valores) - min(valores)
+    amplitud_clase = rango / num_intervalos
+
+    for i in range(num_intervalos):
+        valor_min_intervalo = round(valor_min + amplitud_clase * i, 2)
+        valor_max_intervalo = round(valor_min + amplitud_clase * (i+1), 2)
+        valor_med_intervalo = round((valor_max_intervalo + valor_min_intervalo) / 2, 2)
+
+        valores_limite_max.append(valor_max_intervalo)
+        print("Intervalo {}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_intervalo, valor_med_intervalo, valor_max_intervalo))
+
+    for i in range(len(columna)):
+        for valor_limite in valores_limite_max:
+            if columna.iloc[i] < valor_limite:
+                columna.iloc[i] = round(valor_limite - (amplitud_clase / 2), 1)
+                # columna = columna.replace(valor, valor_limite - int(amplitud_clase / 2)) # COMO VERGA SABE EL INDEX? No se
+                break
+
+    return columna
 
 
 def delete_attr_x_values(df):
+
+    df_copia = df.copy()
 
     cant_atributos = len(df.columns)
     cant_valores_posibles = len(df)
@@ -70,7 +178,7 @@ def delete_attr_x_values(df):
 
                     # Elimino el atributo
                     print("Elimino atributo {} por tener muy pocos valores y uno muy predominante".format(atributo))
-                    df = df.drop([atributo], axis=1)
+                    df_copia = df_copia.drop([atributo], axis=1)
 
         # Si el atributo tiene muchos valores
         elif len(val_col) > porc_muchos_val * cant_valores_posibles:
@@ -91,13 +199,13 @@ def delete_attr_x_values(df):
                 else:
                     # Elimino el atributo
                     print("Elimino atributo {} por tener muchos valores y de frecuencia baja".format(atributo))
-                    df = df.drop([atributo], axis=1)
+                    df_copia = df_copia.drop([atributo], axis=1)
 
         else:
             pass
 
-    print(df)
-    return df
+    print(df_copia)
+    return df_copia
 
 
 def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
@@ -117,10 +225,14 @@ def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso
 
     # 3) CATEGORIZO VARIABLES NUMERICAS
     # categorize_numeric()
-
+    df_modelos.iloc[:, 2:] = find_numeric_columns(df_modelos.iloc[:, 2:])  # veo si las de duplicados sin tener en cuenta las columna de id y precio
+    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_categorizado.xlsx', 'Hoja de datos', index=False)
 
     # 4) ELIMINO CAMPOS ESPECIFICOS SEGUN CANTIDAD DE VALORES Y CANTIDAD DE OPINIONES POR VALOR
-    # delete_attr_x_values(df_modelos)
+    delete_attr_x_values(df_modelos.iloc[:, 3:])
+    df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos', index=False)
+
+    # 5) PREPARACION DEL TEXTO
 
 
 main()

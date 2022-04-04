@@ -87,10 +87,10 @@ def n_opi_per_value(df_mod, df_opi):
 
 def main():
     # READ DATA
-    df_mod = pd.read_excel(
-        "/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx")
-    df_opi = pd.read_excel(
-        "/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx")
+    df_mod = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_tv.xlsx")
+    df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_tv.xlsx")
+    # df_mod = pd.read_excel("/Users/nachomondino/Desktop/df_categorizado.xlsx")
+    # df_mod = pd.read_excel("/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx")
 
     # 1) UNICIDAD DE VALORES
     print(" ------------------------ 1) ANALISIS DE UNICIDAD DE IDS ------------------------ ")

@@ -98,7 +98,6 @@ class MercadoLibreCrawler(Crawler):
         campos_a_extraer = ['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes']
         l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []  # lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
         d = {}  # diccionario en donde guardare las listas con los datos extraidos
-        num_stars = 0
 
         # OBTENGO TAGS QUE CONTIENEN UNA OPINION
         tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]//article')
@@ -117,6 +116,7 @@ class MercadoLibreCrawler(Crawler):
 
                 # Extraigo Rate
                 stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
+                num_stars = 0
                 # Recorro cada una de las 5 estrellas
                 for star in stars:
                     if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
