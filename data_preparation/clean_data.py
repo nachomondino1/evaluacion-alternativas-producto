@@ -1,10 +1,12 @@
 # Importo librerias
 import pandas as pd
+# import preparacion_texto as pt
+from preparacion_texto import TextPreparation
 
 
 def delete_repeated_rows(df):
     """
-     La funcion debe obteneer los indices de las filas a borrar
+     La funcion debe obtener los indices de las filas a borrar
 
     :param df: Dataframe al cual revisar valores duplicados
     :return: Lista de indices de las filas del dataframe a borrar
@@ -29,135 +31,166 @@ def delete_repeated_rows(df):
 
     return idx
 
-def categorize_numeric_columns(df): # esta funcion deberia recibir una columna y discretizarla (teniendo en cuentas las unidades)
-
-    # ver si agrego lista negra = [id_pub]
-    # Por columna del dataframe
+def categorize_numeric_columns(df):
+    """
+    Dado un dataframe, categoriza sus columnas numericas (las no numericas no porque al no haber una "distancia" entre
+    strings, no puedo determinar cual se asemeja con cual) continuas (las discretas no pues ya estan categorizadas)
+    :param df: Dataframe
+    :return: Dataframe con todas sus columnas numericas discretas
+    """
+    # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
 
-        # Si la columna es numerica
+        # SI LA COLUMNA ES NUMERICA
         if (df[columna].dtype == 'float64') or (df[columna].dtype == 'int64'):
 
-            # y si tiene muchos valores (no es discreta)
-            if len(df[columna].value_counts()) > 1.5 * len(df[columna])**0.5:
+            # Y SI ES CONTINUA, ES DECIR, TOMA MUCHO VALORES DISTINTOS (NO ES DISCRETA)
+            cant_valores_unicos = len(df[columna].value_counts())
+            cant_opt_valores_unicos = len(df[columna])**0.5  # cant clases ideales = raiz(nro datos)
+            FACTOR_HOLGURA = 1.5  # al ser mayor de 1, me aseguro que la columna realmente tome muchos valores
+            if cant_valores_unicos > FACTOR_HOLGURA * cant_opt_valores_unicos:
 
-                print("La columna {} sera categorizada".format(columna))
+                print("La columna '{}' sera categorizada...".format(columna))
 
-                valores = list(df[columna])
-                valores_limite_max = []
-                valor_min = min(valores)
-
-                num_clases = round(len(valores)**0.5)  # raiz cuadrada de la cantidad de datos
-                rango = max(valores) - min(valores)  # valor maximo - valor minimo
-                amplitud_clase = rango / num_clases
+                # Defino variables
+                valores = list(df[columna])  # lista de valores de la columna
+                valores_limite_max = []  # lista con valores maximos
+                valor_min = min(valores)  # valor maximo de la columna
+                valor_max = max(valores)  # valor minimo de la columna
+                rango = valor_max - valor_min  # valor maximo - valor minimo
+                amplitud_clase = rango / cant_opt_valores_unicos  # amplitud de una clase
 
                 # CREO INTERVALOS DE CADA CLASE
-                for i in range(num_clases):
-                    valor_min_intervalo = round(valor_min + amplitud_clase * i, 2)
-                    valor_max_intervalo = round(valor_min + amplitud_clase * (i+1), 2)
-                    valor_med_intervalo = round((valor_max_intervalo + valor_min_intervalo) / 2, 2)
+                # por cada clase
+                for i in range(int(cant_opt_valores_unicos)):
+                    # determino valores minimo, medio y maximo de la clase
+                    valor_min_clase = round(valor_min + amplitud_clase * i, 2)  # valor min para estar en clase i
+                    valor_max_clase = round(valor_min + amplitud_clase * (i+1), 2)  # valor max para estar en clase i
+                    valor_med_clase = round((valor_max_clase + valor_min_clase) / 2, 2)  # valor medio de clase i
+                    print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_clase, valor_med_clase, valor_max_clase))
 
-                    valores_limite_max.append(valor_max_intervalo)
-                    print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_intervalo, valor_med_intervalo, valor_max_intervalo))
+                    # guardo valor maximo de la clase
+                    valores_limite_max.append(valor_max_clase)
 
-                # REEMPLAZO VALORES POR LA MEDIA DE LA CLASE
-                for i in range(len(df[columna])):
+                # REEMPLAZO VALORES POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
+                # por cada valor
+                for i in range(len(valores)):
+
+                    # por cada valor maximo de las clases
                     for valor_limite in valores_limite_max:
+
+                        # si el valor es menor al valor maximo de la clase
                         if df[columna].iloc[i] < valor_limite:
+
+                            # reemplazo valor por el valor medio de la clase
                             df[columna].iloc[i] = round(valor_limite - (amplitud_clase / 2), 1)
-                            # columna = columna.replace(valor, valor_limite - int(amplitud_clase / 2)) # COMO VERGA SABE EL INDEX? No se
+
+                            # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
                             break
 
+            # la columna es numerica pero discreta (toma pocos valores distintos)
             else:
                 print("La columna '{}' es numerica pero toma valores discretos".format(columna))
+
+        # la columna no es numerica
         else:
             print("La columna '{}' no es numerica!".format(columna))
 
     return df
 
 def delete_attr_x_values(df):
-
-    df_copia = df.copy()
-
-    cant_atributos = len(df.columns)
-    cant_valores_posibles = len(df)
-
-    # Defino parametros:
-    porc_pocos_val = 0.2
-    porc_muchos_val = 0.75
+    # Defino variables
+    PORC_MUCHOS_VAL = 0.5
+    # columnas_no_eliminar = ["Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
+    columnas_no_eliminar = ["id_publicacion", "precio", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
 
     # Por cada atributo
-    for atributo in df.columns:
+    for columna in df.columns:
 
         # Obtengo lista de frecuencia de sus valores
-        val_col = list(df[atributo].value_counts())
-        # print("Campo al cual ver valores unicos:", atributo)
-        # print(val_col)
+        unique_values = list(df[columna].value_counts())
+        cant_unique_values = len(unique_values)
+        cant_posible_values = len(df[columna])
 
-        # Si el atributo tiene un unico valor para todos los modelos
-        if len(val_col) < 3:
+        if columna not in columnas_no_eliminar:
 
-            # Recorro cada frecuencia
-            for valor in val_col:
+            # SI LA COLUMNA ES CONSTANTE (ES DECIR, UN UNICO VALOR)
+            if cant_unique_values == 1:
 
-                # si alguna frecuencia es predominante
-                if valor > 0.9 * sum(val_col):
+                # Elimino el atributo
+                print("Elimino columna {} por tomar 1 solo valor".format(columna))
+                df = df.drop([columna], axis=1)
 
-                    # Elimino el atributo
-                    print("Elimino atributo {} por tener muy pocos valores y uno muy predominante".format(atributo))
-                    df_copia = df_copia.drop([atributo], axis=1)
+            # SI LA COLUMNA TOMA MUCHOS VALORES DISTINTOS
+            elif cant_unique_values > PORC_MUCHOS_VAL * cant_posible_values:
 
-        # Si el atributo tiene muchos valores
-        elif len(val_col) > porc_muchos_val * cant_valores_posibles:
+                # Elimino el atributo
+                print("Elimino columna {} por tomar muchos valores distintos".format(columna))
+                df = df.drop([columna], axis=1)
 
-            # Intento convertir la variable a numerica
-            try:
-                # Pruebo con el primer elemento
-                int(df[atributo][0])
-                print("Entendio el atributo {} como numero".format(atributo))
+            # SI LA COLUMNA TOMA VALORES DISCRETOS (ni 1 ni muchos)
+            else:
+                # NO HACER NADA
+                print("La columna {} toma valores discretos! (ni 1 ni muchos)".format(columna))
+                pass
 
+    return df
 
-            except:
+def correct_opinion_column(df):
+    # Recorrer cada fila, en part, la columna de opiniones y quitar hasta el punt
+    idx_opi = df.columns.get_loc("content")  # es una idea aplicable a varias funciones que ya hice
 
-                # Si el valor mas frecuente tiene una frecuencia aceptable
-                if val_col[0] > 0.1 * cant_valores_posibles:
-                    pass
+    # Por el largo del dataframe
+    for i in range(len(df)):
 
-                else:
-                    # Elimino el atributo
-                    print("Elimino atributo {} por tener muchos valores y de frecuencia baja".format(atributo))
-                    df_copia = df_copia.drop([atributo], axis=1)
+        # Busco una opinion
+        opinion = df.iloc[i, idx_opi]
 
-        else:
-            pass
+        # Busco el ultimo punto.... se hace con rfind(), r debe ser de reverse
+        idx = opinion.rfind('.')
 
-    print(df_copia)
-    return df_copia
+        # Reemplazo opinion por ella misma pero sin la fecha de emision
+        df.iloc[i, idx_opi] = opinion[:idx]
 
+    df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
+    return df
 
 def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
     # Levanto el dataframe
-    df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df.xlsx')
+    # df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx')
     df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
 
     # 1) ELIMINO NONE VALUES
-    df_opiniones.dropna()  # borra las pocas filas que no tienen title
+    print("+++ (1) ELIMINO NONE VALUES +++")
+    # df_opiniones.dropna()  # borra las pocas filas que no tienen title
 
     # 2) ELIMINO FILAS REPETIDAS --> ojo que tiene que ser sin id...
-    df_opiniones = df_opiniones.drop(delete_repeated_rows(df_opiniones['content']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
-    # df_modelos = df_modelos.drop(delete_repeated_rows(df_modelos.iloc[:, 2:]))  # elimino duplicados sin tener en cuenta las columna de id y precio, DECIDI NO HACERLO
-    print(df_opiniones.shape)
+    print("+++ (2) ELIMINO FILAS REPETIDAS +++")
+    # df_opiniones = df_opiniones.drop(delete_repeated_rows(df_opiniones['content']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
+    # print(df_opiniones.shape)
 
     # 3) CATEGORIZO VARIABLES NUMERICAS
-    # categorize_numeric()
-    df_modelos.iloc[:, 1:] = categorize_numeric_columns(df_modelos.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
-    df_modelos.to_excel('/Users/nachomondino/Desktop/df_categorizado.xlsx', 'Hoja de datos', index=False)
+    print("+++ (3) CATEGORIZO CAMPOS NUMERICOS CONTINUOS +++")
+    # df_modelos.iloc[:, 1:] = categorize_numeric_columns(df_modelos.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
+    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_categorizado.xlsx', 'Hoja de datos', index=False)
 
     # 4) ELIMINO CAMPOS ESPECIFICOS SEGUN CANTIDAD DE VALORES Y CANTIDAD DE OPINIONES POR VALOR
-    # delete_attr_x_values(df_modelos.iloc[:, 3:])
+    print("+++ (4) ELIMINO CAMPOS CONSTANTES, O BIEN, CONTINUOS +++")
+    # ESTA NO df_modelos.iloc[:, 2:] = delete_attr_x_values(df_modelos.iloc[:, 2:])  # elimino columnas que toman 1 o muchos valores # IndexError: single positional indexer is out-of-bounds (creo que era porque el df que devolvia la funcion tenia un largo distinto?)
+    # df_modelos = delete_attr_x_values(df_modelos)  # elimino columnas que toman 1 o muchos valores # IndexError: single positional indexer is out-of-bounds
     # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos', index=False)
 
-    # 5) PREPARACION DEL TEXTO
+    # 5) PREPARACION DE OPINIONES
+    print("+++ (5) PREPARACION DE OPINIONES +++")
+    # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
+    df_opiniones = correct_opinion_column(df_opiniones)
+
+    # Alternativa 1
+    tp = TextPreparation(df_opiniones['content'])
+    cleaned_opinions = tp.text_preparation(steam=True)
+
+    # Alternativa 2
+    cleaned_opinions = text_preparation(df_opiniones['content'])
 
 
 main()
