@@ -1,7 +1,6 @@
 # Importo librerias
 import pandas as pd
-# import preparacion_texto as pt
-from preparacion_texto import TextPreparation
+import data_preparation.preparacion_texto as tp
 
 
 def delete_repeated_rows(df):
@@ -152,12 +151,61 @@ def correct_opinion_column(df):
         # Reemplazo opinion por ella misma pero sin la fecha de emision
         df.iloc[i, idx_opi] = opinion[:idx]
 
-    df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
+    # df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
     return df
 
-def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
+
+def text_preparation(textos):
+    # df = pd.DataFrame(columns=["col"])
+    df_tokenizado = pd.DataFrame(columns=['tokens'])
+    df_cleaned = pd.DataFrame(columns=['content'])
+    # df_steamed = pd.DataFrame(columns=['tokens'])
+
+    # POR OPINION
+    for opinion in textos:
+
+        # Lo convierto en miniscula
+        opinion = opinion.lower()
+
+        # Correccion de repeticiones 'largooo' en vez de 'largo'
+        # Correccion de palabras (mala escritura) 'espectativas' en vez de 'expectativas'
+        # Correccion de abreviaturas 'q' en vez de 'que'
+
+        # Elimino acentos
+        opinion = tp.delete_accent(opinion)
+        # print(opinion)
+
+        # Elimino puntuacion
+        opinion = tp.delete_punctuation(opinion)
+        # print(opinion)
+
+        # (1) TOKENIZATION: SEPARO SUS PALABRAS POR ESPACIOS EN BLANCO
+        tokens = opinion.split()
+
+        # (2) STOP WORD REMOVAL
+        tokens = tp.stop_word_removal(tokens)
+        df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
+        untoken = ' '.join(tokens)
+        df_cleaned = df_cleaned.append({"content": untoken}, ignore_index=True)
+
+        '''
+        # (3) STEAM
+        tokens = tp.steamming(tokens)
+        df_steamed = df_steamed.append({"tokens": tokens}, ignore_index=True)
+
+        for token in tokens:
+            df = df.append({"col": token}, ignore_index=True)
+        '''
+
+    return df_tokenizado, df_cleaned
+
+
+'''
+def main para hacer pruebas en este archivo independientemente de main.py
+def main():  # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
     # Levanto el dataframe
-    # df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx')
+    df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx')
+    # df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
     df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
 
     # 1) ELIMINO NONE VALUES
@@ -185,15 +233,16 @@ def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso
     # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
     df_opiniones = correct_opinion_column(df_opiniones)
 
-    # Alternativa 1
-    tp = TextPreparation(df_opiniones['content'])
-    cleaned_opinions = tp.text_preparation(steam=True)
+    # Limpio las opiniones
+    df_opiniones_tokenizado, df_cleaned_opinions = text_preparation(df_opiniones['content'])  # Alternativa 2
+    print(df_cleaned_opinions)
 
-    # Alternativa 2
-    cleaned_opinions = text_preparation(df_opiniones['content'])
+    # tal vez cleaned() que devuelva solo el df_cleaned y customeerr needs lo tokeniza y obtiene las customer needs... OJO que las funciones de prep_texto las hice con token...
+    # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
 
 
 main()
+'''
 
 
 

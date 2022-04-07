@@ -210,7 +210,11 @@ def correct_price_column(col_precio):
     print("Se corrigio el precio correctamente ")
     return col_precio
 
-def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
+
+
+'''
+def main para hacer pruebas en este archivo independientemente de main.py
+def main():
     # Levanto el dataframe
     df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
 
@@ -231,3 +235,5 @@ def main(): # esto lo implemento en main.py, dsp de terminar el archivo, la paso
 
 
 main()
+
+'''
