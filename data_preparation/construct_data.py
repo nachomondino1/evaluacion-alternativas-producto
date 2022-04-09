@@ -7,17 +7,41 @@ import operator
 from data_preparation import preparacion_texto as tp
 
 
-def define_customer_needs(df_tokenizado, campos_esp):
+def possible_words_to_identify_customer_needs(df_modelos):  # agreegar notas y mejorar nombres de funciones
+    """
+    obtiene palabras de los nombres de las caracteristicas del producto. Podrian ser usadas por los clientes...
+    Ayuda a poder seleccionar las customer needs de mayor relevancia dentro de todas las posibles
+    :param df_modelos:
+    :return:
+    """
+
+    # Obteniendo set de palabras de campos especificos
+    a = str()
+    for columna in df_modelos.columns[1:]:  # no incluyo id
+        name_column = tp.delete_accent(columna).lower()
+        a += name_column + " "
+    # print("strings:", a)
+    l = set(a.split())
+    l2 = tp.stop_word_removal(l)  # lista con palabras de campos especificos sin palabras vacias y sin acentos
+    # print("set:", l2)
+
+    print("Posibles palabras relevantes:", l2)
+
+    return l2
+
+
+def define_possible_customer_needs(df_tokenizado):
+
+    CANT_POSIBLES_CUSTOMER_NEEDS = 200  # dependera del producto?
     # el df puede estar steam o no... el ngrams recibe lista como sequuencia
     d = {}
     freq_ngrams = []
-    palabra_clave = []
 
     # print(df_tokenizado)
     df_tokenizado = df_tokenizado[
         'tokens']  # horrible esta linea pero sino me pone el nombre de la columna en cada fila..
 
-    # 2 palabras
+    # Obtengo n grams
     for i in range(len(df_tokenizado)):
         opinion = df_tokenizado.iloc[i]
 
@@ -37,50 +61,16 @@ def define_customer_needs(df_tokenizado, campos_esp):
                 d[ngram] = 1
 
     # OBTENER LISTA DE LOS N GRAMS MAS FRECUENTES
-    sorted_dict = sorted(d.items(), key=operator.itemgetter(
-        1))  # Lista con pares key-value ordenados crecientemente segun el value
+    sorted_dict = sorted(d.items(), key=operator.itemgetter(1))  # Lista con pares key-value ordenados crecientemente segun el value
     sorted_dict = sorted_dict[::-1]  # invierto lista, ahora ordenados descendientemnete
 
-    for item in sorted_dict[:100]:  # hasta los primeros 50
+    for item in sorted_dict[:CANT_POSIBLES_CUSTOMER_NEEDS]:  # hasta los primeros x
         key = item[0]
+        freq_ngrams.append(key)
 
-        # Por palabra del ngram
-        for palabra in key.split():
+    print("Posibles {} Customer needs: {}".format(CANT_POSIBLES_CUSTOMER_NEEDS ,freq_ngrams))
 
-            # si al menos 1 palabra esta en los campos especificos...
-            if palabra in campos_esp:
-                print(item)
-
-                # Elimino campo especifico para no obtener una customer need parecida
-                campos_esp.remove(palabra)
-
-                # Agrego a palabra claves para poder determinar si una opinion habla o no de una customer need
-                palabra_clave.append(palabra)
-
-                # La agrego
-                freq_ngrams.append(key)
-                break
-
-    # print(freq_bigrams)
-    print(palabra_clave)
-
-    '''
-    # OBTENER LISTA DE LOS N GRAMS MAS FRECUENTES
-    print('++')
-    print(d.values())
-    sortedDict = sorted(d.items(), key=operator.itemgetter(1))  # ordena par key-value del diccionario segun el value
-    print(sortedDict)
-    freq_items = sortedDict[-10:]  # seleccionar las 10 maximas frecuencias
-    print(freq_items)
-
-    for freq_item in freq_items:
-        print(freq_item)
-        key = freq_item[0]
-        freq_bigrams.append(key)
-
-    print(freq_bigrams)
-    '''
-    return freq_ngrams, palabra_clave
+    return freq_ngrams
 
 
 def generate_n_grams(text, ngram):
@@ -91,16 +81,78 @@ def generate_n_grams(text, ngram):
     return ans
 
 
-def possible_relevant_words(df_modelos):
-    # obtiene palabras de los nombres de las caracteristicas del producto. Podrian ser usadas por los clientes...
+def select_customer_needs(df_tokenizado, attribute_words):
+    """
+    Selecciono de las frases mas frecuentes aquellas que seran las customer needs. Para ello, utilizo las palabras
+    que forman a los nombres de los atributos del producto.
+    :param freq_ngrams:
+    :param possible_words:
+    :return:
+    """
+    # Defino variables
+    customer_needs = []
+    palabras_clave = []
 
-    # Obteniendo set de palabras de campos especificos
-    a = str()
-    for columna in df_modelos.columns[1:]:  # no incluyo id
-        name_column = tp.delete_accent(columna).lower()
-        a += name_column + " "
-    # print("strings:", a)
-    l = set(a.split())
-    l2 = tp.stop_word_removal(l)  # lista con palabras de campos especificos sin palabras vacias y sin acentos
-    # print("set:", l2)
-    return l2
+    copy_possible_words = attribute_words.copy()
+
+    # Defino posibles costumer needs. Aprox 200 frases de 3 palabras, en particular, las mas frecuentes.
+    possible_customer_needs = define_possible_customer_needs(df_tokenizado)
+
+    # Por cada posible customer need
+    for possible_customer_need in possible_customer_needs:  # hasta los primeros x
+
+        # Por cada palabra de la frase
+        for palabra in possible_customer_need.split():
+
+            # Si la palabra es de las relevantes
+            if palabra in attribute_words:
+
+                # y la frase solo contiene 1 de las posibles palabras relevantes y no tiene numeros
+                if check_not_numeric_or_repeated(possible_customer_need, copy_possible_words):
+
+                    # Elimino campo especifico para no obtener una customer need parecida
+                    attribute_words.remove(palabra)
+
+                    # Agrego a palabra claves para poder determinar si una opinion habla o no de una customer need
+                    palabras_clave.append(palabra)
+
+                    # La agrego
+                    customer_needs.append(possible_customer_need)
+                    break
+            else:
+                pass
+
+
+    # filtro de frase con sentido...
+    # podria sacar customer needs con dos o mas palabras en possible words usando la copia
+
+    print("Customer needs:", customer_needs)
+    print("Palabras clave:", palabras_clave)
+
+    return customer_needs, palabras_clave
+
+
+def check_not_numeric_or_repeated(possible_customer_need, attribute_words):
+    # Se fija que una customer need no tenga dos atributos en lugar de uno (evita repeticion)
+    n = 0
+
+    # Por cada palabra de la frase
+    for palabra in possible_customer_need.split():
+
+        # Si la palabra es de las relevantes
+        if palabra in attribute_words:
+            n += 1
+
+        # Si la frase tiene un numero
+        elif palabra.isnumeric():
+            # la descarto
+            n = 0
+            break
+
+        else:
+            pass
+
+    if n == 1:
+        return True
+    else:
+        return False

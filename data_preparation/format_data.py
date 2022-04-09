@@ -213,7 +213,7 @@ def correct_price_column(col_precio):
 
 
 '''
-def main para hacer pruebas en este archivo independientemente de main.py
+# def main para hacer pruebas en este archivo independientemente de main.py
 def main():
     # Levanto el dataframe
     df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
@@ -231,9 +231,10 @@ def main():
     # 3) CORRECTION OF PRICE COLUMN
     print("+++ (3) CORRECCION COLUMNA PRECIO +++")
     df_modelos['precio'] = correct_price_column(df_modelos['precio'])
-    df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
+    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
+    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
+
 
 
 main()
-
 '''

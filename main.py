@@ -21,7 +21,7 @@ import data_understanding.collect_data.dataframe_creator
 import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_preparation import format_data, clean_data, construct_data
-from modelling import modelo_1, atribucion
+from modelling import atribucion
 
 def main():
     '''
@@ -56,11 +56,10 @@ def main():
     df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
 
     # 2) DATA PREPARATION
-    print(" ------------------- (2) DATA PREPARATION  ------------------- ".format(':^'))
-    print("(2) DATA PREPARATION".format(':^'))
+    print(" ------------------- (2) DATA PREPARATION  ------------------- \n")
 
     # 2.1 FORMAT DATA
-    print(" +++++++++++++++++++ (2.1) FORMAT DATA  +++++++++++++++++++ ")
+    print(" +++++++++++++++++++ (2.1) FORMAT DATA  +++++++++++++++++++ ", end="\n")
     print("2.1.1 Convirtiendo columnas de strings con numeros a columnas numericas...")
     df_modelos = format_data.string_column_to_numeric_column(df_modelos)
 
@@ -94,34 +93,36 @@ def main():
     print("2.2.5 Preparando opiniones...")
     # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
     df_opiniones = clean_data.correct_opinion_column(df_opiniones)
-    # Limpio las opiniones
-    df_opiniones_tokenizado, df_cleaned_opinions = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
-    df_cleaned_opinions.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
 
+    # Limpio las opiniones
+    df_opiniones_tokenizado, df_opiniones['content'] = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
+    df_opiniones.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
+    # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
 
     # 2.3 CONSTRUCT DATA
     print(" +++++++++++++++++++ (2.3) CONSTRUCT DATA  +++++++++++++++++++ ")
     # Defino customer needs (ngrams = 3) y relevant words para el sentiment (ngrams=1)
-    possible_relevant_words = construct_data.possible_relevant_words(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
-    customer_needs, relevant_words = construct_data.define_customer_needs(df_opiniones_tokenizado, possible_relevant_words)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
+    possible_relevant_words = construct_data.possible_words_to_identify_customer_needs(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
+    customer_needs, relevant_words = construct_data.select_customer_needs(df_opiniones_tokenizado, possible_relevant_words)
 
+    # 3) ATRIBUCION
+    print(" ------------------- (3) ATRIBUCION  ------------------- ")
+    # 3.1 PIDE MATRIZ DE RELACIONES
+    # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs) # ahorra es sin producto.atributos
+    relation_matrix = atribucion.create_relation_matrix(df_modelos.columns[1:], customer_needs)  # incluyo el precio
+
+    # 3.2 Atribucion de sentiment de opinion a cada valor de cada campo especifico
+    # usa relevant_words para ver si una opinion habla o no de tal customer need
+    df_sent = atribucion.opinion_sentiment_to_customer_needs(df_opiniones, relevant_words)
+    df_sent_por_valor = atribucion.customer_needs_sentiment_to_attribute_value(df_modelos, df_sent, relation_matrix)
+    df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
+
+    # GUARDO RESULTADOS EN MY SQL?
     ''' TAL VEZ NI LO CORRA pues para que quiero un sentiment predicho si tengo el original?
     # 3) SENTIMENT ANALYSIS
     print(" ------------------- (3) SENTIMENT ANALYSIS  ------------------- ")
     print(modelo_1.modelo1(df_cleaned_opinions))
     '''
-
-    # 4) ATRIBUCION
-    print(" ------------------- (4) ATRIBUCION  ------------------- ")
-    # 4.1 PIDE MATRIZ DE RELACIONES
-    # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs) # ahorra es sin producto.atributos
-    relation_matrix = atribucion.create_relation_matrix(df_modelos.columns.iloc[:, 1:], customer_needs)
-
-    # 4.2 Atribucion de sentiment de opinion a cada valor de cada campo especifico
-    # usa relevant_words para ver si una opinion habla o no de tal customer need
-
-
-    # GUARDO RESULTADOS EN MY SQL?
 
 
 main()
