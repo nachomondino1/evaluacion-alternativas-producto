@@ -2,40 +2,13 @@
 import pandas as pd
 import numpy
 
-def create_relation_matrix(atributos, customer_needs):
-    df = pd.DataFrame(columns=atributos, index=customer_needs)
-
-    # Por atributo o campo especifico
-    for atributo in atributos:
-
-        # Por customer need
-        for customer_need in customer_needs:
-
-            # Pido al administrador relacion entre customer_need y atributo
-            df.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo, customer_need)))
-            # falta implementar validacion de ingreso..
-
-    print(df)
-    return df
-
-
-# le paso df_opiniones con opinion y rate
-def opinion_sentiment_to_customer_needs(df_opiniones, relevant_words):  #pasar df entero
-    '''
-    Con las relevant words actuales: (esto era con dataframe sin limpiar)
-                            pantalla - memoria - precio - ram - tamaño - bateria - camara
-    cant opis c/rate        653	276	938	308	148	203	232
-    % de opi totales        16%	7%	23%	8%	4%	5%	6%
-
-    Tras opi cleaned
-    cant opis c/rate        825	669	950	278	955	314	152
-    % de opi totales        20%	16%	23%	7%	23%	8%	4%
+def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
+    """
     Revisar opiniones manualmente y ver de atrib habala y de cuales no. IDentificar como identificar cuando habla de uno.
     :param df_opiniones:
     :param relevant_words:
     :return:
-    '''
-
+    """
     # df_sent = pd.DataFrame(columns=[relevant_words])  #tendre que agregarr id_pub
     df_sent = pd.DataFrame()  #tendre que agregar id_pub
 
@@ -50,7 +23,7 @@ def opinion_sentiment_to_customer_needs(df_opiniones, relevant_words):  #pasar d
         # inicializo diccionarios donde guardare datos por opinion
         d_sent = {'id_publicacion': df_opiniones.iloc[i, 0]}  # no se si inicializarlo asi o vacio..
 
-        for word in relevant_words:
+        for word in customer_needs_one_word:
 
             # Si la opinion menciona el atributo
             try:
@@ -74,11 +47,35 @@ def opinion_sentiment_to_customer_needs(df_opiniones, relevant_words):  #pasar d
 
     return df_sent
 
-
-def customer_needs_sentiment_to_attribute_value(df_mod, df_sent, matriz_relaciones):
+def create_relation_matrix(atributos, customer_needs):
     """
-    Dados los sentiment de cada customer need en las opinion y la matriz de relaciones entre customer needs y atributos,
-     atribuye dichos sentiment a los valores que tome cada atributo.
+    Crea matriz de relaciones entre customer needs y atributos pidiendole al usuario por terminal la relacion entre
+    cada uno.
+    :param atributos: Lista de atributos o campos especificos de un producto
+    :param customer_needs: Lista de customer needs (de 1 sola palabra) de un producto
+    :return: Dataframe con atributos como columnas y customer needs como fila. Celda indica relacion entre fila i y
+    atributo j
+    """
+    # Creo dataframe con atributos como columnas y customer needs como filas
+    df = pd.DataFrame(columns=atributos, index=customer_needs)
+
+    # Por atributo o campo especifico
+    for atributo in atributos:
+
+        # Por customer need
+        for customer_need in customer_needs:
+
+            # Pido al administrador relacion entre customer_need y atributo
+            df.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo, customer_need)))
+            # falta implementar validacion de ingreso de uno de esos numeros...
+
+    print(df)
+    return df
+
+def to_attribute_value(df_mod, df_sent, matriz_relaciones):
+    """
+    Dados los sentiment de cada customer need en las opiniones y la matriz de relaciones entre customer needs y
+    atributos, atribuye dichos sentiment a los valores que tome cada atributo.
     :param df_sent:
     :return:
     """
@@ -187,10 +184,10 @@ def customer_needs_sentiment_to_attribute_value(df_mod, df_sent, matriz_relacion
 df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_formateado.xlsx')
 df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
 relevant_words = ['precio', 'bateria', 'camara', 'memoria', 'tamaño', 'pantalla', 'resolucion']
-df_sent = opinion_sentiment_to_customer_needs(df_opiniones, relevant_words)
+df_sent = to_customer_needs(df_opiniones, relevant_words)
 atrib = ['precio', 'Marca']
 customer_needs = ['precio', 'bateria', 'camara']
-df_sent_x_modelo = customer_needs_sentiment_to_attribute_value(df_modelos, df_sent, create_relation_matrix(atrib, customer_needs))
+df_sent_x_modelo = to_attribute_value(df_modelos, df_sent, create_relation_matrix(atrib, customer_needs))
 
 
 

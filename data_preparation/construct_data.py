@@ -7,60 +7,70 @@ import operator
 from data_preparation import preparacion_texto as tp
 
 
-def possible_words_to_identify_customer_needs(df_modelos):  # agreegar notas y mejorar nombres de funciones
+def get_attributes_name_words(df_modelos):
     """
-    obtiene palabras de los nombres de las caracteristicas del producto. Podrian ser usadas por los clientes...
-    Ayuda a poder seleccionar las customer needs de mayor relevancia dentro de todas las posibles
-    :param df_modelos:
-    :return:
+    Obtiene las palabras unicas de los nombres de las caracteristicas o atributos del producto. Es probable que el
+    cliente use al menos una de ellas en sus opiniones. Asi, podria seleccionar las customer needs de mayor relevancia
+    dentro de todas las posibles.
+    :param df_modelos: Dataframe de modelos de un producto
+    :return: Lista de palabras unicas de los nombres de las caracteristicas o atributos del producto
     """
+    # Defino variable auxiliar (en caso que el nombre de la columna sea mas de 1 palabra)
+    aux = str()
 
-    # Obteniendo set de palabras de campos especificos
-    a = str()
+    # Por columna en dataframe modelos
     for columna in df_modelos.columns[1:]:  # no incluyo id
+
+        # Obtengo nombre de la columna sin accentos y en miniscula
         name_column = tp.delete_accent(columna).lower()
-        a += name_column + " "
+        aux += name_column + " "
+
+    # Guardo palabras unicas de los nombres de los campos especificos
+    attr_name_words = set(aux.split())
+    attr_name_words = tp.stop_word_removal(attr_name_words)  # lista con palabras de campos especificos sin palabras vacias y sin acentos
     # print("strings:", a)
-    l = set(a.split())
-    l2 = tp.stop_word_removal(l)  # lista con palabras de campos especificos sin palabras vacias y sin acentos
-    # print("set:", l2)
+    print("Palabras unicas de nombres de atributos:", attr_name_words)
 
-    print("Posibles palabras relevantes:", l2)
-
-    return l2
+    return attr_name_words
 
 
 def define_possible_customer_needs(df_tokenizado):
-
-    CANT_POSIBLES_CUSTOMER_NEEDS = 200  # dependera del producto?
-    # el df puede estar steam o no... el ngrams recibe lista como sequuencia
+    """
+    Obtiene lista de las posibles customer needs de un producto pues son las frases de 3 palabras mas frecuentes en las
+    opiniones de dicho producto.
+    :param df_tokenizado: Dataframe con columna "tokens" donde cada fila tiene una lista de palabras (puede estar
+    lemmatizado, steam o ninguno)
+    :return: Lista de las <CANT_POSIBLES_CUSTOMER_NEEDS> frases de 3 palabras mas frecuentes
+    """
+    # Defino variables
+    CANT_POSIBLES_CUSTOMER_NEEDS = 200  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     freq_ngrams = []
+    idx_token = df_tokenizado.columns.get_loc("tokens")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
+    # df_tokenizado = df_tokenizado['tokens']  # horrible esta linea pero sino me pone el nombre de la columna en cada fila..
 
-    # print(df_tokenizado)
-    df_tokenizado = df_tokenizado[
-        'tokens']  # horrible esta linea pero sino me pone el nombre de la columna en cada fila..
-
-    # Obtengo n grams
+    # POR OPINION
     for i in range(len(df_tokenizado)):
-        opinion = df_tokenizado.iloc[i]
+        opinion = df_tokenizado.iloc[i, idx_token]
 
-        ngrams = generate_n_grams(opinion, ngram=3)  # es tri en ralidad pero ees para probar
+        # OBTENGO SUS FRASES DE 3 PALABRAS O "TRIGRAMS" (una opinion estara compuesta de mas de un trigram)
+        ngrams = generate_n_grams(opinion, ngram=3)
 
-        # Por cada two_gram
+        # GUARDO FRECUENCIAS DE CADA TRIGRAM
+        # Por cada trigram
         for ngram in ngrams:
 
-            # Si el two_gram ya fue cargado
+            # Si el trigram ya fue cargado
             if ngram in d.keys():
                 # Sumar uno a su frecuencia
                 d[ngram] += 1
 
-            # Si el two_gram no fue cargado
+            # Si el trigram no fue cargado
             else:
                 # lo inicializo
                 d[ngram] = 1
 
-    # OBTENER LISTA DE LOS N GRAMS MAS FRECUENTES
+    # OBTENGO LISTA DE LOS N GRAMS MAS FRECUENTES
     sorted_dict = sorted(d.items(), key=operator.itemgetter(1))  # Lista con pares key-value ordenados crecientemente segun el value
     sorted_dict = sorted_dict[::-1]  # invierto lista, ahora ordenados descendientemnete
 
@@ -74,6 +84,12 @@ def define_possible_customer_needs(df_tokenizado):
 
 
 def generate_n_grams(text, ngram):
+    """
+    Obtiene lista de los n-grams de un texto
+    :param text: Texto tokenizado, es decir, como lista de palabras
+    :param ngram: largo de frases a buscar
+    :return: Lista de frases de largo <ngrams> en <texto>
+    """
     # words = [word for word in text.split(" ") if word not in set(stopwords.words('english'))]
     # print("Sentence after removing stopwords:", text)
     temp = zip(*[text[i:] for i in range(0, ngram)])
@@ -81,25 +97,21 @@ def generate_n_grams(text, ngram):
     return ans
 
 
-def select_customer_needs(df_tokenizado, attribute_words):
+def select_customer_needs(possible_customer_needs, attribute_words):
     """
-    Selecciono de las frases mas frecuentes aquellas que seran las customer needs. Para ello, utilizo las palabras
+    De las frases mas frecuentes, selecciono aquellas que seran las customer needs. Para ello, utilizo las palabras
     que forman a los nombres de los atributos del producto.
-    :param freq_ngrams:
-    :param possible_words:
-    :return:
+    :param possible_customer_needs: Lista de las <CANT_POSIBLES_CUSTOMER_NEEDS> frases de 3 palabras mas frecuentes
+    :param attribute_words: Lista de palabras unicas de los nombres de las caracteristicas o atributos del producto
+    :return: Customer needs como frases de 3 palabras y como 1 sola palabra
     """
     # Defino variables
     customer_needs = []
-    palabras_clave = []
-
+    customer_needs_one_word = []
     copy_possible_words = attribute_words.copy()
 
-    # Defino posibles costumer needs. Aprox 200 frases de 3 palabras, en particular, las mas frecuentes.
-    possible_customer_needs = define_possible_customer_needs(df_tokenizado)
-
     # Por cada posible customer need
-    for possible_customer_need in possible_customer_needs:  # hasta los primeros x
+    for possible_customer_need in possible_customer_needs:
 
         # Por cada palabra de la frase
         for palabra in possible_customer_need.split():
@@ -114,7 +126,7 @@ def select_customer_needs(df_tokenizado, attribute_words):
                     attribute_words.remove(palabra)
 
                     # Agrego a palabra claves para poder determinar si una opinion habla o no de una customer need
-                    palabras_clave.append(palabra)
+                    customer_needs_one_word.append(palabra)
 
                     # La agrego
                     customer_needs.append(possible_customer_need)
@@ -122,18 +134,22 @@ def select_customer_needs(df_tokenizado, attribute_words):
             else:
                 pass
 
-
-    # filtro de frase con sentido...
+    # podria filtro de frase con sentido...
     # podria sacar customer needs con dos o mas palabras en possible words usando la copia
-
     print("Customer needs:", customer_needs)
-    print("Palabras clave:", palabras_clave)
+    print("Customer need en una palabra:", customer_needs_one_word)
 
-    return customer_needs, palabras_clave
+    return customer_needs, customer_needs_one_word
 
 
 def check_not_numeric_or_repeated(possible_customer_need, attribute_words):
-    # Se fija que una customer need no tenga dos atributos en lugar de uno (evita repeticion)
+    """
+    Evita customer needs con repeticion (dos que se refieran al mismo atributo) o con numeros
+    :param possible_customer_need: Frase de 3 palabras que contiene al menos 1 palabra relevante
+    :param attribute_words: Lista de palabras relevantes
+    :return: True si contiene una sola palabra relevante y ningun numero, o en caso contrario, False
+    """
+    # Defino variable
     n = 0
 
     # Por cada palabra de la frase

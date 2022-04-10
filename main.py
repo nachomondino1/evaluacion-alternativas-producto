@@ -21,7 +21,7 @@ import data_understanding.collect_data.dataframe_creator
 import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_preparation import format_data, clean_data, construct_data
-from modelling import atribucion
+from modelling import sentiment_atribution
 
 def main():
     '''
@@ -102,28 +102,19 @@ def main():
     # 2.3 CONSTRUCT DATA
     print(" +++++++++++++++++++ (2.3) CONSTRUCT DATA  +++++++++++++++++++ ")
     # Defino customer needs (ngrams = 3) y relevant words para el sentiment (ngrams=1)
-    possible_relevant_words = construct_data.possible_words_to_identify_customer_needs(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
-    customer_needs, relevant_words = construct_data.select_customer_needs(df_opiniones_tokenizado, possible_relevant_words)
+    attr_name_words = construct_data.get_attributes_name_words(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
+    possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)
+    customer_needs, customer_needs_one_word = construct_data.select_customer_needs(possible_costumer_needs, attr_name_words)
 
-    # 3) ATRIBUCION
+    # 3) ATRIBUCION (sentiment de opinion a cada valor de cada campo especifico)
     print(" ------------------- (3) ATRIBUCION  ------------------- ")
-    # 3.1 PIDE MATRIZ DE RELACIONES
-    # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs) # ahorra es sin producto.atributos
-    relation_matrix = atribucion.create_relation_matrix(df_modelos.columns[1:], customer_needs)  # incluyo el precio
-
-    # 3.2 Atribucion de sentiment de opinion a cada valor de cada campo especifico
-    # usa relevant_words para ver si una opinion habla o no de tal customer need
-    df_sent = atribucion.opinion_sentiment_to_customer_needs(df_opiniones, relevant_words)
-    df_sent_por_valor = atribucion.customer_needs_sentiment_to_attribute_value(df_modelos, df_sent, relation_matrix)
+    df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)
+    # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
+    relation_matrix = sentiment_atribution.create_relation_matrix(df_modelos.columns[1:], customer_needs_one_word)  # incluyo el precio
+    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_modelos, df_sent, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
 
     # GUARDO RESULTADOS EN MY SQL?
-    ''' TAL VEZ NI LO CORRA pues para que quiero un sentiment predicho si tengo el original?
-    # 3) SENTIMENT ANALYSIS
-    print(" ------------------- (3) SENTIMENT ANALYSIS  ------------------- ")
-    print(modelo_1.modelo1(df_cleaned_opinions))
-    '''
-
 
 main()
 
