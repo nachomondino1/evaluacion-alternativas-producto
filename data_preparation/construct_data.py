@@ -103,7 +103,7 @@ def select_customer_needs(possible_customer_needs, attribute_words):
     que forman a los nombres de los atributos del producto.
     :param possible_customer_needs: Lista de las <CANT_POSIBLES_CUSTOMER_NEEDS> frases de 3 palabras mas frecuentes
     :param attribute_words: Lista de palabras unicas de los nombres de las caracteristicas o atributos del producto
-    :return: Customer needs como frases de 3 palabras y como 1 sola palabra
+    :return: Lista de customer needs como frases de 3 palabras y como 1 sola palabra
     """
     # Defino variables
     customer_needs = []
