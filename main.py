@@ -15,7 +15,6 @@ Pseudocodigo de lo que quisiera que haga:
     entonces le asigno 4.3 a bateria = 4500 mAh y 4.3 a tamaño de pantalla = 5’’ (tendria que ver de agregar la influencia de la relacion entre customer need y
     atributo pues tamaño de pantalla tiene menos relacion con  “el celular le dura tod@ el dia” que el atributo bateria por lo que, no deberian tener 4,3 los dos..)
 """
-
 # Importo Librerias
 import data_understanding.collect_data.dataframe_creator
 import pandas as pd
@@ -116,7 +115,8 @@ def main():
 
     # GUARDO RESULTADOS EN MY SQL?
 
-main()
+if __name__ == '__main__':
+    main()
 
 
 
