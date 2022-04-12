@@ -83,7 +83,7 @@ def create_relation_matrix(atributos, customer_needs):
                 relation_matrix.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo, customer_need)))
             # falta implementar validacion de ingreso de uno de esos numeros...
 
-    print(relation_matrix)
+    relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos')
     return relation_matrix
 
 def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
