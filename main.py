@@ -21,6 +21,8 @@ import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_preparation import format_data, clean_data, construct_data
 from modelling import sentiment_atribution
+import GoogleDrive
+import requests
 
 def main():
     '''
@@ -108,17 +110,32 @@ def main():
     # 3) ATRIBUCION (sentiment de opinion a cada valor de cada campo especifico)
     print(" ------------------- (3) ATRIBUCION  ------------------- ")
     df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)
+
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     relation_matrix = sentiment_atribution.create_relation_matrix(df_modelos.columns[1:], customer_needs_one_word)  # incluyo el precio
+    relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index=False)
+    # GoogleDrive.subir_archivo('/Users/nachomondino/Desktop/relation_matrix.xlsx', '1Y1DiQFQ5sQi-uod2uQ61Dmenh3GPNO3p')
+
     df_sent_por_valor = sentiment_atribution.to_attribute_value(df_modelos, df_sent, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
+    # GoogleDrive.subir_archivo('/Users/nachomondino/Desktop/df_final.xlsx','1Y1DiQFQ5sQi-uod2uQ61Dmenh3GPNO3p')
 
+
+    url = GoogleDrive.leer_archivo('relation_matrix.xlsx')
+    print(url)
+
+    s = requests.get(url).content
+    print(s)
+    df = pd.read_csv(s)
+    print(df)
+
+
+    # GoogleDrive.bajar_archivo_por_nombre('relation_matrix.xlsx', '/Users/nachomondino/Desktop/prueba/')  # funciona!
     # GUARDO RESULTADOS EN MY SQL?
+
 
 if __name__ == '__main__':
     main()
-
-
 
 
 ''' EN EXTRACCION DE DATOS AL PPIO: hacerr lista de productos a relevar me pareece muy largo y hay mucha prob de falla

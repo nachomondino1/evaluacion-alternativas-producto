@@ -11,6 +11,8 @@ Pseudocodigo de lo que quisiera que haga para un usuario final:
 # import streamlit as st antes hacer pip install streamlit (hacerlo dsp de virtual env)
 import pandas as pd
 import streamlit as st
+import GoogleDrive
+
 
 def c(customer_needs, customer_needs_substring):
     for customer_need in customer_needs:
@@ -139,7 +141,7 @@ def main():
     product = st.sidebar.selectbox('¿Que producto desea evaluar?', product_options)
 
     # Abrir archivo de sentiment segun producto
-    # # df_final = pd.read_excel('/Users/nachomondino/Desktop/df_final.xlsx')
+    df_final = pd.read_excel('/Users/nachomondino/Desktop/df_final.xlsx')
 
     # Si el cliente es usuario final
     if client == 'Usuario final':
@@ -163,9 +165,13 @@ def main():
 
         # PROCESAMIENTO DE PESOS Y DATOS
         # importar matriz de relaciones
-        relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx')  # dsp la importare desde otro lugar
-        print(relation_matrix)
+        # GoogleDrive.bajar_acrchivo_por_nombre('relation_matrix.xlsx',)
+        # relation_matrix = GoogleDrive.leer_archivo('1XQrCpdsDxQuyIhsm9Ad12gDK3iMJSa41')
+        GoogleDrive.bajar_archivo_por_nombre('relation_matrix.xlsx','/Users/nachomondino/Desktop')
+        # relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx')  # dsp la importare desde otro lugar
+        # print(relation_matrix)
 
+        '''
         # Calculo importancia tecnica de cada atributo segun necesidades del cliente
         imp_tecnica_attr = importancia_tecnica(customer_needs_weights, relation_matrix)
         print(imp_tecnica_attr)
@@ -192,6 +198,7 @@ def main():
 
         # show results
         pass
+    '''
 
 
 if __name__ == '__main__':

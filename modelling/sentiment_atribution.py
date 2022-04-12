@@ -71,10 +71,10 @@ def create_relation_matrix(atributos, customer_needs):
     relation_matrix = pd.DataFrame(columns=atributos, index=customer_needs)
 
     # Por atributo o campo especifico
-    for atributo in atrib_limpios:
+    for atributo in atrib_limpios[:3]:
 
         # Por customer need
-        for customer_need in customer_needs:
+        for customer_need in customer_needs[:3]:
 
             # Pido al administrador relacion entre customer_need y atributo
             try:
