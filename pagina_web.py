@@ -163,7 +163,7 @@ def main():
 
         # PROCESAMIENTO DE PESOS Y DATOS
         # importar matriz de relaciones
-        relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx')  # dsp la importare desde otro lugar
+        relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx')  # dsp la importare desde otro lugar
         print(relation_matrix)
 
         # Calculo importancia tecnica de cada atributo segun necesidades del cliente
