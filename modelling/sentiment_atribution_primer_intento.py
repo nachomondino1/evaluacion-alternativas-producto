@@ -1,6 +1,5 @@
 # Atribucion de sentiment de opinion a cada valor de cada campo especifico
 import pandas as pd
-from modelling import google_sentiment_api
 
 def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
     """
@@ -12,131 +11,43 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
     """
     df_opiniones = df_opiniones.dropna()  #tiene none por usar stop worrd removal... despues lo saco pues ya lo implemente en main.py
 
-    # defino diccionarios de palabras relacionadas (lo hago aca?)
-    d_palabras_adic = {'camara': ['camaras', 'foto', 'fotos'], 'memoria': ['fluidez', 'almacenamiento', 'ram'],
-                       "procesador": ["velocidad", "funcionamiento", "software"]
-                       }
-
-
     # Defino Dataframes vacios
     df_costumer_needs_sent = pd.DataFrame(columns=["id_publicacion"] + customer_needs_one_word)
 
     # Obtengo indices de columnas que contiene opiniones y la que contiene el sentiment de estas
     idx_id = df_opiniones.columns.get_loc("id_publicacion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
     idx_opi = df_opiniones.columns.get_loc("content")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
+    idx_rate = df_opiniones.columns.get_loc("rate")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 
-    # Por opinion
+    # Por opinion  --> tendre que guardar un sentiment a cada atrib y eso esta basado en una deteerminada cant de opis
     for i in range(len(df_opiniones)):
-        id, opinion = df_opiniones.iloc[i, idx_id], df_opiniones.iloc[i, idx_opi]
+        id, opinion, rate = df_opiniones.iloc[i, idx_id], df_opiniones.iloc[i, idx_opi], df_opiniones.iloc[i, idx_rate]
         fila = [id]  # inicializo variable que guardara la fila del nuevo dataframe
+
         print("NºFila:", i)
         print("Opinion:", opinion)
-
-        # Obtengo sentiment de cada entity de la opinion
-        d_entities_sent = google_sentiment_api.sample_analyze_entity_sentiment(opinion)
 
         # Por customer need
         for customer_need in customer_needs_one_word:
             # print(customer_need)
 
-            # Agrego palabras adicionales para identificar mejor customer need
-            # Obtengo, si hay, palabras adicionales para identificar dicha customer need
-            try:
-                palabras_adic = d_palabras_adic[customer_need]
-                palabras_a_buscar = [customer_need] + palabras_adic
-
-            except KeyError:
-                palabras_a_buscar = [customer_need]
-
-            bool = True
-
-            # Por palabra relevante para identificar customer need
-            for palabra_a_buscar in palabras_a_buscar:
-
-                # Si la opinion menciona a la palabra
-                if palabra_a_buscar in d_entities_sent.keys():
-
-                    # Obtengo su salience, score y magnitude
-                    sentiment_customer_need = d_entities_sent[palabra_a_buscar]
-                    salience, score, magnitude = sentiment_customer_need[0], sentiment_customer_need[1], sentiment_customer_need[2]
-
-                    # Si la opinion es claramente positiva
-                    if score > 0.8 and magnitude > 4:
-                        fila.append("CP")
-
-                    # Si la opinion es claramente negativa
-                    elif score < -0.6 and magnitude > 3:
-                        fila.append("CN")
-
-                    # Si la opinion es positiva
-                    elif score > 0.1:
-                        fila.append("P")
-
-                    # Si la opinion es negativa
-                    elif score < -0.1:
-                        fila.append("N")
-
-                    # Si la opinion es mixta
-                    elif (score < 0.1 or score > -0.1) and magnitude > 4:
-                        fila.append("M")
-
-                    # Si la opinion es neutral
-                    else:
-                        fila.append("NE")
-
-                    # contemplar caso que mas de una palabra a buscar este en diccionario... por ahora break...
-                    bool = False
-                    break
-
-            # Si la opinion no menciona el atributo
-            if bool:
-                # el atributo toma sentiment None
-                fila.append(None)
-
-            '''  
             # Si la customer need es mencionada en la opinion
-            if customer_need in d_entities_sent.keys():
+            if customer_need in opinion:
 
-                # Obtengo su salience, score y magnitude
-                sentiment_customer_need = d_entities_sent[customer_need]
-                salience, score, magnitude = sentiment_customer_need[0], sentiment_customer_need[1], sentiment_customer_need[2]
-
-                # Si la opinion es claramente positiva
-                if score > 0.8 and magnitude > 4:
-                    fila.append("CP")
-
-                # Si la opinion es claramente negativa
-                elif score < -0.6 and magnitude > 3:
-                    fila.append("CN")
-
-                # Si la opinion es positiva
-                elif score > 0.1:
-                    fila.append("P")
-
-                # Si la opinion es negativa
-                elif score < -0.1:
-                    fila.append("N")
-
-                # Si la opinion es mixta
-                elif (score < 0.1 or score > -0.1) and magnitude > 4:
-                    fila.append("M")
-
-                # Si la opinion es neutral
-                else:
-                    fila.append("NE")
+                # asigno rate de opinion a customeer need
+                fila.append(rate)
 
             # Si la opinion no menciona el atributo
             else:
                 # el atributo toma sentiment None
                 fila.append(None)
-            '''
 
         # Agrego fila al dataframe
         print("Fila:", fila)
         df_costumer_needs_sent.loc[i] = fila
 
     print(df_costumer_needs_sent)
-    df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp.xlsx', 'Hoja de datos',index=False)
+    df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_4.xlsx', 'Hoja de datos', index=False)
     return df_costumer_needs_sent
 
 def create_relation_matrix(atributos, customer_needs):
@@ -338,14 +249,16 @@ def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
     '''
     return df_attr_value_sent
 
-df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx')
-customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 'resolucion']
-
+df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
+# customer_needs = ['pantalla', 'memoria','precio','ram', 'tamaño','bateria','camara','pantallita','pantallas', 'almacenamiento','espacio','caro', 'barato','fotos','foto']
+customer_needs = ['pantalla', 'memoria','rapido','lento','fluido', 'funcionamiento', 'almacenamiento', 'ram', 'precio','caro','barato',
+                  'tamaño','bateria','camara','camaras','fotos','foto','resolucion']
 to_customer_needs(df_opiniones, customer_needs)
 
-# palabras_adicionales = {'precio': ['caro', 'barato'],'camara': ['camaras', 'foto', 'fotos'],'memoria': ['rapido', 'lento', 'fluido', 'funcionamiento', 'almacenamiento', 'ram']}
-
+palabras_adicionales = {'precio': ['caro', 'barato'],'camara': ['camaras', 'foto', 'fotos'],
+                        'memoria': ['rapido', 'lento', 'fluido', 'funcionamiento', 'almacenamiento', 'ram']}
 '''
+
 atributos = ['precio', 'bateria']
 customer_needs = ['pantalla', 'camara']
 relation_matrix = create_relation_matrix(atributos, customer_needs)

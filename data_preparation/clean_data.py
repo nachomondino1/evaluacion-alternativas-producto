@@ -176,9 +176,11 @@ def text_preparation(textos):
         # print(opinion)
 
         # Elimino puntuacion
-        opinion = tp.delete_punctuation(opinion)
+        # opinion = tp.delete_punctuation(opinion)
         # print(opinion)
+        df_cleaned.loc[len(df_cleaned)] = opinion  # estoy probando dataframe sin stop word removal
 
+        '''
         # (1) TOKENIZATION: SEPARO SUS PALABRAS POR ESPACIOS EN BLANCO
         tokens = opinion.split()
 
@@ -189,6 +191,7 @@ def text_preparation(textos):
         untoken = ' '.join(tokens)
         df_cleaned.loc[len(df_cleaned)] = untoken
         # df_cleaned = df_cleaned.append({"content": untoken}, ignore_index=True)
+        '''
 
         '''
         # (3) STEAM
