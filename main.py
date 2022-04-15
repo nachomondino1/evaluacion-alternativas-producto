@@ -3,7 +3,7 @@ import data_understanding.collect_data.dataframe_creator
 import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_preparation import format_data, clean_data, construct_data
-from modelling import sentiment_atribution_primer_intento
+from modelling import sentiment_atribution
 import GoogleDrive
 import requests
 
@@ -65,33 +65,33 @@ def main():
     print("2.2.5 Preparando opiniones...")
     # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
     df_opiniones = clean_data.correct_opinion_column(df_opiniones)
+    # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
     # Limpio las opiniones
-    df_opiniones_tokenizado, df_opiniones['content'] = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
-    df_opiniones.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
+    df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
+    # df_opiniones_customer.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
-    df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)
+    # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
-    '''
     print(" +++++++++++++++++++ (2.3) CONSTRUCT DATA  +++++++++++++++++++ ")
     # Defino customer needs (ngrams = 3) y relevant words para el sentiment (ngrams=1)
     attr_name_words = construct_data.get_attributes_name_words(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
-    possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)
+    possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)  # df_opi limpio
     customer_needs, customer_needs_one_word = construct_data.select_customer_needs(possible_costumer_needs, attr_name_words)
 
     print(" ------------------- (3) ATRIBUCION  ------------------- ")
-    df_sent = sentiment_atribution_primer_intento.to_customer_needs(df_opiniones, customer_needs_one_word)
+    df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi sin limpieza
 
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
-    relation_matrix = sentiment_atribution_primer_intento.create_relation_matrix(df_modelos.columns[1:], customer_needs_one_word)  # incluyo el precio
+    relation_matrix = sentiment_atribution.create_relation_matrix(df_modelos.columns[1:], customer_needs_one_word)  # incluyo el precio
     relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index=False)
     # GoogleDrive.subir_archivo('/Users/nachomondino/Desktop/relation_matrix.xlsx', '1Y1DiQFQ5sQi-uod2uQ61Dmenh3GPNO3p')
 
-    df_sent_por_valor = sentiment_atribution_primer_intento.to_attribute_value(df_modelos, df_sent, relation_matrix)
+    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_modelos, df_sent, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
     # GoogleDrive.subir_archivo('/Users/nachomondino/Desktop/df_final.xlsx','1Y1DiQFQ5sQi-uod2uQ61Dmenh3GPNO3p')
 
-
+    '''
     url = GoogleDrive.leer_archivo('relation_matrix.xlsx')
     print(url)
 

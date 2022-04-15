@@ -1,13 +1,10 @@
-# Uno campos especificos como modelo y marca?
-# reemplazo id_pub por id_modelo
-# implemento definicion de customer needs
-
 # Importo librerias
 import operator
 from data_preparation import preparacion_texto as tp
 
 
-def get_attributes_name_words(df_modelos):
+
+def get_attributes_name_words(df_modelos):  #podria quedarme solo con entities o sustantivos
     """
     Obtiene las palabras unicas de los nombres de las caracteristicas o atributos del producto. Es probable que el
     cliente use al menos una de ellas en sus opiniones. Asi, podria seleccionar las customer needs de mayor relevancia
@@ -22,8 +19,9 @@ def get_attributes_name_words(df_modelos):
     for columna in df_modelos.columns[1:]:  # no incluyo id
 
         # Obtengo nombre de la columna sin accentos y en miniscula
-        name_column = tp.delete_accent(columna).lower()
-        aux += name_column + " "
+        # name_column = tp.delete_accent(columna).lower()
+        # aux += name_column + " "
+        aux += columna + " "
 
     # Guardo palabras unicas de los nombres de los campos especificos
     attr_name_words = set(aux.split())
@@ -32,7 +30,6 @@ def get_attributes_name_words(df_modelos):
     print("Palabras unicas de nombres de atributos:", attr_name_words)
 
     return attr_name_words
-
 
 def define_possible_customer_needs(df_tokenizado):
     """
@@ -82,7 +79,6 @@ def define_possible_customer_needs(df_tokenizado):
 
     return freq_ngrams
 
-
 def generate_n_grams(text, ngram):
     """
     Obtiene lista de los n-grams de un texto
@@ -95,7 +91,6 @@ def generate_n_grams(text, ngram):
     temp = zip(*[text[i:] for i in range(0, ngram)])
     ans = [' '.join(ngram) for ngram in temp]
     return ans
-
 
 def select_customer_needs(possible_customer_needs, attribute_words):
     """
@@ -140,7 +135,6 @@ def select_customer_needs(possible_customer_needs, attribute_words):
     print("Customer need en una palabra:", customer_needs_one_word)
 
     return customer_needs, customer_needs_one_word
-
 
 def check_not_numeric_or_repeated(possible_customer_need, attribute_words):
     """

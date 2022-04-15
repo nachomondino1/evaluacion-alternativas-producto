@@ -154,7 +154,6 @@ def correct_opinion_column(df):
     # df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
     return df
 
-
 def text_preparation(textos):
     # df = pd.DataFrame(columns=["col"])
     df_tokenizado = pd.DataFrame(columns=['tokens'])
@@ -176,22 +175,18 @@ def text_preparation(textos):
         # print(opinion)
 
         # Elimino puntuacion
-        # opinion = tp.delete_punctuation(opinion)
+        opinion = tp.delete_punctuation(opinion)
         # print(opinion)
-        df_cleaned.loc[len(df_cleaned)] = opinion  # estoy probando dataframe sin stop word removal
 
-        '''
         # (1) TOKENIZATION: SEPARO SUS PALABRAS POR ESPACIOS EN BLANCO
         tokens = opinion.split()
 
         # (2) STOP WORD REMOVAL
         tokens = tp.stop_word_removal(tokens)
-        # df_tokenizado.loc[len(df_tokenizado)] = tokens  # intentando arreglar FutureWarning
-        df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
+        df_tokenizado.loc[len(df_tokenizado)] = tokens  # intentando arreglar FutureWarning
+        # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
         untoken = ' '.join(tokens)
-        df_cleaned.loc[len(df_cleaned)] = untoken
-        # df_cleaned = df_cleaned.append({"content": untoken}, ignore_index=True)
-        '''
+        df_cleaned.loc[len(df_cleaned)] = untoken # df_cleaned = df_cleaned.append({"content": untoken}, ignore_index=True)
 
         '''
         # (3) STEAM
@@ -202,7 +197,7 @@ def text_preparation(textos):
             df = df.append({"col": token}, ignore_index=True)
         '''
 
-    return df_tokenizado, df_cleaned
+    return df_tokenizado    # tambien podria devolver df_cleaned, pero no lo uso
 
 
 '''

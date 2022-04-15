@@ -10,13 +10,9 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
     el sentiment que toma la customer need, el cual sera el rate de la opinion si la customer need es nombrada en ella,
     en caso contrario, None.
     """
-    df_opiniones = df_opiniones.dropna()  #tiene none por usar stop worrd removal... despues lo saco pues ya lo implemente en main.py
-
-    # defino diccionarios de palabras relacionadas (lo hago aca?)
+    # Defino diccionarios de palabras relacionadas (lo hago aca?)
     d_palabras_adic = {'camara': ['camaras', 'foto', 'fotos'], 'memoria': ['fluidez', 'almacenamiento', 'ram'],
-                       "procesador": ["velocidad", "funcionamiento", "software"]
-                       }
-
+                       "procesador": ["velocidad", "funcionamiento", "software"]}
 
     # Defino Dataframes vacios
     df_costumer_needs_sent = pd.DataFrame(columns=["id_publicacion"] + customer_needs_one_word)
@@ -58,26 +54,26 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
 
                     # Obtengo su salience, score y magnitude
                     sentiment_customer_need = d_entities_sent[palabra_a_buscar]
-                    salience, score, magnitude = sentiment_customer_need[0], sentiment_customer_need[1], sentiment_customer_need[2]
+                    score, magnitude = sentiment_customer_need[0], sentiment_customer_need[1]
 
                     # Si la opinion es claramente positiva
-                    if score > 0.8 and magnitude > 4:
+                    if score >= 0.9 and magnitude >= 0.9:
                         fila.append("CP")
 
                     # Si la opinion es claramente negativa
-                    elif score < -0.6 and magnitude > 3:
+                    elif score <= -0.9 and magnitude >= 0.9:
                         fila.append("CN")
 
                     # Si la opinion es positiva
-                    elif score > 0.1:
+                    elif score >= 0.2:
                         fila.append("P")
 
                     # Si la opinion es negativa
-                    elif score < -0.1:
+                    elif score <= -0.2:
                         fila.append("N")
 
                     # Si la opinion es mixta
-                    elif (score < 0.1 or score > -0.1) and magnitude > 4:
+                    elif magnitude >= 0.9:  # elif (score < 0.25 or score > -0.25)
                         fila.append("M")
 
                     # Si la opinion es neutral
@@ -93,50 +89,12 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
                 # el atributo toma sentiment None
                 fila.append(None)
 
-            '''  
-            # Si la customer need es mencionada en la opinion
-            if customer_need in d_entities_sent.keys():
-
-                # Obtengo su salience, score y magnitude
-                sentiment_customer_need = d_entities_sent[customer_need]
-                salience, score, magnitude = sentiment_customer_need[0], sentiment_customer_need[1], sentiment_customer_need[2]
-
-                # Si la opinion es claramente positiva
-                if score > 0.8 and magnitude > 4:
-                    fila.append("CP")
-
-                # Si la opinion es claramente negativa
-                elif score < -0.6 and magnitude > 3:
-                    fila.append("CN")
-
-                # Si la opinion es positiva
-                elif score > 0.1:
-                    fila.append("P")
-
-                # Si la opinion es negativa
-                elif score < -0.1:
-                    fila.append("N")
-
-                # Si la opinion es mixta
-                elif (score < 0.1 or score > -0.1) and magnitude > 4:
-                    fila.append("M")
-
-                # Si la opinion es neutral
-                else:
-                    fila.append("NE")
-
-            # Si la opinion no menciona el atributo
-            else:
-                # el atributo toma sentiment None
-                fila.append(None)
-            '''
-
         # Agrego fila al dataframe
         print("Fila:", fila)
         df_costumer_needs_sent.loc[i] = fila
 
     print(df_costumer_needs_sent)
-    df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp.xlsx', 'Hoja de datos',index=False)
+    df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_4.xlsx', 'Hoja de datos',index=False)
     return df_costumer_needs_sent
 
 def create_relation_matrix(atributos, customer_needs):
@@ -338,12 +296,17 @@ def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
     '''
     return df_attr_value_sent
 
-df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx')
+
+# Probando to_customer_needs
+df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_menos_menos_cleaned.xlsx')
 customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 'resolucion']
 
 to_customer_needs(df_opiniones, customer_needs)
 
 # palabras_adicionales = {'precio': ['caro', 'barato'],'camara': ['camaras', 'foto', 'fotos'],'memoria': ['rapido', 'lento', 'fluido', 'funcionamiento', 'almacenamiento', 'ram']}
+
+
+
 
 '''
 atributos = ['precio', 'bateria']
