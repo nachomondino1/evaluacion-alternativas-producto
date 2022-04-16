@@ -10,13 +10,12 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
     el sentiment que toma la customer need, el cual sera el rate de la opinion si la customer need es nombrada en ella,
     en caso contrario, None.
     """
+    # DEFINO VARIABLES
     # Defino diccionarios de palabras relacionadas (lo hago aca?)
     d_palabras_adic = {'camara': ['camaras', 'foto', 'fotos'], 'memoria': ['fluidez', 'almacenamiento', 'ram'],
                        "procesador": ["velocidad", "funcionamiento", "software"]}
-
-    # Defino Dataframes vacios
+    # Creo Dataframe a retornar. Aun vacio pero con los nombres de las columnas correspondientes
     df_costumer_needs_sent = pd.DataFrame(columns=["id_publicacion"] + customer_needs_one_word)
-
     # Obtengo indices de columnas que contiene opiniones y la que contiene el sentiment de estas
     idx_id = df_opiniones.columns.get_loc("id_publicacion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
     idx_opi = df_opiniones.columns.get_loc("content")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
@@ -33,11 +32,10 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
 
         # Por customer need
         for customer_need in customer_needs_one_word:
-            # print(customer_need)
 
             # Agrego palabras adicionales para identificar mejor customer need
             # Obtengo, si hay, palabras adicionales para identificar dicha customer need
-            try:
+            try:  # MEJORAR IMPLEMENTACION...
                 palabras_adic = d_palabras_adic[customer_need]
                 palabras_a_buscar = [customer_need] + palabras_adic
 
@@ -52,33 +50,8 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
                 # Si la opinion menciona a la palabra
                 if palabra_a_buscar in d_entities_sent.keys():
 
-                    # Obtengo su salience, score y magnitude
-                    sentiment_customer_need = d_entities_sent[palabra_a_buscar]
-                    score, magnitude = sentiment_customer_need[0], sentiment_customer_need[1]
-
-                    # Si la opinion es claramente positiva
-                    if score >= 0.9 and magnitude >= 0.9:
-                        fila.append("CP")
-
-                    # Si la opinion es claramente negativa
-                    elif score <= -0.9 and magnitude >= 0.9:
-                        fila.append("CN")
-
-                    # Si la opinion es positiva
-                    elif score >= 0.2:
-                        fila.append("P")
-
-                    # Si la opinion es negativa
-                    elif score <= -0.2:
-                        fila.append("N")
-
-                    # Si la opinion es mixta
-                    elif magnitude >= 0.9:  # elif (score < 0.25 or score > -0.25)
-                        fila.append("M")
-
-                    # Si la opinion es neutral
-                    else:
-                        fila.append("NE")
+                    # Guardo su score
+                    fila.append(d_entities_sent[palabra_a_buscar])
 
                     # contemplar caso que mas de una palabra a buscar este en diccionario... por ahora break...
                     bool = False
@@ -94,7 +67,7 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):  #pasar df entero
         df_costumer_needs_sent.loc[i] = fila
 
     print(df_costumer_needs_sent)
-    df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_4.xlsx', 'Hoja de datos',index=False)
+    df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_5.xlsx', 'Hoja de datos',index=False)
     return df_costumer_needs_sent
 
 def create_relation_matrix(atributos, customer_needs):
@@ -123,12 +96,21 @@ def create_relation_matrix(atributos, customer_needs):
         # Por customer need
         for customer_need in customer_needs[:3]:
 
-            # Pido al administrador relacion entre customer_need y atributo
-            try:
-                relation_matrix.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo, customer_need)))
-            except ValueError:
-                relation_matrix.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo, customer_need)))
-            # falta implementar validacion de ingreso de uno de esos numeros...
+            # Validacion de ingreso de relaciones
+            # Mientras que la carga no sea un numero entero
+            while True:
+                # Pido al administrador relacion entre customer_need y atributo
+                try:
+                    relation_matrix.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo.upper(),customer_need).upper()))
+                    # Administrador cargo relacion correctamente
+                    break
+
+                # Si la relacion no es un numero
+                except ValueError:
+                    # sigo en el ciclo while hasta que cargue la relacion correctamente
+                    pass
+
+            # relation_matrix.loc[customer_need, atributo] = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo, customer_need)))
 
     relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos')
     return relation_matrix
@@ -202,6 +184,7 @@ def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
                 fila.append(prom_sent)
                 print("Fila:", fila)
                 df_attr_value_sent.loc[len(df_attr_value_sent)] = fila  # rabino el index pero funciona joya
+
             except ValueError:
                 fila.append(None)
                 fila.append(None)

@@ -3,7 +3,6 @@ import operator
 from data_preparation import preparacion_texto as tp
 
 
-
 def get_attributes_name_words(df_modelos):  #podria quedarme solo con entities o sustantivos
     """
     Obtiene las palabras unicas de los nombres de las caracteristicas o atributos del producto. Es probable que el
