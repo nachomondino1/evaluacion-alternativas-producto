@@ -1,12 +1,3 @@
-"""
-Pseudocodigo de lo que quisiera que haga para un usuario final:
-# Búsqueda del cliente
-# Le muestro customer needs al cliente (ya extraidas) para que establezca el peso a cada una.
-# Llamara a algoritmo que haga el calculo de la importancia tecnica, luego calcule la valoracion final de cada publicacion
-# Otro algoritmo calculara el % de recomendacion y le mostrará en formato tabla los resultados (dicha tabla tendra filtros para que el cliente pueda interactuar con precio, estado, etc)
-"""
-
-
 # Importo librerias
 # import streamlit as st antes hacer pip install streamlit (hacerlo dsp de virtual env)
 import pandas as pd
@@ -24,8 +15,12 @@ def importancia_tecnica(customer_needs_weights, relation_matrix):
     # Es para cada propiedad del producto. Para cada propiedad del producto j: Suma por cada req del cliente i de (Valoracion del cliente de requisito i * relacion entre req i y prop j)
     # return Diccionario con atributo
 
+    # Arreglo problema de index al levantar la matriz de relaciones (CDO TERMINE LAS PRUEBAS YA NO HARA FALTA)
+    # relation_matrix = relation_matrix.reindex(matriz_relaciones["customer_need"])
+    # relation_matrix = relation_matrix.drop(['customer_need'],axis=1)
+
     # Defino variables
-    attributes = relation_matrix.columns[1:]
+    attributes = relation_matrix.columns
     customer_needs = list(relation_matrix.iloc[:,0])  # Son customer needs de 1 sola palabra
     d = {}
 
@@ -66,18 +61,20 @@ def calculate_valoracion_final(df_modelos, df_sent_attr_val, importancia_tecnica
 
     # Por la cantidad de modelos de haya
     for i in range(len(df_modelos)):
+        print("CAMBIO DE MODELO. Nº:", i)
 
         # defino valoracion final
         valor_final = 0
-        print("CAMBIO DE MODELO. Nº:", i)
 
         # Por atributo
         for atributo in importancia_tecnica.keys():
             print("ATRIBUTO:", atributo)
 
-            idx_atrib = df_modelos.columns.get_loc(atributo)  # es una idea aplicable a varias funciones que ya hice
+            # Obtengo el sentiment minimo para dicho atributo
+            min_prom_sent = df_sent_attr_val[df_sent_attr_val['campo_especifico']==atributo]["prom_sent"].min()
 
             # Obtengo valor para ese atributo de ese modelo
+            idx_atrib = df_modelos.columns.get_loc(atributo)  # es una idea aplicable a varias funciones que ya hice
             valor_attr = df_modelos.iloc[i, idx_atrib]
 
             # Obtengo sentiment del valor del atributo
@@ -85,16 +82,18 @@ def calculate_valoracion_final(df_modelos, df_sent_attr_val, importancia_tecnica
                                     (df_sent_attr_val['valor'] == valor_attr)]
             # print(df_sent_attr_val_filtrado)
 
+            # Calculo valoracion final parcial
             try:
                 cant_opi, sent = df_sent_attr_val_filtrado.iloc[0,2:]
-
-                if (sent > 0 and sent<5) and (importancia_tecnica[atributo] > 0 and importancia_tecnica[atributo] < 1000):
-                    valor_final += sent * importancia_tecnica[atributo]
-                    print(sent * importancia_tecnica[atributo], valor_final)
-                    # print(sent, importancia_tecnica[atributo], valor_final)
+                # if (sent > 0 and sent < 5) and (importancia_tecnica[atributo] > 0 and importancia_tecnica[atributo] < 1000):
+                valor_final += sent * importancia_tecnica[atributo]
+                # print(sent * importancia_tecnica[atributo], valor_final)
+                # print(sent, importancia_tecnica[atributo], valor_final)
 
             except TypeError:  #cannot convert the series to <class 'int'>
-                pass  # el valor es Nan por ende el dataframe filtrado queda vacio
+                # DEBO ASIGNAR EL PEOR SENTIMENT DE LOS VALORES DEL CAMPO
+                valor_final += min_prom_sent * importancia_tecnica[atributo]
+                # pass  # el valor es Nan por ende el dataframe filtrado queda vacio
 
             except IndexError:  #  single positional indexer is out-of-bounds
                 pass  # el df esta vacio y yo intento obtener con iloc un elemento. El df esta vacio en el caso que el valor sea nan
@@ -167,21 +166,20 @@ def main():
         # importar matriz de relaciones
         # GoogleDrive.bajar_acrchivo_por_nombre('relation_matrix.xlsx',)
         # relation_matrix = GoogleDrive.leer_archivo('1XQrCpdsDxQuyIhsm9Ad12gDK3iMJSa41')
-        GoogleDrive.bajar_archivo_por_nombre('relation_matrix.xlsx','/Users/nachomondino/Desktop')
-        # relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx')  # dsp la importare desde otro lugar
+        # GoogleDrive.bajar_archivo_por_nombre('relation_matrix.xlsx','/Users/nachomondino/Desktop')
+        relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relations_matrixes.xlsx')  # dsp la importare desde otro lugar
         # print(relation_matrix)
 
-        '''
         # Calculo importancia tecnica de cada atributo segun necesidades del cliente
         imp_tecnica_attr = importancia_tecnica(customer_needs_weights, relation_matrix)
         print(imp_tecnica_attr)
 
         # Importo archivos
         df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx')
-        df_costumer_needs_sent = pd.read_excel('/Users/nachomondino/Desktop/df_final.xlsx')
+        df_sent_attr_val = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx')
 
         # Calculo valoracion final de cada alternativa
-        df = calculate_valoracion_final(df_modelos, df_costumer_needs_sent, imp_tecnica_attr)
+        df = calculate_valoracion_final(df_modelos, df_sent_attr_val, imp_tecnica_attr)
         df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
 
         # Presentación de resultados dinámicos
@@ -198,7 +196,6 @@ def main():
 
         # show results
         pass
-    '''
 
 
 if __name__ == '__main__':
