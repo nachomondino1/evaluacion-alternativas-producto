@@ -272,12 +272,13 @@ df = to_attribute_value(df_modelos, df_costumer_needs_sent, create_relation_matr
 df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent3.xlsx', 'Hoja de datos')
 '''
 
-
+'''
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
 df = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent3.xlsx', 'Hoja de datos')
 df = df.drop(['Unnamed: 0'],axis=1)
 print(df)
 cant_opinines_ponderacion(df)
+'''
 
 
 '''

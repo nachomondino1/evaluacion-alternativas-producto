@@ -4,7 +4,7 @@ import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_preparation import format_data, clean_data, construct_data
 from modelling import sentiment_atribution
-import GoogleDrive
+from modelling import clustering
 import requests
 
 def main():
@@ -85,11 +85,14 @@ def main():
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     relation_matrix = sentiment_atribution.create_relation_matrix(df_modelos.columns[1:], customer_needs_one_word)  # incluyo el precio
     relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index=False)
-    # GoogleDrive.subir_archivo('/Users/nachomondino/Desktop/relation_matrix.xlsx', '1Y1DiQFQ5sQi-uod2uQ61Dmenh3GPNO3p')
 
     df_sent_por_valor = sentiment_atribution.to_attribute_value(df_modelos, df_sent, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
-    # GoogleDrive.subir_archivo('/Users/nachomondino/Desktop/df_final.xlsx','1Y1DiQFQ5sQi-uod2uQ61Dmenh3GPNO3p')
+
+    print(" ------------------- (4) CLUSTERING  ------------------- ")
+    df_clustering = clustering.datafrrame_clustering(df_modelos, df_sent_por_valor)
+    print(df_clustering)
+    # clustering(df_clustering)
 
     '''
     url = GoogleDrive.leer_archivo('relation_matrix.xlsx')

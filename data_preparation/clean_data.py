@@ -183,8 +183,9 @@ def text_preparation(textos):
 
         # (2) STOP WORD REMOVAL
         tokens = tp.stop_word_removal(tokens)
-        df_tokenizado.loc[len(df_tokenizado)] = tokens  # intentando arreglar FutureWarning
-        # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
+        print(tokens)
+        # df_tokenizado.loc[len(df_tokenizado)] = tokens  # intentando arreglar FutureWarning --> pero por algun motivo fallo...
+        df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
         untoken = ' '.join(tokens)
         df_cleaned.loc[len(df_cleaned)] = untoken # df_cleaned = df_cleaned.append({"content": untoken}, ignore_index=True)
 

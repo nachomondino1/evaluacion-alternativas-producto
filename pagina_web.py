@@ -129,9 +129,6 @@ def recommend_table(df):
     by_val = df.sort_values('val_final', ascending=False)
     return by_val
 
-def clustering():
-    pass
-
 def main():
     customer_needs_weights = {}
 
@@ -200,10 +197,11 @@ def main():
 
     # si es empresa
     else:
-        # clustering() --> ojo que solo usa dataframe atribuido a customer needs
-        # Debera agrupar sentiment de una misma alternativa o modelo y luego agrupare las alternativas qie se asemejan
+        # Importo resultados de clustering
+        # df_clustering =
 
-        # show results
+        # Le muestro resultados al cliente
+        # st.write(df_clustering)
         pass
 
 
