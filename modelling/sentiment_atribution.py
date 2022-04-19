@@ -128,21 +128,15 @@ def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
     # Defino sentiment que retornare
     df_attr_value_sent = pd.DataFrame(columns=['valor', 'campo_especifico', 'cant_opi_con_sent', 'prom_sent'])
 
-    # Arreglo problema de index al levantar la matriz de relaciones (CDO TERMINE LAS PRUEBAS YA NO HARA FALTA)
-    # matriz_relaciones = matriz_relaciones.reindex(matriz_relaciones["customer_need"])
-    # matriz_relaciones = matriz_relaciones.drop(['customer_need'],axis=1)
-
     # Por campo especifico o atributo del producto
     for atributo in matriz_relaciones.columns:  # evito columna con customer needs...
         print(atributo)
 
         # Por valor unico del campo
-        for valor_unico in df_mod[atributo].unique():
+        for valor_unico in df_mod[atributo].dropna().unique():  # hay modelos cuyo atrib toma valor none por eso hago un dropna(), funciona joya
             print(valor_unico)
-            fila = [valor_unico, atributo]  #inicializo la lista con valor y atributo
-            relaciones = []
-            l_prom_sent = []
-            cant_opi_con_sent, prom_sent = 0, 0  # inicializo variables pues el atrib pueede tenre relacion con mas de una customer need
+            fila, relaciones, l_prom_sent = [], [], []
+            cant_opi_con_sent, prom_sent = 0, 0  # inicializo variables pues el atrib puede tenre relacion con mas de una customer need
 
             # Obtengo ids de modelos cuyo atributo tome el valor_unico
             ids = df_mod[df_mod[atributo] == valor_unico]['id_publicacion']
@@ -159,37 +153,57 @@ def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
             for customer_need in df_costumer_needs_sent_filtrado.columns[1:]:  # no incluyo id_pub
 
                 # Si tiene relacion con atributo
-                try:  # momentaneamente en pruebas
-                    if matriz_relaciones.loc[customer_need, atributo] > 0:  # falta implementar que un atrib tenga dos rerlaciones en lugar de 1 y que cargue cuando nio tiene relacion con ningun campo
-                        relaciones.append(matriz_relaciones.loc[customer_need, atributo])  # ojpo que entra aca 20.000 veces. Yo pense que no. Estoy quemado ya.
-                        print("Relacion entre {} y {}: {}".format(customer_need, atributo, relaciones))
+                # try:  # momentaneamente en pruebas
+                if matriz_relaciones.loc[customer_need, atributo] > 0:
 
-                        # Obtengo <cant_opi_con_sent>
-                        cant_opi_con_sent += len(df_costumer_needs_sent_filtrado[customer_need].dropna())
+                    # Guardo relacion y prom_sent por si el atributo tiene mas de una relacion
+                    relaciones.append(matriz_relaciones.loc[customer_need, atributo])
+                    l_prom_sent.append(df_costumer_needs_sent_filtrado[customer_need].mean())
+                    print("Relacion entre {} y {}: {}".format(customer_need, atributo, relaciones))
 
-                        # Obtengo <prom_sent>
-                        l_prom_sent.append(df_costumer_needs_sent_filtrado[customer_need].mean())
+                    # Obtengo <cant_opi_con_sent>
+                    cant_opi_con_sent += len(df_costumer_needs_sent_filtrado[customer_need].dropna())
 
-                        # Si el atributo ya tiene relacion con otra/s customer needs
-                        if len(relaciones) >= 2:
-                            prom_sent = 0
+                    # Obtengo <prom_sent>
+                    # Si el atributo ya tiene relacion con otra/s customer needs
+                    if len(relaciones) >= 2:
+                        prom_sent = 0
 
-                            # Hago promedio ponderado segun relaciones
-                            for i in range(len(relaciones)):
-                                print(relaciones[i], sum(relaciones), l_prom_sent[i])
-                                prom_sent += relaciones[i] / sum(relaciones) * l_prom_sent[i]
+                        # Hago promedio ponderado segun relaciones
+                        for i in range(len(relaciones)):
+                            print(relaciones[i], sum(relaciones), l_prom_sent[i])
+                            prom_sent += relaciones[i] / sum(relaciones) * l_prom_sent[i]
 
-                        # Si el atributo aun no tiene relacion con otra customer needs
-                        else:
-                            # Obtengo prom_sent
-                            prom_sent = df_costumer_needs_sent_filtrado[customer_need].mean()
+                    # Si el atributo aun no tiene relacion con otra customer needs
+                    else:
+                        # Obtengo prom_sent
+                        prom_sent = df_costumer_needs_sent_filtrado[customer_need].mean()
 
-                        # print(cant_opi_con_sent, prom_sent)
+                    # print(cant_opi_con_sent, prom_sent)
 
                 # Atributo y customer need sin relacion
-                except:
-                    pass
+                # except:
+                #    pass
 
+            '''
+            # Guardo <cant_opi_con_sent> y <prom_sent> en fila --> es el try except de abajao pero nunca entra al except... pues defino arriba cant opi y prom sent
+            # Si el valor tiene opiniones pero no un prom_sent
+            if cant_opi_con_sent > 0 and (str(prom_sent) == 'nan' or prom_sent == 0):
+                cant_opi_con_sent, prom_sent = correct_nan(ids)
+                print("Asigno promedio de rate de opiniones con dicho valor, basado en {} opiniones, seria {}".format(cant_opi_con_sent, prom_sent))
+                fila.append(valor_unico), fila.append(atributo), fila.append(cant_opi_con_sent), fila.append(prom_sent)
+
+            # Si el valor tiene opiniones y prom_sent
+            else:
+                fila.append(valor_unico), fila.append(atributo), fila.append(cant_opi_con_sent), fila.append(prom_sent)
+            '''
+            fila.append(valor_unico), fila.append(atributo), fila.append(cant_opi_con_sent), fila.append(prom_sent)
+            print("Fila:", fila)
+            # Guardo fila en dataframe
+            df_attr_value_sent.loc[len(df_attr_value_sent)] = fila  # rabino el index pero funciona joya
+
+
+            '''
             # Si el atributo tiene al menos una relacion
             try:
                 # Guardo <cant_opi_con_sent> y <prom_sent> en fila
@@ -199,17 +213,49 @@ def to_attribute_value(df_mod, df_costumer_needs_sent, matriz_relaciones):
                 df_attr_value_sent.loc[len(df_attr_value_sent)] = fila  # rabino el index pero funciona joya
 
             # si el atributo no tiene relacion con ninguna customer need
-            except ValueError:
+            except ValueError:  # no entro nadie...
                 # Seteo <cant_opi_con_sent> y <prom_sent> a None en fila
+                print("El valor cargado es NONE. CHEQUIAR")
                 fila.append(None), fila.append(None)
+                # cant_opi, prom_sent = correct_nan(ids)
+                # print("El valor {} seria NAN pero ahora asignaria promedio de rate de opiniones con dicho valor {}, basado en {} opiniones".format(valor_unico, prom_sent, cant_opi))
                 # Guardo fila en dataframe
                 df_attr_value_sent.loc[len(df_attr_value_sent)] = fila  # rabino el index
+            '''
 
     return df_attr_value_sent
 
+def correct_nan(ids):
+    df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_menos_menos_cleaned.xlsx')
+
+    # Filtro df opiniones por ids
+    df_aux = pd.DataFrame(columns=df_opiniones.columns)
+    for id in ids:
+        df_aux = pd.concat([df_aux, df_opiniones[df_opiniones['id_publicacion'] == id]])
+    df_opiniones_filtrado = df_aux
+    # print(df_costumer_needs_sent_filtrado)
+
+    # Obtengo cant_opis
+    cant_opi = len(df_opiniones_filtrado)
+
+    # Obtengo prom_sent
+    # Llevo escala de rate_min,rate_max a -1,1
+    # Construyo recta a partir de dos puntos
+    # y1, y2 = -1, 1
+    y1, y2 = 0, 1
+    # rate_min = df_opiniones['rate'].min()  # x1
+    rate_prom = df_opiniones['rate'].mean()  # x1, pruebo a poner el cero en la media de los rates en lugar de poner el -1 en el minimo pues sino el score tiende a ser siempre posistivo dado que hay muchos valores cercanos al maximo...
+    rate_max = df_opiniones['rate'].max()  # x2
+    rate = df_opiniones_filtrado['rate'].mean()  # x
+
+    m = (y2 - y1) / (rate_max - rate_prom)  # pendiente de recta
+    score = m * (rate - rate_prom) + y1
+
+    return cant_opi, score
+
 def cant_opinines_ponderacion(df_attr_value_sent):
 
-    df = pd.DataFrame()
+    df = pd.DataFrame(columns=['valor', 'campo_especifico', 'prom_sent'])
 
     # Por atributo
     for attr in df_attr_value_sent['campo_especifico'].unique():
@@ -225,11 +271,23 @@ def cant_opinines_ponderacion(df_attr_value_sent):
             print(valor)
 
             # Obtengo cant de opis del valor
-            df_valor = df_attr[df_attr['valor']==valor]
-            print(df_valor)
-            cant_opi_valor = df_valor.loc[0, "cant_opi_con_sent"]
-            prom_sent_valor = df_valor.loc[0, "prom_sent"]
+            df_valor = df_attr[df_attr['valor'] == valor]
+            # idx = df_valor.index
+            # idx_opi = df_valor.columns.get_loc("cant_opi_con_sent")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
+            # idx_sent = df_valor.columns.get_loc("prom_sent")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
+            # print(idx, idx_opi, idx_sent)
+            # print(df_valor)
+
+            cant_opi_valor = int(df_attr_value_sent[(df_attr_value_sent['campo_especifico']==attr) & (df_attr_value_sent['valor']==valor)]['cant_opi_con_sent'])
+            prom_sent_valor = float(df_attr_value_sent[(df_attr_value_sent['campo_especifico']==attr) & (df_attr_value_sent['valor']==valor)]['prom_sent'])
+
             print(cant_opi_valor, prom_sent_valor)
+            # prom_sent_valor = df_valor["prom_sent"]
+
+            # cant_opi_valor = df_valor.iloc[idx, idx_opi]
+            # prom_sent_valor = df_valor.iloc[idx, idx_sent]
+            # print(cant_opi_valor, prom_sent_valor)
+
 
             # Calculo factor
             porc_cant_opi = cant_opi_valor / max_cant_opi_attr
@@ -246,11 +304,11 @@ def cant_opinines_ponderacion(df_attr_value_sent):
             # df_attr_value_sent[df_attr_value_sent['valor']==valor]['prom_sent'] == prom_sent_valor_nuevo
             fila = [valor, attr, prom_sent_valor_nuevo]
 
-        # Guardo fila del valor
-        df.loc[len(df)] = fila
+            # Guardo fila del valor
+            df.loc[len(df)] = fila
 
-    df_attr_value_sent.to_excel('/Users/nachomondino/Desktop/df_ponderado.xlsx', 'Hoja de datos')
-    return df_attr_value_sent
+    df.to_excel('/Users/nachomondino/Desktop/df_ponderado_2.xlsx', 'Hoja de datos')
+    return df
 
 
 
@@ -276,17 +334,19 @@ print(relation_matrix)
 df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx')
 df_costumer_needs_sent = pd.read_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_5.xlsx')
 relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx')
-
+atributos = list(df_modelos.columns[1:])
+customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 'resolucion']
 # df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
 # customer_needs_one_word = ['pantalla', 'camara']
 
 df = to_attribute_value(df_modelos, df_costumer_needs_sent, create_relation_matrix(atributos, customer_needs))
-# to_attribute_value(df_modelos, df_costumer_needs_sent, relation_matrix)
-df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos')
+# df = to_attribute_value(df_modelos, df_costumer_needs_sent, relation_matrix)
+df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent2.xlsx', 'Hoja de datos')
 '''
 
+
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
-df = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos')
+df = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent2.xlsx', 'Hoja de datos')
 df = df.drop(['Unnamed: 0'],axis=1)
 print(df)
 cant_opinines_ponderacion(df)
