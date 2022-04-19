@@ -172,7 +172,8 @@ def main():
         # PROCESAMIENTO DE PESOS Y DATOS
         # importar matriz de relaciones
         # relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relations_matrixes.xlsx')  # dsp la importare desde otro lugar
-        relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx', index_col=0)  # dsp la importare desde otro lugar
+        # relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx', index_col=0)  # dsp la importare desde otro lugar
+        relation_matrix = pd.read_excel('./data/modelling/relation_matrix.xlsx', index_col=0)  # dsp la importare desde otro lugar
         print(relation_matrix)
 
         # Calculo importancia tecnica de cada atributo segun necesidades del cliente
@@ -188,12 +189,12 @@ def main():
 
         # Calculo valoracion final de cada alternativa
         df = calculate_valoracion_final(df_modelos, df_sent_attr_val, imp_tecnica_attr)
-        df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
+        # df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
 
         # Presentación de resultados dinámicos
         # Muestro tabla de recomendacion
         df2 = recommend_table(df)
-        df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
+        # df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
         st.write(df2)
         print(df2)
 
