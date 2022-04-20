@@ -3,6 +3,7 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from pydrive2.files import FileNotUploadedError
 
+# usa credentials_module.json
 directorio_credenciales = 'credentials_module.json'
 
 

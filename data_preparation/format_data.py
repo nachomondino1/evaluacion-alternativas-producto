@@ -186,6 +186,7 @@ def correct_price_column(col_precio):
     :param col_precio: Columna precio
     :return: Columna precio corregida
     """
+    l_precios = []
 
     # Por cada valor de columna precio
     for i in range(len(col_precio)):
@@ -196,21 +197,24 @@ def correct_price_column(col_precio):
             string_value = str(col_precio.iloc[i])  # numpy.float64 no tiene method replace()
 
             # Saco el punto
-            correct_string_value = string_value.replace(".", "")
+            correct_string_value = string_value.replace(".", "")  #siempre use espacio en blanco
 
             # Lo convierto a numero entero y lo reemplazo en la columna
-            col_precio.iloc[i] = int(correct_string_value)  # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
+            l_precios.append(int(correct_string_value)) # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
 
         # Excepto que es nan
         except ValueError:  # cannot convert float NaN to integer
-
             # No corrigo nada
-            pass
+            l_precios.append(None)
 
+    # Guardo nueva columna precio
+    new_col_precio = pd.Series(l_precios)  #si o si sera dtype float64 pues el NaN es un float64
     print("Se corrigio el precio correctamente ")
-    return col_precio
+    return new_col_precio #antes devolcia col_precio
 
 
+df_modelos_original = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx','Hoja de datos')
+print(correct_price_column(df_modelos_original['precio']))
 
 '''
 # def main para hacer pruebas en este archivo independientemente de main.py
