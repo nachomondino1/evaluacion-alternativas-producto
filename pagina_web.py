@@ -5,7 +5,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 
 
-def c(customer_needs, customer_needs_substring):
+def c(customer_needs, customer_needs_substring):  # no se que enombre ponerle, busca relacion entre customer needs de 3 palabras y las de 1...
     for customer_need in customer_needs:
 
         if customer_needs_substring in customer_need:
@@ -262,8 +262,6 @@ def main():
         st.write('## Tabla 3: Marcas por grupo')
 
         st.write('## Tabla 4: Alternativas por grupo')
-
-
 
         # st.write(df_clustering)
         pass

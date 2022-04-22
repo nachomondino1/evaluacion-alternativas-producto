@@ -1,15 +1,23 @@
 # Importo librerias
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sb
 from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min
-from mpl_toolkits.mplot3d import Axes3D
+from sklearn.preprocessing import StandardScaler
+# import matplotlib.pyplot as plt
 
 
 def create_clustering_dataframe(df_modelos, df_attr_values):
-
+    """
+    Agrega informacion de distintos dataframes para crear el dataframe con todos valores numericos y sin NaN y asi poder
+    hacer clustering
+    :param df_modelos: Dataframe cuya unidad de analisis son los valores de los atributos del producto. Sus columnas son
+    valor, atributo al que perenece y su sentiment
+    :param df_attr_values: Dataframe cuya unidad de analisis es cada una de las alternativas del producto, sus columnas
+    son los atributos del producto y las celdas el valor que toma el atributo en una alternativa
+    :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
+    atributos del producto y las celdas, a diferencia del df_attr_values, son los sentiment que toma el valor del
+    atributo
+    """
     # Creo dataframe a retornar vacio con los nombres de las columnas correspondientes
     df = pd.DataFrame(columns=['id_publicacion'] + list(df_attr_values['campo_especifico'].unique()))
 
@@ -53,15 +61,19 @@ def create_clustering_dataframe(df_modelos, df_attr_values):
         df.loc[len(df)] = l_prom_sent
 
     # Reemplazo valores Nan por valores medios de cada columna
-    replace_nan(df)
+    # replace_nan(df)
+    df = df.dropna()  # elimina alternativas con NaN
 
     return df
 
 def replace_nan(df):
-
-    # https://stackoverflow.com/questions/10368721/running-kmeans-function-on-matrix-with-nan
-    # Replace NaNs in column with mean of the column
-
+    """
+    Por columna del dataframe, reemplaza valores Nan por la media de dicha columna
+    :param df: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
+    atributos del producto y las celdas son los sentiment que toma el valor del atributo pero contiene NaN values
+    :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
+    atributos del producto y las celdas son los sentiment que toma el valor del atributo sin NaN values
+    """
     # Por columna
     for column in df.columns:
 
@@ -81,35 +93,93 @@ def replace_nan(df):
 
     return df
 
-def clustering(df_clustering):
-    # https://www.aprendemachinelearning.com/k-means-en-python-paso-a-paso/
-
-    plt.rcParams['figure.figsize'] = (16, 9)
-    plt.style.use('ggplot')
-
+def k_means(df_clustering):
+    """
+    Aplica modelo de K-means a los datos pasados por parametro. Previamente, selecciono automaticamente el k ideal.
+    :param df_clustering: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas
+    son los atributos del producto y las celdas son los sentiment que toma el valor del atributo
+    :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas
+    son los atributos del producto y la columna "label" con el cluster al que pertenece y las celdas son los sentiment
+    que toma el valor del atributo
+    """
     # Defino datos
     X = np.array(df_clustering[df_clustering.columns])  #por ahi teenga que sacar algunas columnas..
 
-    '''
-    # Obtener el valor de K
-    Nc = range(1, 20)
-    kmeans = [KMeans(n_clusters=i) for i in Nc]
-    score = [kmeans[i].fit(X).score(X) for i in range(len(kmeans))]
-    plt.plot(Nc, score)
-    plt.xlabel('Number of Clusters')
-    plt.ylabel('Score')
-    plt.title('Elbow Curve')
-    plt.show()
-    '''
+    # escalo datos para determinar k  # estoy en duda si hay que hacerlo pero por los rdos diria que si
+    sc_X = StandardScaler()
+    scaled_data = sc_X.fit_transform(X)
+    # print("Scaled data")
+    # print(scaled_data)
+    # print('---')
+    # Eleccion automatica de k
+    k = chooseBestKforKMeans(scaled_data, range(2,20))
+    # k = chooseBestKforKMeans(X, range(2, 40))
 
     # Ejecutamos K-means
-    kmeans = KMeans(n_clusters=5).fit(X)
+    kmeans = KMeans(n_clusters=k).fit(X)
     print(kmeans)
-    centroids = kmeans.cluster_centers_
-    print(centroids)
 
+    # Imprimo valores de los centros de cada cluster
+    # centroids = kmeans.cluster_centers_
+    # print(centroids)
+
+    # Agrego columna de cluster al que pertenece cada alternativa
     df_clustering["label"] = kmeans.labels_
     return df_clustering
+
+def chooseBestKforKMeans(scaled_data, k_range):
+    """
+    Choose best k from a range for some data
+    :param scaled_data: Data que debe estar normalizada (?)
+    :param k_range: Rango de valores que puede tomar k
+    :return:
+    """
+    ans = []
+
+    # Por k
+    for k in k_range:
+
+        # Creo modelo de K-means
+        scaled_inertia = kMeansRes(scaled_data, k)
+
+        # Guardo resultados del modelo
+        ans.append((k, scaled_inertia))
+
+    # Creo dataframe para mostrar los resultados
+    results = pd.DataFrame(ans, columns = ['k','Scaled Inertia']).set_index('k')
+    print(results)
+
+    # Elijo el mejor k (minimiza scaled inertia)
+    best_k = results.idxmin()[0]
+
+    return best_k
+
+def kMeansRes(scaled_data, k, alpha_k=0.06):  #lo subi de 0.02 a 0.06 para tener menos clusters...
+    '''
+    Parameters
+    ----------
+    scaled_data: matrix
+        scaled data. rows are samples and columns are features for clustering
+    k: int
+        current k for applying KMeans
+    alpha_k: float
+        manually tuned factor that gives penalty to the number of clusters
+    Returns
+    -------
+    scaled_inertia: float
+        scaled inertia value for current k
+    '''
+
+    # Calculo inertia para k=1 donde todos los datos pertenecen a un solo grupo
+    inertia_o = np.square((scaled_data - scaled_data.mean(axis=0))).sum()
+
+    # Entreno Modelo de K-means buscando k clusters
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(scaled_data)
+
+    # Evaluo el modelo con metrica "scaled inertia" (formula de scaled inertia)
+    scaled_inertia = kmeans.inertia_ / inertia_o + alpha_k * k
+
+    return scaled_inertia
 
 def show_results(df_mod, df_clust):  #despues veo si la pongo en pagina_web.py o si la dejo
 
@@ -182,34 +252,25 @@ def show_results(df_mod, df_clust):  #despues veo si la pongo en pagina_web.py o
 
 def main():
 
-    '''
-    # Armo el dataframe
+    # Creo el dataframe para clustering
     df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos')
-    df_attr_values = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos',index_col=0)
+    df_attr_values = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent11.xlsx', 'Hoja de datos',index_col=0)
     print(df_modelos)
     print(df_attr_values)
     df_clustering = create_clustering_dataframe(df_modelos, df_attr_values)
     df_clustering.to_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', 'Hoja de datos')
-    '''
 
-    '''
-    df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', 'Hoja de datos',index_col=0)
+    # df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', 'Hoja de datos',index_col=0)
 
-    # Retiro Nan para poder usar Kmeans que no puede tener NaN values... igual son pocos los valores que les pasa esto. 84 de 121 modelos tiene todos los valores.
-    df_clustering = replace_nan(df_clustering)
-    print(df_clustering)
-    # df_clustering.to_excel('/Users/nachomondino/Desktop/df_clustering_sin_nan.xlsx')
-    '''
-
-    df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos')
+    # df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos')
 
     # Proceso los datos
-    df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', index_col=0)
-    df = clustering(df_clustering)
+    # df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', index_col=0)
+    df = k_means(df_clustering)
     df.to_excel('/Users/nachomondino/Desktop/df_clustering_labels.xlsx')
 
-    df2 = show_results(df_modelos, df)
-    df2.to_excel('/Users/nachomondino/Desktop/df_clustering_prueba.xlsx')
+    # df2 = show_results(df_modelos, df)
+    # df2.to_excel('/Users/nachomondino/Desktop/df_clustering_prueba.xlsx')
 
 
 main()

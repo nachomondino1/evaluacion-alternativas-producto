@@ -90,9 +90,9 @@ def main():
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
 
     print(" ------------------- (4) CLUSTERING  ------------------- ")
-    df_clustering = clustering.datafrrame_clustering(df_modelos, df_sent_por_valor)
+    df_clustering = clustering.create_clustering_dataframe(df_modelos, df_sent_por_valor)
     print(df_clustering)
-    # clustering(df_clustering)
+    clustering.k_means(df_clustering)
 
     '''
     url = GoogleDrive.leer_archivo('relation_matrix.xlsx')
