@@ -37,6 +37,10 @@ def categorize_numeric_columns(df):
     :param df: Dataframe
     :return: Dataframe con todas sus columnas numericas discretas
     """
+    # DEFINO VARIABLES
+    FACTOR_HOLGURA = 1.5  # al ser mayor de 1, me aseguro que la columna realmente tome muchos valores
+    PERCENTILES = 0.2
+
     # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
 
@@ -45,12 +49,58 @@ def categorize_numeric_columns(df):
 
             # Y SI ES CONTINUA, ES DECIR, TOMA MUCHO VALORES DISTINTOS (NO ES DISCRETA)
             cant_valores_unicos = len(df[columna].value_counts())
-            cant_opt_valores_unicos = len(df[columna])**0.5  # cant clases ideales = raiz(nro datos)
-            FACTOR_HOLGURA = 1.5  # al ser mayor de 1, me aseguro que la columna realmente tome muchos valores
+            # cant_opt_valores_unicos = len(df[columna]) ** 0.5  # cant clases ideales = raiz(nro datos)
+            cant_opt_valores_unicos = len(df[columna]) ** 0.4  # cant clases ideales = raiz(nro datos)
+
             if cant_valores_unicos > FACTOR_HOLGURA * cant_opt_valores_unicos:
 
                 print("La columna '{}' sera categorizada...".format(columna))
 
+                # Nueva implementacion de clases con ≠ amplitud (basado en percentiles)
+                # defino variables
+                cant_clases = int(1 / PERCENTILES)
+                valores_unicos = sorted(list(df[columna].dropna().unique()))
+                print(valores_unicos)
+
+                valores = list(df[columna]) # lista de valores de la columna
+                valores_limite_max = []  # lista con valores maximos
+                d = {}
+
+                # Por clase
+                for i in range(cant_clases):
+                    idx_valor_min_clase = int(len(valores_unicos) * PERCENTILES * i) # valor min para estar en clase i
+                    idx_valor_max_clase = int(len(valores_unicos) * PERCENTILES * (i + 1)) - 1 # valor min para estar en clase i
+                    # el -1 seria porque el idx de la lista arranca en 0
+
+                    print(idx_valor_min_clase, idx_valor_max_clase, len(valores_unicos))
+
+                    valor_min_clase = valores_unicos[idx_valor_min_clase]
+                    valor_max_clase = valores_unicos[idx_valor_max_clase]
+                    valor_med_clase = round((valor_max_clase + valor_min_clase) / 2, 2)  # valor medio de clase i
+
+                    # guardo valor maximo de la clase
+                    valores_limite_max.append(valor_max_clase)
+                    d[valor_max_clase] = valor_med_clase
+
+                    print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_clase, valor_med_clase, valor_max_clase))
+
+                # REEMPLAZO VALORES POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
+                # por cada valor
+                for i in range(len(valores)):
+
+                    # por cada valor maximo de las clases
+                    for valor_limite in valores_limite_max:
+
+                        # si el valor es menor al valor maximo de la clase
+                        if df[columna].iloc[i] < valor_limite:
+
+                            # reemplazo valor por el valor medio de la clase
+                            df[columna].iloc[i] = round(d[valor_limite], 1)
+
+                            # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
+                            break
+
+                ''' Ex implementacion de clases con = amplitud 
                 # Defino variables
                 valores = list(df[columna])  # lista de valores de la columna
                 valores_limite_max = []  # lista con valores maximos
@@ -86,6 +136,7 @@ def categorize_numeric_columns(df):
 
                             # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
                             break
+                '''
 
             # la columna es numerica pero discreta (toma pocos valores distintos)
             else:
@@ -243,179 +294,4 @@ def main():  # esto lo implemento en main.py, dsp de terminar el archivo, la pas
 
 
 main()
-'''
-
-
-
-
-
-
-
-"""
-Verificar unicidad de filas desde marca en adelante
-Contar None values. 
-    1.- Si una FILA tiene menos del x% de atrib entonces la sacaria. 
-    2.- Si una columna tiene menos del x% de atrib la sacaria
-
-Contar valores unicos de columnas.
-    1.- Si tiene muchos valores unicos (mas de x por ej): --> (no incluir id_pub, precio, marca ni modelo)
-        1.1.- Si la variable es numerica, convertirla en categorica (por ej, capacidad de la bateria, en cambio, modelo del procesador no puedo)
-        1.2.- Si no es numerica, (Por ej, "Modelo del procesador" quien toma muchos valores ≠ y con poca frec cada uno)
-            Si el mas frecuente, tiene una frec muy chica, entonces eliminar.
-            Si el mas frecuente tiene una frec aceptable, no eliminar
-            
-    2.- Si tiene muy pocos valores unicos:
-        2.1.- y predomina uno por mucho, entonces no tener en cuenta el atributo. Por ej, atrib "Con camara" hay 71 Si y 2 No. Es practicamente cte en los modelos y encima el "No" se basa en pocas opiniones..
-    Pero que hago con los modelos que son el caso particular que no lo tiene? 
-        2.2.- 
-    
-    3.- Si tiene un solo valor, eliminar atributo. No hay diferencial entre modelos. Por ej, atributo "Con teclado QWERTY físico" que solo toma el valor "No".
-
-
-Ver si precio lo entiende como int o como str. 
-"""
-
-
-''' ANTES DE DECIDIR QUE NO IBA A BORRAR FILAS DEL DF_MODELOS
-def delete_none_values(df):
-    # ELIMINO FILAS CON MUCHOS NONE VALUES
-    df_copia = df.copy()  #tuve que haceer copia porque quedaba out of bounds
-
-    porc_max_none = 0.20
-    cant_col = len(df.columns)
-
-    # Recorro cada fila del df
-    for i in range(len(df)):
-        none_values_fila = 0
-        print("Nueva fila, numero {}".format(i))
-
-        # Recorro cada columna del df
-        for j in range(cant_col):
-
-            # si la celda tiene el valor None
-            if str(df.iloc[i, j]) == 'nan':
-                print(df.iloc[i, j])  # se deberian imprimir los nan
-
-                # Sumo 1 al contador de None
-                none_values_fila += 1
-
-        # Terminado de recorrer las columnas de una fila, defino porcentaje de None de dicha fila
-        porc_none = none_values_fila / cant_col
-
-        # Si hay mas None de los tolerados
-        if porc_none > porc_max_none:
-            # Elimino fila
-            print("Elimino fila numero {} pues tienen el {:.0f}% de sus valores None".format(i, porc_none*100))
-            df_copia = df_copia.drop(i, axis=0)
-            print(df_copia.shape)
-
-    # ELIMINO COLUMNAS CON MUCHOS NONE VALUES
-    # falta implementar
-    return df
-
-
-'''
-
-
-
-'''
-def find_numeric_columns(df):
-
-    # Deberia ver si una columna es dtype int64 o float64 y luego analizar cuantos valores tiene
-    # si la columna es dtype float64 o int64 y es una variable discreta
-    # entonces categorizarla, reemplazar valores anterior por los nuevos.
-
-
-    print("+++ INICIALIZO REVISION DE COLUMNAS NUMERICAS +++")
-
-    # Devuelve lista de columnas numericas?
-    l_columnas_numericas = []
-
-    # Por cada columna (campo especifico) de las columnas del df
-    for columna in df.columns:
-        print("COLUMNA: ", columna)
-
-        valores = list(df[columna])
-        nuevos_valores = []
-
-        columna_numerica = True
-        unidades = set()
-
-        # Por cada valor de la columna
-        for valor in df[columna]:
-
-            try:
-                # separo el valor segun espacios (requiero que numero y string esten separados)
-                lista_palabras_valor = valor.split()
-                cant_num = 0
-
-                # por cada palabra
-                for palabra in lista_palabras_valor:
-
-                    # Si la palabra es un numero
-                    try:
-                        valor_numerico = float(palabra)
-                        cant_num += 1
-
-                    # Si la palabra no es un numero
-                    except ValueError:
-                        unidades.add(palabra)
-                        pass
-
-                # Al terminar de revisar palabras del valor, veo cuantos numeros encontre
-                if cant_num > 1:
-                    print("No es numerica. Valor que contiene dos o mas numeros:", valor)
-                    columna_numerica = False
-                    break
-
-                elif cant_num == 0:
-                    print("No es numerica. Valor que no contiene numeros:", valor)
-                    columna_numerica = False
-                    break
-
-                else:
-                    # print('EL VALOR {} CONTIENE NUMERO'.format(valor))
-                    nuevos_valores.append(valor_numerico)
-                    pass
-
-            # Excepto si el valor es un none value
-            except AttributeError:
-                nuevos_valores.append(valor)
-                # print("Deberia ser nan:", valor)
-
-        if columna_numerica:
-            l_columnas_numericas.append(columna_numerica)
-            print("Es numerica!")
-            print("Unidades:", unidades)
-
-            # OJO TENGO QUE PONER CONDICION DE QUE TENGA MUCHOS VALORES UNICOS
-            if len(df[columna].value_counts()) > len(df[columna])**0.5:
-
-                # Si tiene una sola unidad
-                if len(unidades) == 0:
-                    columna_discretizada = categorize_numeric_column(columna=df[columna])
-                    df[columna] = columna_discretizada
-
-                elif len(unidades) == 1:
-                    # reeemplazo columna
-                    df[columna] = df[columna].replace(valores, nuevos_valores)
-
-                    # Discretizo columna
-                    columna_discretizada = categorize_numeric_column(columna=df[columna])
-                    df[columna] = columna_discretizada
-
-                # Si tiene mas de una unidad
-                else:
-                    print("No la puedo discretizar pues tiene mas de una unidad")
-
-            else:
-                print("La columna ya toma valores discretos, por lo que, no hace falta discretizar")
-
-        print()
-
-    print("Las columnas numericas son: {}".format(l_columnas_numericas))
-    return df
-
-
-
 '''

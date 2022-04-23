@@ -1,10 +1,10 @@
 # Importo Librerias
 import data_understanding.collect_data.dataframe_creator
 import pandas as pd
-from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
+# from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_preparation import format_data, clean_data, construct_data
-from modelling import sentiment_atribution
-from modelling import clustering
+# from modelling import sentiment_atribution
+# from modelling import clustering
 import requests
 
 def main():
@@ -64,21 +64,24 @@ def main():
 
     print("2.2.5 Preparando opiniones...")
     # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
-    df_opiniones = clean_data.correct_opinion_column(df_opiniones)
+    # df_opiniones = clean_data.correct_opinion_column(df_opiniones)
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
     # Limpio las opiniones
-    df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
+    # df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
     # df_opiniones_customer.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
     print(" +++++++++++++++++++ (2.3) CONSTRUCT DATA  +++++++++++++++++++ ")
     # Defino customer needs (ngrams = 3) y relevant words para el sentiment (ngrams=1)
-    attr_name_words = construct_data.get_attributes_name_words(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
-    possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)  # df_opi limpio
-    customer_needs, customer_needs_one_word = construct_data.select_customer_needs(possible_costumer_needs, attr_name_words)
+    # attr_name_words = construct_data.get_attributes_name_words(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
+    # possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)  # df_opi limpio
+    # customer_needs, customer_needs_one_word = construct_data.select_customer_needs(possible_costumer_needs, attr_name_words)
 
+    df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx')
+
+    '''
     print(" ------------------- (3) ATRIBUCION  ------------------- ")
     df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi sin limpieza
 
@@ -93,6 +96,7 @@ def main():
     df_clustering = clustering.create_clustering_dataframe(df_modelos, df_sent_por_valor)
     print(df_clustering)
     clustering.k_means(df_clustering)
+    '''
 
     '''
     url = GoogleDrive.leer_archivo('relation_matrix.xlsx')
