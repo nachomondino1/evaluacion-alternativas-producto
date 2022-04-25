@@ -61,37 +61,40 @@ def create_clustering_dataframe(df_modelos, df_attr_values):
         df.loc[len(df)] = l_prom_sent
 
     # Reemplazo valores Nan por valores medios de cada columna
-    # replace_nan(df)
-    df = df.dropna()  # elimina alternativas con NaN
+    df = replace_nan(df)
+    # df = df.dropna()  # elimina alternativas con NaN
 
     return df
 
 def replace_nan(df):
     """
-    Por columna del dataframe, reemplaza valores Nan por la media de dicha columna
+    Por columna del dataframe, reemplaza valores NaN (valores que no tienen sentiment asociado) por la media de dicha
+    columna
     :param df: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
     atributos del producto y las celdas son los sentiment que toma el valor del atributo pero contiene NaN values
     :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
     atributos del producto y las celdas son los sentiment que toma el valor del atributo sin NaN values
     """
+    # Hago copia del dataframe para evitar warning al reemplazar un valor por otro nuevo
+    df_copia = df.copy()
+
     # Por columna
     for column in df.columns:
 
-        # Obtengo promedio de
+        # Obtengo promedio de valores de columna
         valor_promedio = df[column].mean()
+        print("Atributo:", column, "valor promedio:", valor_promedio)
 
         # Por valor
         for i in range(len(df[column])):
 
-            valor = df[column].iloc[i]
-
-            # Si el valor es NaN
-            if str(valor) == 'nan':
+            # Si el valor es NaN (el valor no tiene sentiment)
+            if str(df[column].iloc[i]) == 'nan':
 
                 # Reemplazo valor NaN por valor promedio de la columna
-                df[column].iloc[i] = valor_promedio
+                df_copia[column].iloc[i] = valor_promedio  # esta linea arroja warning si no usaria copia
 
-    return df
+    return df_copia
 
 def k_means(df_clustering):
     """
@@ -119,20 +122,16 @@ def k_means(df_clustering):
     kmeans = KMeans(n_clusters=k).fit(X)
     print(kmeans)
 
-    # Imprimo valores de los centros de cada cluster
-    # centroids = kmeans.cluster_centers_
-    # print(centroids)
-
     # Agrego columna de cluster al que pertenece cada alternativa
     df_clustering["label"] = kmeans.labels_
     return df_clustering
 
 def chooseBestKforKMeans(scaled_data, k_range):
     """
-    Choose best k from a range for some data
+    Choose best k for some data
     :param scaled_data: Data que debe estar normalizada (?)
     :param k_range: Rango de valores que puede tomar k
-    :return:
+    :return: best k
     """
     ans = []
 
@@ -154,7 +153,7 @@ def chooseBestKforKMeans(scaled_data, k_range):
 
     return best_k
 
-def kMeansRes(scaled_data, k, alpha_k=0.06):  #lo subi de 0.02 a 0.06 para tener menos clusters...
+def kMeansRes(scaled_data, k, alpha_k=0.04):  #lo subi de 0.02 a 0.06 para tener menos clusters...
     '''
     Parameters
     ----------
@@ -183,20 +182,20 @@ def kMeansRes(scaled_data, k, alpha_k=0.06):  #lo subi de 0.02 a 0.06 para tener
 
 def show_results(df_mod, df_clust):  #despues veo si la pongo en pagina_web.py o si la dejo
 
-    table1 = pd.DataFrame(columns=df_clust.columns[1:])
+    table1 = pd.DataFrame(columns=df_clust.columns)
 
     # Tabla 1
     # Por grupo
-    for grupo in df_clust['label'].unique():
+    for cluster in df_clust['label'].unique():
 
         # Defino variable donde guardar scores para un grupo
         fila = []
 
         # filtro dataframe
-        df_grupo = df_clust[df_clust['label']==grupo]
+        df_grupo = df_clust[df_clust['label'] == cluster]
 
         # Por atributo
-        for atributo in df_clust.columns[1:]:  #salvo el id_pub
+        for atributo in df_clust:  #salvo el id_pub
 
             # Obtengo promedio de scores
             score_prom = df_grupo[atributo].mean()
@@ -209,7 +208,7 @@ def show_results(df_mod, df_clust):  #despues veo si la pongo en pagina_web.py o
 
     # Ordeno la tabla por grupo
     table1 = table1.sort_values(by=['label'])
-
+    '''
     # table 2
     # seguro necesite df_modelos_formateado pues las numericas las promedio..
     table2 = pd.DataFrame()
@@ -247,14 +246,15 @@ def show_results(df_mod, df_clust):  #despues veo si la pongo en pagina_web.py o
 
     # table 3
     # table 4
+    '''
 
-    return table1, table2
+    return table1 #, table2
 
 def main():
 
     # Creo el dataframe para clustering
-    df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos')
-    df_attr_values = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent11.xlsx', 'Hoja de datos',index_col=0)
+    df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx', index_col=0)
+    df_attr_values = pd.read_excel('/Users/nachomondino/Desktop/df_attrr_values_sent_11.xlsx', 'Hoja de datos',index_col=0)
     print(df_modelos)
     print(df_attr_values)
     df_clustering = create_clustering_dataframe(df_modelos, df_attr_values)
@@ -266,11 +266,11 @@ def main():
 
     # Proceso los datos
     # df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', index_col=0)
-    df = k_means(df_clustering)
+    df = k_means(df_clustering.iloc[:, 1:])  # no le mando id de pub
     df.to_excel('/Users/nachomondino/Desktop/df_clustering_labels.xlsx')
 
-    # df2 = show_results(df_modelos, df)
-    # df2.to_excel('/Users/nachomondino/Desktop/df_clustering_prueba.xlsx')
+    df2 = show_results(df_modelos, df)
+    df2.to_excel('/Users/nachomondino/Desktop/df_clustering_prueba.xlsx')
 
 
 main()

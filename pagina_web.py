@@ -48,95 +48,102 @@ def calculate_importancia_tecnica(customer_needs_weights, relation_matrix):
     return d
 
 def calculate_valoracion_final(df_modelos, df_sent_attr_val, importancia_tecnica):
+    """
+
+    :param df_modelos:
+    :param df_sent_attr_val:
+    :param importancia_tecnica:
+    :return:
+    """
     # valoración final = sum por cada resp técnica de una alternativa (importancia tecnica j * sentiment de respuesta técnica {segun el valor que toma dicha resp técnica}
     # return df con modelo y su valoracion final
 
     # Defino variables
     df = df_modelos.copy()
-    valores_fin = []
+    val_fin_alts = []
+    atributos = df_sent_attr_val['campo_especifico'].unique()
 
-    # Por la cantidad de modelos de haya
+    # POR ALTERNATIVA
     for i in range(len(df_modelos)):
         print("CAMBIO DE MODELO. Nº:", i)
 
-        # defino valoracion final
-        valor_final = 0
-        valores_nan = 0
+        # defino variables
+        val_fin_attr = 0  # Reinicio valoracion final por cada alternativa
+        valores_sin_sent = 0  # Reinicio valores nan por cada alternativa
 
-        # Por atributo
-        # for atributo in importancia_tecnica.keys():
-        for atributo in df_sent_attr_val['campo_especifico'].unique():  # ingreso solo a atributos que tienen al menos una relacion
-            print("ATRIBUTO:", atributo)
+        # POR ATRIBUTO
+        for atributo in atributos:  # ingreso solo a atributos que tienen al menos una relacion
 
-            # Obtengo valor para ese atributo de ese modelo
-            idx_atrib = df_modelos.columns.get_loc(atributo)  # es una idea aplicable a varias funciones que ya hice
-            valor_attr = df_modelos.iloc[i, idx_atrib]
+            # OBTENGO VALOR DEL ATRIBUTO
+            valor = df_modelos.loc[i, atributo]
+            print("ATRIBUTO: {} y VALOR: {}".format(atributo, valor))
 
-            # si el atributo tiene valor nan
-            if str(valor_attr) == 'nan':
-                # Obtengo el sentiment minimo para dicho atributo
+            # SI EL VALOR NO ES NAN (la alternativa puede no tener valor para el atributo)
+            if str(valor) != 'nan':
+
+                # OBTENGO SENTIMENT DEL VALOR (ME QUEDE ACA!)
+                sent_valor = float(df_sent_attr_val[(df_sent_attr_val['campo_especifico'] == atributo) & (df_sent_attr_val['valor'] == valor)]['prom_sent'])
+
+                # SI NO ES NAN
+                if str(sent_valor) != 'nan':
+                    # CALCULO VALORACION FINAL DEL ATRIBUTO
+                    val_fin_attr += sent_valor * importancia_tecnica[atributo]
+                    # print(sent, importancia_tecnica[atributo], valor_final)
+
+                # SI ES NAN
+                else:
+                    # SUMO 1 A CANTIDAD DE VALORES SIN SENTIMENT DE LA ALTERNATIVA
+                    print("El atributo {} toma valor {} y este tiene sentiment NaN".format(atributo, valor))
+                    valores_sin_sent += 1
+
+            # SI EL VALOR ES NAN
+            else:
+                # OBTENGO SENTIMENT MINIMO DEL ATRIBUTO
                 min_prom_sent = df_sent_attr_val[df_sent_attr_val['campo_especifico'] == atributo]["prom_sent"].min()
-
                 print("El modelo Nº{} tiene valor NaN en atributo {}, por lo cual, le asigno el peor sentiment {} de"
                       "los valores de dicho atributo".format(i, atributo, min_prom_sent))
 
-                # Calculo valoracion final
-                valor_final += min_prom_sent * importancia_tecnica[atributo]
+                # CALCULO VALORACION FINAL DEL ATRIBUTO
+                val_fin_attr += min_prom_sent * importancia_tecnica[atributo]
 
-            # si el atributo tiene valor
-            else:
-                # Obtengo sentiment del valor del atributo
-                df_sent_attr_val_filtrado = df_sent_attr_val[(df_sent_attr_val['campo_especifico'] == atributo) &
-                                        (df_sent_attr_val['valor'] == valor_attr)]
-                print(df_sent_attr_val_filtrado)
+        # PONDERO VALORACION FINAL DE LA ALTERNATIVA SEGUN CANTIDAD DE VALORES CON SENTIMENT
+        val_fin_alt = val_fin_attr / (len(atributos) - valores_sin_sent)
+        print('Valor final =', val_fin_attr, ' Cantidad de valores =', len(atributos),'Cantidad de valores sin sent = ',
+              valores_sin_sent, 'Valor final / (cant valores - cant val nan) = ', val_fin_alt)
 
-                # Calculo valoracion final parcial
-                # si el valor no tiene score
-                idx_prom_sent = df_sent_attr_val.columns.get_loc("prom_sent")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
-                if str(df_sent_attr_val_filtrado.iloc[0,idx_prom_sent]) == 'nan':
-                    valores_nan += 1
-
-                # si el valor tiene score
-                else:  #adentro hacia un try-except pero al parecer ya no lo necesito
-
-                    sent = df_sent_attr_val_filtrado.iloc[0,idx_prom_sent]
-                    valor_final += sent * importancia_tecnica[atributo]
-                    # print(sent * importancia_tecnica[atributo], valor_final)
-                    # print(sent, importancia_tecnica[atributo], valor_final)
-
-        # Guardo modelo y su valoracion final
-        a = valor_final / (len(df_sent_attr_val['campo_especifico'].unique()) - valores_nan)
-        print('Valor final =', valor_final, ' Cantidad de valores =', len(df_sent_attr_val['campo_especifico'].unique()),
-              'Cantidad de valores nan = ',valores_nan, 'Valor final / (cant valores - cant val nan) = ', a)
-        valores_fin.append(a)
+        # GUARDO ALTERNATIVA Y SU VALORACION FINAL
+        val_fin_alts.append(val_fin_alt)
 
     # Agrego columna al dataframe modelos
-    df['val_final'] = valores_fin
-    print(valores_fin)
+    df['val_final'] = val_fin_alts
+    print(val_fin_alts)
 
     return df
 
 def recommend_table(df_mod_original, df_mod_val_final):
+    """
 
-    # deberia mostrar los valores reales de los modelos antes de limpiarlos... (y sin id_publicacion)
-
-    # Ordeno los dataframes del mismo modo
-    df_mod_original = df_mod_original.sort_values(by=['id_publicacion'])
-    df_mod_val_final = df_mod_val_final.sort_values(by=['id_publicacion'])
-    print(df_mod_original)
-    print(df_mod_val_final)
-
+    :param df_mod_original:# deberia mostrar los valores reales de los modelos antes de limpiarlos... (y sin id_publicacion)
+    :param df_mod_val_final:
+    :return:
+    """
+    # Defino variables
     val_max = df_mod_val_final['val_final'].max()
-    idx = df_mod_val_final.columns.get_loc('val_final')
     l_porc_recom = []
 
-    for i in range(len(df_mod_val_final)):
-        val_fin = df_mod_val_final.iloc[i, idx]
+    # POR ALTERNATIVA
+    for id in df_mod_original['id_publicacion']:
+
+        # OBTENGO SU VALORACION FINAL
+        val_fin = float(df_mod_val_final[df_mod_val_final['id_publicacion'] == id]['val_final'])
+
+        # CALCULO PORCENTAJE DE RECOMENDACION
         porc_recom = round(val_fin / val_max * 100, 1)
         l_porc_recom.append(porc_recom)
 
-    df_mod_original['val_final'] = l_porc_recom
-    df_mod_original = df_mod_original.sort_values('val_final', ascending=False)
+    # GUARDO PORCENTAJES DE RECOMENDACION DE LAS ALTERNITVAS
+    df_mod_original['porcentaje_recomendacion'] = l_porc_recom
+    df_mod_original = df_mod_original.sort_values('porcentaje_recomendacion', ascending=False)
 
     return df_mod_original
 
@@ -218,14 +225,14 @@ def main():
         print(imp_tecnica_attr)
 
         # Importo archivos
-        df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx')
+        df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx', index_col=0)
         print(df_modelos)
         # df_sent_attr_val = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', index_col=0)
-        df_sent_attr_val = pd.read_excel('/Users/nachomondino/Desktop/df_ponderado.xlsx', index_col=0)
+        df_sent_attr_val = pd.read_excel('/Users/nachomondino/Desktop/df_attrr_values_sent_11.xlsx', index_col=0)
         print(df_sent_attr_val)
 
         # Calculo valoracion final de cada alternativa
-        df = calculate_valoracion_final(df_modelos, df_sent_attr_val, imp_tecnica_attr)
+        df_alts_val_fin = calculate_valoracion_final(df_modelos, df_sent_attr_val, imp_tecnica_attr)
         # df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
 
         # Presentación de resultados dinámicos
@@ -236,16 +243,22 @@ def main():
 
         df_modelos_original = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx', 'Hoja de datos')
         # df_modelos_original['precio'] = show_correct_price(df_modelos_original['precio'])
-        df2 = recommend_table(df_modelos_original, df)
+        df_alts_recommend = recommend_table(df_modelos_original, df_alts_val_fin)
         # df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
 
         # Aca mostraria los 10 mas recomendados...
         st.write('#### Las 10 alternativas que mas le recomendamos')
-        st.write(df2.loc[:,['Marca', "precio",'val_final']])
+        # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
+
+        idxs_top_ten = df_alts_recommend.index[:10]
+        aggrid_interactive_table(df=df_alts_recommend.loc[idxs_top_ten, ['Marca', "Modelo", "precio",'porcentaje_recomendacion']])
+
+        # df_top_ten = df_alts_recommend.loc[idxs_top_ten, ['Marca', "Modelo", "precio",'porcentaje_recomendacion']]
+        # st.write(df_top_ten)
 
         # Aca mostraria los resultados completos
         st.write('#### Todas las alternativas')
-        selection = aggrid_interactive_table(df=df2)
+        aggrid_interactive_table(df=df_alts_recommend)
 
     # si es empresa
     else:
@@ -265,9 +278,6 @@ def main():
 
         # st.write(df_clustering)
         pass
-
-
-
 
 
 

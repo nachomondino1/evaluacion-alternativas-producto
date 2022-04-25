@@ -53,7 +53,7 @@ class MercadoLibreCrawler(Crawler):
         """
         # INTENTO OBTENER URL DE LA SIGUIENTE PAGINA
         try:
-            url_next_page = self.driver.find_element_by_xpath(
+            url_next_page = self.driver.find_element(By.XPATH,
                 '//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
             # url_next_page = driver.find_element(By.XPATH, '//a[contains(@href, "Desde") and @title = "Siguiente"]').get_attribute('href') #XPATH alternativo
 
@@ -95,8 +95,8 @@ class MercadoLibreCrawler(Crawler):
         campo. Uso diccionario por la facilidad que representa  transformarlo en fila/s de un DataFrame.
         """
         # INICIALIZO VARIABLES
-        campos_a_extraer = ['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes']
-        l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes = [], [], [], [], [], []  # lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
+        campos_a_extraer = ['id_alternativa', 'opinion']
+        l_id_alternativa, l_opinion = [], []  # lista por cada campo a extraer. Dentro guardare un valor por cada opinion de la publicacion
         d = {}  # diccionario en donde guardare las listas con los datos extraidos
 
         # OBTENGO TAGS QUE CONTIENEN UNA OPINION
@@ -108,41 +108,39 @@ class MercadoLibreCrawler(Crawler):
             # INTENTO EXTRAER TODOS LOS CAMPOS QUE QUIERO
             try:
                 # Extraigo Title
-                l_title.append(tag.find_element_by_xpath('.//h3').text)
+                # l_title.append(tag.find_element(By.XPATH, './/h3').text)
 
-                # Extraigo Content
-                l_content.append(tag.find_element_by_xpath(
-                    './/p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
+                # Extraigo Opinion
+                l_opinion.append(tag.find_element(By.XPATH,'.//p').text)  # EXTRAE LO QUE HAY DE TEXXTO EN EL SPAN POR ESO EXTRAE EL "HACE..."
 
                 # Extraigo Rate
-                stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
-                num_stars = 0
+                # stars = tag.find_elements_by_class_name("ui-review-view__comments__review-comment__rating__star")
+                # num_stars = 0
                 # Recorro cada una de las 5 estrellas
-                for star in stars:
-                    if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
-                        num_stars += 1
-                    else:
-                        # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
-                        break
-                l_rate.append(num_stars)
+                # for star in stars:
+                #     if star.find_element_by_tag_name("path").get_attribute("fill") == "#3483FA":
+                #         num_stars += 1
+                #     else:
+                #         # Dejo de recorrer las estrellas al encontrar la primera que no ha sido llenada
+                #         break
+                # l_rate.append(num_stars)
 
                 # Extraigo Likes y dislikes
-                l_likes.append(int(tag.find_element_by_xpath('.//button[@data-testid="like-button"]').text))
-                l_dislikes.append(int(tag.find_element_by_xpath('.//button[@data-testid="dislike-button"]').text))
+                # l_likes.append(int(tag.find_element(By.XPATH, './/button[@data-testid="like-button"]').text))
+                # l_dislikes.append(int(tag.find_element(By.XPATH, './/button[@data-testid="dislike-button"]').text))
 
             # FALLO EXTRACCION DE ALGUN CAMPO
             except NoSuchElementException:
-                print("Fallo extraccion de al menos un campo. Probablemente cambio el codigo html de la pagina "
-                      "(como ya ha pasado) ")
-                pass
+                print("Fallo extraccion de opinion. Cuidado pudo haber cambio el codigo html de la pagina (como ya ha "
+                      "pasado) ")
 
         # GUARDO DATOS EXTRAIDOS
         # Creo lista de id_publicacion segun la cantidad de opiniones
-        for i in range(len(l_title)):  # podria haber puesto cualquier campo en lugar de title
-            l_id_publicacion.append(id_publicacion)
+        for i in range(len(l_opinion)):  # podria haber puesto cualquier campo en lugar de title
+            l_id_alternativa.append(id_publicacion)
 
         # Creo lista que contiene todas las listas con los datos extraidos
-        data = [l_id_publicacion, l_title, l_content, l_rate, l_likes, l_dislikes]
+        data = [l_id_alternativa, l_opinion]
 
         # Guardo los datos propiamente
         for i in range(len(campos_a_extraer)):

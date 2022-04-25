@@ -44,7 +44,11 @@ def delete_punctuation(text):
     return new_text
 
 def stop_word_removal(tokens):
+    """
 
+    :param tokens:
+    :return:
+    """
     # Read lista de palabras a remover (vacias.txt)
     path = '/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data_preparation/vacias.txt'
     palabras_vacias = pd.read_csv(path)

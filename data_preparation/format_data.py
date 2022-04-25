@@ -135,13 +135,18 @@ def string_column_to_numeric_column(df):
     return df
 
 def yes_no_column_to_ones_ceros_column(df):
-    # Defino lista con los valores buscados
-    valores_buscados = {"si": 1, "sí": 1, "no": 0}
+    """
+
+    :param df:
+    :return:
+    """
+    # Defino variables
+    valores_buscados = {"si": 1, "sí": 1, "no": 0}  # Defino lista con los valores buscados
 
     # POR COLUMNA DE LAS COLUMNAS DEL DATAFRAME
     for columna in df.columns:
 
-        # SI LA COLUMNA ES DEE STRINGS
+        # SI LA COLUMNA ES DE STRINGS
         if df[columna].dtype == 'object':
 
             # OBTENGO VALORES UNICOS DE LA COLUMNA
@@ -164,15 +169,17 @@ def yes_no_column_to_ones_ceros_column(df):
                     columna_si_no = False
                     break
 
+            # Si LA COLUMNA ES DEL TIPO SI-NO
             if columna_si_no:
                 print('Columna {} es convertida a 1 y 0'.format(columna))
 
+                # Por valor
                 for i in range(len(df[columna])):
 
                     try:
                         # Reemplazo valor "Si" o "no" por 1 o 0 respectivamente
                         valor_si_no = df[columna].iloc[i].lower()
-                        df[columna].iloc[i] = valores_buscados[valor_si_no]  # SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
+                        df.loc[i, columna] = valores_buscados[valor_si_no]
 
                     # El valor es un nan
                     except:
@@ -186,6 +193,7 @@ def correct_price_column(col_precio):
     :param col_precio: Columna precio
     :return: Columna precio corregida
     """
+    # Defino variables
     l_precios = []
 
     # Por cada valor de columna precio
@@ -212,10 +220,6 @@ def correct_price_column(col_precio):
     print("Se corrigio el precio correctamente ")
     return new_col_precio #antes devolcia col_precio
 
-
-df_modelos_original = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx','Hoja de datos')
-print(correct_price_column(df_modelos_original['precio']))
-
 '''
 # def main para hacer pruebas en este archivo independientemente de main.py
 def main():
@@ -237,7 +241,6 @@ def main():
     df_modelos['precio'] = correct_price_column(df_modelos['precio'])
     # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
     df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
-
 
 
 main()

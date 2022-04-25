@@ -197,6 +197,7 @@ def to_attribute_value(df_modelos, df_costumer_needs_sent, matriz_relaciones):
             df_attr.loc[len(df_attr)] = fila  # rabino el index pero funciona joya
             print("Fila:", fila)
 
+        # df_attr_value_sent = pd.concat([df_attr_value_sent, df_attr], ignore_index=True)
         # GUARDO EL ATRIBUTO, SUS VALORES Y SUS SENTIMENT SOLO SI EL ATRIBUTO TIENE AL MENOS UNA RELACION
         # Si el atributo tiene relacion con al menos una customer need
         if sum_relaciones > 0:
@@ -284,7 +285,7 @@ print(relation_matrix)
 
 
 # Probando to_attr_values()
-df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx')
+df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx', index_col=0)
 df_costumer_needs_sent = pd.read_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_5.xlsx')
 relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx')
 atributos = list(df_modelos.columns[1:])
@@ -294,7 +295,8 @@ customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 
 
 df = to_attribute_value(df_modelos, df_costumer_needs_sent, create_relation_matrix(atributos, customer_needs))
 # df = to_attribute_value(df_modelos, df_costumer_needs_sent, relation_matrix)
-df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent11.xlsx', 'Hoja de datos')
+# df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_14.xlsx', 'Hoja de datos')
+df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
 
 
 '''

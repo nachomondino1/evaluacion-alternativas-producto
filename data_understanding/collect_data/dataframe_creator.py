@@ -4,7 +4,6 @@ import pandas as pd
 def add_lines_to_dataframe(d_data, df):
     """
     Agrega filas en un DataFrame existente
-
     :param d_data: diccionario con datos. Sus keys deben ser igual a los nombres de las columnas del dataframe
     existente. Sus value pueden ser tanto un solo valor como una lista de valores.
     :param df: DataFrame existente (puede estar vacio aunque si o si con los nombres de las columnas)
@@ -22,17 +21,16 @@ def add_lines_to_dataframe(d_data, df):
     return df
 
 
-def create_models_dataframe(campos_especificos):
+def create_dataframe_alternativas(campos_especificos):
     """
-    Crea DataFrame de modelos con los nombres de las columnas correspondientes y sin filas (vacio).
+    Crea DataFrame de alternativas con los nombres de las columnas correspondientes y sin filas (vacio).
     Los nombres de las columnas dependeran de cada producto, por lo que, son pasados como parametro.
-
     :param campos_especificos: Lista de campos especificos (o "atributos") del producto de Mercado Libre que deseo
         extraer. Por ejemplo, "tamano de pantalla" para el producto "celulares". Su largo dependera de cada producto.
-    :return: Dataframe "modelos" con los nombres de las columnas correspondientes y sin filas (vacio)
+    :return: Dataframe "alternativas" con los nombres de las columnas correspondientes y sin filas (vacio)
     """
     # DEFINO LISTA CON CAMPOS QUE SON INDEPENDIENTES DEL PRODUCTO
-    campos_a_extraer = ['id_publicacion', 'precio']
+    campos_a_extraer = ['id_alternativa', 'precio']
 
     # POR CAMPO ESPECIFICO
     for campos_especifico in campos_especificos:
@@ -46,11 +44,12 @@ def create_models_dataframe(campos_especificos):
     return df
 
 
-def create_opinions_dataframe():
+def create_dataframe_opiniones():
     """
     Crea Dataframe de opiniones
-
     :return: Dataframe "opiniones" con los nombres de las columnas correspondientes y sin filas (vacio)
     """
-    df = pd.DataFrame(columns=['id_publicacion', 'title', 'content', 'rate', 'likes', 'dislikes'])
+    # df = pd.DataFrame(columns=['id_alternativa', 'title', 'opinion', 'rate', 'likes', 'dislikes'])
+    df = pd.DataFrame(columns=['id_alternativa', 'opinion'])
+
     return df

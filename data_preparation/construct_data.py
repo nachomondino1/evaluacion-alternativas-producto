@@ -3,7 +3,7 @@ import operator
 from data_preparation import preparacion_texto as tp
 
 
-def get_attributes_name_words(df_modelos):  #podria quedarme solo con entities o sustantivos
+def get_attributes_name_words(df_modelos):  # podria quedarme solo con entities o sustantivos, NO ME GUSTA.
     """
     Obtiene las palabras unicas de los nombres de las caracteristicas o atributos del producto. Es probable que el
     cliente use al menos una de ellas en sus opiniones. Asi, podria seleccionar las customer needs de mayor relevancia
@@ -18,14 +18,12 @@ def get_attributes_name_words(df_modelos):  #podria quedarme solo con entities o
     for columna in df_modelos.columns[1:]:  # no incluyo id
 
         # Obtengo nombre de la columna sin accentos y en miniscula
-        # name_column = tp.delete_accent(columna).lower()
-        # aux += name_column + " "
-        aux += columna + " "
+        name_column = tp.delete_accent(columna).lower()
+        aux += name_column + " "
 
     # Guardo palabras unicas de los nombres de los campos especificos
     attr_name_words = set(aux.split())
     attr_name_words = tp.stop_word_removal(attr_name_words)  # lista con palabras de campos especificos sin palabras vacias y sin acentos
-    # print("strings:", a)
     print("Palabras unicas de nombres de atributos:", attr_name_words)
 
     return attr_name_words
@@ -112,6 +110,8 @@ def select_customer_needs(possible_customer_needs, attribute_words):
 
             # Si la palabra es de las relevantes
             if palabra in attribute_words:
+
+                print(possible_customer_need)
 
                 # y la frase solo contiene 1 de las posibles palabras relevantes y no tiene numeros
                 if check_not_numeric_or_repeated(possible_customer_need, copy_possible_words):

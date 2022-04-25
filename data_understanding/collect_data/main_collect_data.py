@@ -6,15 +6,15 @@ from data_understanding.collect_data import dataframe_creator, corte_extraccion_
 from data_understanding.collect_data.mercadolibre_crawler import MercadoLibreCrawler
 
 
-def data_extractor(producto, df_opiniones, df_modelos):
+def data_extractor(producto, df_opiniones, df_alternativas):
     """
-    Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y la API de Mercado Libre
-    y los almacena en los DataFrames pasados como parametro. Representa toda la logica de extraccion.
-
-    :param producto: producto pasado por el usuario para el cual extraer informacion
-    :param df_opiniones: DataFrame solo con los nombres de las columnas para ser llenado con opiniones
-    :param df_modelos: DataFrame solo con los nombres de las columnas para ser llenado con datos de publicaciones
-    :return: Ambos Datafranes cargados con todos los datos extraidos
+    Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y los almacena en los
+    DataFrames pasados como parametro. Representa toda la logica de extraccion.
+    :param producto: String. Nombre de producto al cual extraer datos
+    :param df_opiniones: DataFrame vacio con columnas id_alternativa y opinion.
+    :param df_alternativas: DataFrame vacio con columnas id_alternativa, precio y una por cada campo especifico del
+    producto.
+    :return: Dataframes opiniones y alterenativas cargados con los datos extraidos del producto
     """
     # CREO OBJETO "CRAWLER" DE CLASE MercadoLibreCrawler(), ASI TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
     options = webdriver.ChromeOptions()
@@ -65,7 +65,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
             sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
             # OBTENGO SU IDENTIFICADOR DE PUBLICACION ("id_publicacion")
-            id_publicacion = crawler.get_publication_id(url_publicacion)
+            id_alternativa = crawler.get_publication_id(url_publicacion)
 
             # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
             url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
@@ -87,20 +87,20 @@ def data_extractor(producto, df_opiniones, df_modelos):
                     crawler.ScrollDown()
 
                     # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
-                    d_opiniones_publicacion = crawler.get_publication_opinions_data(id_publicacion)
-                    l_prim_opiniones.append(d_opiniones_publicacion['content'][0])  # Guardo la primera opinion de la
+                    d_opiniones_alternativa = crawler.get_publication_opinions_data(id_alternativa)
+                    l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
                     # publicacion para poder hacer la verificacion de opiniones nuevas
-                    df_opiniones = dataframe_creator.add_lines_to_dataframe(d_opiniones_publicacion, df_opiniones)
+                    df_opiniones = dataframe_creator.add_lines_to_dataframe(d_opiniones_alternativa, df_opiniones)
                     # print(df_opiniones)
 
                     # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
                     crawler.driver.back()
                     sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
-                    # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_modelos")
-                    d_data_modelos = crawler.get_modelo_data(id_publicacion, crawler.producto.atributos)
-                    df_modelos = dataframe_creator.add_lines_to_dataframe(d_data_modelos, df_modelos)
-                    # print(df_modelos)
+                    # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
+                    d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
+                    df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
+                    # print(df_alternativas)
 
                 # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN), ENTONCES NO EXTRAIGO NADA.
                 else:
@@ -149,7 +149,7 @@ def data_extractor(producto, df_opiniones, df_modelos):
     # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
     corte_extraccion_datos.explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
 
-    return df_opiniones, df_modelos
+    return df_opiniones, df_alternativas
 
 
 ''' implementado en main.py

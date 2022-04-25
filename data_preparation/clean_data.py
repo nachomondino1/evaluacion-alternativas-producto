@@ -38,8 +38,7 @@ def categorize_numeric_columns(df):
     :return: Dataframe con todas sus columnas numericas discretas
     """
     # DEFINO VARIABLES
-    FACTOR_HOLGURA = 1.5  # al ser mayor de 1, me aseguro que la columna realmente tome muchos valores
-    PERCENTILES = 0.2
+    PERCENTILES = 1 / 6
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
@@ -48,21 +47,20 @@ def categorize_numeric_columns(df):
         if (df[columna].dtype == 'float64') or (df[columna].dtype == 'int64'):
 
             # Y SI ES CONTINUA, ES DECIR, TOMA MUCHO VALORES DISTINTOS (NO ES DISCRETA)
+            # Defino variables
             cant_valores_unicos = len(df[columna].value_counts())
-            # cant_opt_valores_unicos = len(df[columna]) ** 0.5  # cant clases ideales = raiz(nro datos)
-            cant_opt_valores_unicos = len(df[columna]) ** 0.4  # cant clases ideales = raiz(nro datos)
+            cant_opt_valores_unicos = len(df[columna]) ** 0.5  # cant clases ideales = raiz(nro datos)
 
-            if cant_valores_unicos > FACTOR_HOLGURA * cant_opt_valores_unicos:
-
+            # Si toma mas valores que la cantidad optima
+            if cant_valores_unicos > cant_opt_valores_unicos:  # Aqui se podria aplicar "factor de holgura"
                 print("La columna '{}' sera categorizada...".format(columna))
 
-                # Nueva implementacion de clases con ≠ amplitud (basado en percentiles)
-                # defino variables
+                # DEFINO CLASES (con ≠ amplitud (basado en percentiles)
+                # Defino variables
                 cant_clases = int(1 / PERCENTILES)
+                valores = list(df[columna]) # lista de valores de la columna
                 valores_unicos = sorted(list(df[columna].dropna().unique()))
                 print(valores_unicos)
-
-                valores = list(df[columna]) # lista de valores de la columna
                 valores_limite_max = []  # lista con valores maximos
                 d = {}
 
@@ -72,11 +70,9 @@ def categorize_numeric_columns(df):
                     idx_valor_max_clase = int(len(valores_unicos) * PERCENTILES * (i + 1)) - 1 # valor min para estar en clase i
                     # el -1 seria porque el idx de la lista arranca en 0
 
-                    print(idx_valor_min_clase, idx_valor_max_clase, len(valores_unicos))
-
                     valor_min_clase = valores_unicos[idx_valor_min_clase]
                     valor_max_clase = valores_unicos[idx_valor_max_clase]
-                    valor_med_clase = round((valor_max_clase + valor_min_clase) / 2, 2)  # valor medio de clase i
+                    valor_med_clase = (valor_max_clase + valor_min_clase) / 2  # valor medio de clase i
 
                     # guardo valor maximo de la clase
                     valores_limite_max.append(valor_max_clase)
@@ -85,58 +81,20 @@ def categorize_numeric_columns(df):
                     print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_clase, valor_med_clase, valor_max_clase))
 
                 # REEMPLAZO VALORES POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
-                # por cada valor
+                # Por valor del atributo
                 for i in range(len(valores)):
 
-                    # por cada valor maximo de las clases
+                    # Por valor maximo de las clases
                     for valor_limite in valores_limite_max:
 
-                        # si el valor es menor al valor maximo de la clase
-                        if df[columna].iloc[i] < valor_limite:
+                        # Si el valor es menor al valor maximo de la clase
+                        if df[columna].iloc[i] <= valor_limite:
 
                             # reemplazo valor por el valor medio de la clase
-                            df[columna].iloc[i] = round(d[valor_limite], 1)
+                            df.loc[i, columna] = d[valor_limite]
 
                             # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
                             break
-
-                ''' Ex implementacion de clases con = amplitud 
-                # Defino variables
-                valores = list(df[columna])  # lista de valores de la columna
-                valores_limite_max = []  # lista con valores maximos
-                valor_min = min(valores)  # valor maximo de la columna
-                valor_max = max(valores)  # valor minimo de la columna
-                rango = valor_max - valor_min  # valor maximo - valor minimo
-                amplitud_clase = rango / cant_opt_valores_unicos  # amplitud de una clase
-
-                # CREO INTERVALOS DE CADA CLASE
-                # por cada clase
-                for i in range(int(cant_opt_valores_unicos)):
-                    # determino valores minimo, medio y maximo de la clase
-                    valor_min_clase = round(valor_min + amplitud_clase * i, 2)  # valor min para estar en clase i
-                    valor_max_clase = round(valor_min + amplitud_clase * (i+1), 2)  # valor max para estar en clase i
-                    valor_med_clase = round((valor_max_clase + valor_min_clase) / 2, 2)  # valor medio de clase i
-                    print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_clase, valor_med_clase, valor_max_clase))
-
-                    # guardo valor maximo de la clase
-                    valores_limite_max.append(valor_max_clase)
-
-                # REEMPLAZO VALORES POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
-                # por cada valor
-                for i in range(len(valores)):
-
-                    # por cada valor maximo de las clases
-                    for valor_limite in valores_limite_max:
-
-                        # si el valor es menor al valor maximo de la clase
-                        if df[columna].iloc[i] < valor_limite:
-
-                            # reemplazo valor por el valor medio de la clase
-                            df[columna].iloc[i] = round(valor_limite - (amplitud_clase / 2), 1)
-
-                            # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
-                            break
-                '''
 
             # la columna es numerica pero discreta (toma pocos valores distintos)
             else:
@@ -205,10 +163,11 @@ def correct_opinion_column(df):
     # df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
     return df
 
-def text_preparation(textos):
+def text_preparation(textos):  # creo que la voy a sacar y desde el main llamo a cada funcion directo de preparacion_texto.py
     # df = pd.DataFrame(columns=["col"])
     df_tokenizado = pd.DataFrame(columns=['tokens'])
-    df_cleaned = pd.DataFrame(columns=['content'])
+    df_aux =  pd.DataFrame(columns=['tokens'])
+    # df_cleaned = pd.DataFrame(columns=['content'])
     # df_steamed = pd.DataFrame(columns=['tokens'])
 
     # POR OPINION
@@ -234,11 +193,9 @@ def text_preparation(textos):
 
         # (2) STOP WORD REMOVAL
         tokens = tp.stop_word_removal(tokens)
-        print(tokens)
-        # df_tokenizado.loc[len(df_tokenizado)] = tokens  # intentando arreglar FutureWarning --> pero por algun motivo fallo...
-        df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
-        untoken = ' '.join(tokens)
-        df_cleaned.loc[len(df_cleaned)] = untoken # df_cleaned = df_cleaned.append({"content": untoken}, ignore_index=True)
+        df_tokenizado.loc[len(df_tokenizado)] = [tokens]  # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
+        # untoken = ' '.join(tokens)
+        # df_cleaned.loc[len(df_cleaned)] = untoken
 
         '''
         # (3) STEAM
