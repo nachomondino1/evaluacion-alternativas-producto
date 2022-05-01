@@ -20,7 +20,7 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
     df_costumer_needs_sent = pd.DataFrame(columns=["id_publicacion"] + customer_needs_one_word)
     # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs (lo hago aca?)
     d_palabras_adic = {'camara': ['camaras', 'foto', 'fotos'], 'memoria': ['fluidez', 'almacenamiento', 'ram'],
-                       "procesador": ["velocidad", "funcionamiento","software"]}
+                       "procesador": ["velocidad", "funcionamiento","software"], 'bateria':'duracion'}
 
     # POR OPINION
     for i in range(len(df_opiniones)):

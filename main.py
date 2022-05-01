@@ -2,104 +2,144 @@
 import data_understanding.collect_data.dataframe_creator
 import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
-# from data_preparation import format_data, clean_data, construct_data
-# from modelling import sentiment_atribution
-# from modelling import clustering
+from data_understanding import describe_data, explore_data
+from data_preparation import format_data, clean_data, construct_data
+# from modelling import sentiment_atribution, clustering
 import requests
 
 def main():
-
-    print(" (1) EXTRACCION DE DATOS ".center(120, '#'))
+    '''
+    print(" (1) DATA UNDERSTANDING ".center(120, '#'))
+    print(" (1.1) COLLECT INITIAL DATA ".center(120))
     # Pido producto a relevar al administrador
     producto = str(input("Ingrese producto a relevar: "))
 
     # Creo objeto producto
     product = mercadolibre_crawler.Product(producto)  # despues lo saco
 
-    print("A) Validando producto ingresado".center(120))
+    print("A) Validando producto ingresado...".center(120))
     # Valido el producto buscado tal que no sea una busqueda tan amplia
     product.search_validation()
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
-    print("B) Buscando atributos del producto".center(120))
-    product.atributos = product.get_product_attributes()
+    print("B) Buscando atributos del producto...".center(120))
+    product.atributos, name_attrs = product.get_product_attributes()  # el segundo return es parrte de la prueba...
 
     # En base al producto a buscar, creo los data
     df_opiniones = dataframe_creator.create_dataframe_opiniones()
     df_alternativas = dataframe_creator.create_dataframe_alternativas(product.atributos)
 
-    print("C) Extrayendo datos del producto".center(120))
+    print("C) Extrayendo datos del producto...".center(120))
     # Carga de datos a data
     df_opiniones, df_alternativas = main_collect_data.data_extractor(product, df_opiniones, df_alternativas)
 
-    # Exporto data (podria ser por seguridad)
-    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
-    df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
-
     '''
+    # Prueba
+    l_col = ['Marca', 'Línea', 'Modelo', 'Modelo alfanumérico', 'Voltaje', 'Frecuencia', 'Es smart', 'Sistema operativo', 'Con apagado automático', 'Con sistema de montaje VESA incorporado', 'Ancho x Profundidad x Altura', 'Peso', 'Ancho con soporte', 'Profundidad con soporte', 'Altura con soporte', 'Peso con soporte', 'Cantidad de parlantes', 'Potencia máxima de los parlantes', 'Modos de sonido', 'Tipo de pantalla', 'Tamaño de la pantalla', 'Tipo de resolución', 'Con HDR', 'Resolución máxima', 'Relación de aspecto', 'Frecuencia de actualización de la pantalla', 'Con USB', 'Con HDMI', 'Cantidad de puertos HDMI', 'Cantidad de puertos USB', 'Con Wi-Fi', 'Con ethernet', 'Con entrada S/PDIF', 'Con entrada por video componentes', 'Con entrada por video compuesto', 'Con entrada de antena RF', 'Accesorios incluidos', 'Con función screen share', 'Apps integradas', 'Es 3D', 'Es curvo', 'Es portátil', 'Capacidad de almacenamiento', 'Con cables ocultos', 'Relación de contraste', 'Con Bluetooth', 'Con VGA', 'Brillo', 'Tiempo de respuesta', 'Con comando de voz integrado', 'Ancho', 'Ángulo de visión horizontal', 'Ángulo de visión vertical', 'Asistentes virtuales integrados', 'Cantidad de núcleos del procesador']
+
     # Levanto el dataframe ES PRUEBA DE (2)
-    df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
-    df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
+    df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_alternativas_tv.xlsx')
+    df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_tv.xlsx')
+
+
+    print(" (1.2) DESCRIBE DATA ".center(120))
+    describe_data.getting_to_know_data(df_alternativas)
+    describe_data.getting_to_know_data(df_opiniones)
+
+    print(" (1.3) EXPLORE DATA ".center(120))
+    print(" a) Analisis de unicidad de ids ".center(120))
+    explore_data.id_uniqueness_check(df_alternativas, df_opiniones)
+
+    print(" b) Analisis de filas repetidas ".center(120))
+    print("Dataframe opiniones")
+    explore_data.check_repeated_rows(df_opiniones['opinion']) # filas repetidas sin tener en cuenta el id_pub
+    print("Dataframe alternativas")
+    explore_data.check_repeated_rows(df_alternativas.iloc[:, 2:])  # filas repetidas sin tener en cuenta el id_pub y precio
+
+    print(" c) Analisis de cantidad de opiniones por valor de cada campo especifico ".center(120))
+    explore_data.n_opi_by_value(df_alternativas, df_opiniones)
+
+    # Exporto data (podria ser por seguridad)
+    # df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
+    # df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_alternativas_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
+
+    # Levanto el dataframe ES PRUEBA DE (2)
+    # df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
+    # df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
+
 
     print(" (2) DATA PREPARATION ".center(120, "#"))
     print(" (2.1) FORMAT DATA ".center(120))
-    print("A) Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
-    df_modelos = format_data.string_column_to_numeric_column(df_modelos)
+    print("A) Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
+    df_alternativas = format_data.string_column_to_numeric_column(df_alternativas)
 
-    print("B) Convirtiendo columnas si-no a columnas 1-0... ".center(120))
-    df_modelos = format_data.yes_no_column_to_ones_ceros_column(df_modelos)
+    print("B) Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
+    df_alternativas = format_data.yes_no_column_to_one_zero_column(df_alternativas)
 
-    print("C) Corrigiendo columna precio...".center(120))
-    df_modelos['precio'] = format_data.correct_price_column(df_modelos['precio'])
 
-    print("(2.2) CLEAN DATA ".center(120))
-    print("2.2.1 Eliminando none values...".center(120))
-    df_opiniones.dropna()  # borra las pocas filas que no tienen title
+    print("C) Dataframe Alternativas: Corrigiendo columna precio...".center(120))
+    df_alternativas['precio'].dropna()  # ESTOY PROBANDO
+    df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])
 
-    print("2.2.2 Eliminando filas repetidas...".center(120))
-    df_opiniones = df_opiniones.drop(clean_data.delete_repeated_rows(df_opiniones['content']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
 
-    print("2.2.3 Categorizando campos numericos continuos...".center(120))
-    df_modelos.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_modelos.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
+    print("(2.2) CLEAN DATA ".center(120))  #podria dividirlo por dataframe...
+    # print("2.2.1 Dataframe Opiniones: Eliminando none values...".center(120))
+    # df_opiniones.dropna()  # borra las pocas filas que no tienen title
 
-    print("2.2.4 Eliminando campos constantes y campos continuos...".center(120))
-    df_modelos = clean_data.delete_attr_x_values(df_modelos)  # elimino columnas que toman 1 o muchos valores
+    print("2.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
+    df_opiniones = df_opiniones.drop(clean_data.delete_repeated_rows(df_opiniones['opinion']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
 
-    print("2.2.5 Preparando opiniones...".center(120))
+    print("2.2.2 Dataframe Alternativas: Categorizando campos numericos continuos...".center(120))
+    df_alternativas.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alternativas.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
+
+    print("2.2.3 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
+    df_alternativas = clean_data.delete_attr_x_values(df_alternativas)  # elimino columnas que toman 1 o muchos valores
+
+    print("2.2.4 Dataframe Opiniones: Preparando opiniones...".center(120))
     # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
     df_opiniones = clean_data.correct_opinion_column(df_opiniones)
 
     # Limpio las opiniones
-    df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['content'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
+    df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['opinion'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
     # df_opiniones_customer.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
     print(" (2.3) CONSTRUCT DATA ".center(120))
     # Defino customer needs (ngrams = 3) y relevant words para el sentiment (ngrams=1)
-    attr_name_words = construct_data.get_attributes_name_words(df_modelos)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES
+    print("2.3.1 Defino posibles customer needs del producto...".center(120))
+    # attr_name_words = construct_data.get_attributes_name_words(df_alternativas)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES  --> 1º intento
+    attr_name_words = construct_data.get_attributes_name_words(l_col)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES --> 3º intento
     possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)  # df_opi limpio
+
+    print("2.3.2 Selecciono customer needs del producto...".center(120))
     customer_needs, customer_needs_one_word = construct_data.select_customer_needs(possible_costumer_needs, attr_name_words)
 
     # Exporto customer needs Ojo es una lista...
     # customer_needs.to_csv('/Users/nachomondino/Desktop/customer_needs.csv', index=False)
-    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx')
-    '''
+    # df_alternativas.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx')
 
     '''
-    print(" (3) ATRIBUCION ".center(120, "#"))
+    print(" (3) MODELLING ".center(120, "#"))
+    print(" (3.1) ATRIBUCION ".center(120))
+    print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
     df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi sin limpieza
 
+    print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
-    relation_matrix = sentiment_atribution.create_relation_matrix(df_modelos.columns[1:], customer_needs_one_word)  # incluyo el precio
+    relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio
     relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index=False)
 
-    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_modelos, df_sent, relation_matrix)
+    print("3.1.3 Atribuyo sentiment a valores de los atributos del producto...".center(120))
+    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_alternativas, df_sent, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
 
-    print(" (4) CLUSTERING ".center(120, "#"))
-    df_clustering = clustering.create_clustering_dataframe(df_modelos, df_sent_por_valor)
+    print(" (3.2) CLUSTERING ".center(120))
+    print("3.2.1 Creo dataframe para clustering...".center(120))
+    df_clustering = clustering.create_clustering_dataframe(df_alternativas, df_sent_por_valor)
     print(df_clustering)
+
+    print("3.2.2 Corro modelo clustering...".center(120))
     clustering.k_means(df_clustering)
     '''
 

@@ -189,7 +189,7 @@ class MercadoLibreCrawler(Crawler):
         facilidad que representa transformarlo en fila/s de un DataFrame.
         """
         # DEFINO DICCIONARIO DONDE GUARDARE DATOS. AGREGO EL UNICO CAMPO PREVIAMENTE EXTRAIDO.
-        data = {'id_publicacion': id_publicacion}
+        data = {'id_alternativa': id_publicacion}
 
         # ESPERO HASTA QUE APAREZCA LA SECCION "CARACTERISTICAS PRINCIPALES"
         try:
@@ -357,6 +357,7 @@ class Product:
         else:
             # DEFINO EL NOMBRE DE LA SUBCATEGORIA A LA QUE PERTENECE EL PRODUCTO
             self.nombre_subcat = tag_nombre_subcat.find_previous_sibling().attrs['title']
+            print("El producto ha sido validado con exito")
 
     def get_home_page_url(self):
         """
@@ -474,5 +475,6 @@ class Product:
         # RESUMO LOS RESULTADOS DE LA EXTRACCION DE ATRIBUTOS
         print("Los {} atributos y su frecuencia (cortare en frec {}):".format(len(d.keys()), frec_corte), d)
         print('Los {} atributos mas frecuentes:'.format(len(atributos)), atributos)
+        print(d.keys())
 
-        return atributos
+        return atributos, d.keys()       # ESTO ES UNA PRUEBA!

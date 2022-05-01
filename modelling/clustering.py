@@ -250,6 +250,8 @@ def show_results(df_mod, df_clust):  #despues veo si la pongo en pagina_web.py o
 
     return table1 #, table2
 
+
+'''
 def main():
 
     # Creo el dataframe para clustering
@@ -274,3 +276,4 @@ def main():
 
 
 main()
+'''

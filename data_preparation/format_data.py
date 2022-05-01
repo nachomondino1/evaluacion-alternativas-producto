@@ -8,7 +8,6 @@ def check_if_numeric_column(columna):
     :param columna: Columna de valores string
     :return: True si la columna puede ser convertida a numerica, o bien, False en caso contrario.
     """
-
     # Por valor de la columna
     for valor in columna:
 
@@ -58,8 +57,8 @@ def check_if_numeric_column(columna):
 
 def string_column_to_numeric_column(df):
     """
-    Dado un dataframe, convierte sus columnas con valores string que guardan numeros en valores numericos para poder
-    hacer moperaciones matematicas.
+    Dado un dataframe, revisa cada columna de este y, aquellas que sean inherentemente numéricas pero que sean
+    interpretadas como strings (pues llevan la unidad del valor numerico), son convertidas a numericas.
     :param df: Dataframe al cual hacer la conversion
     :return: Dataframe convertido
     """
@@ -134,11 +133,11 @@ def string_column_to_numeric_column(df):
 
     return df
 
-def yes_no_column_to_ones_ceros_column(df):
+def yes_no_column_to_one_zero_column(df):
     """
-
-    :param df:
-    :return:
+    Convierte todas las columnas si-no de un dataframe a columnas de 1-0
+    :param df: Dataframe
+    :return: Dataframe pasado por parametro con columnas si-no reemplazadas por columnas 1-0
     """
     # Defino variables
     valores_buscados = {"si": 1, "sí": 1, "no": 0}  # Defino lista con los valores buscados
@@ -158,14 +157,14 @@ def yes_no_column_to_ones_ceros_column(df):
             # POR CADA VALOR UNICO
             for valor in valores_unicos.index:
 
-                # SI EL VALOR ES UNO DE LOS VALORES BUSCADOS
+                # SI EL VALOR ES SI O NO
                 if valor.lower() in valores_buscados.keys():
-                    # CONTINUAR REVISANDO VALORES
+                    # CONTINUAR REVISANDO VALORES UNICOS
                     pass
 
-                # NO ES UN VALOR DE LOS BUSCADOS
+                # SI EL VALOR NO ES SI O NO
                 else:
-                    # DEJO DE RECORRER VALORES UNICOS DE LA COLUMNA PUES NO ES DEL TIPO "SI" O "NO"
+                    # DEJO DE RECORRER VALORES UNICOS DE LA COLUMNA PUES NO ES DEL TIPO SI-NO
                     columna_si_no = False
                     break
 
@@ -211,14 +210,14 @@ def correct_price_column(col_precio):
             l_precios.append(int(correct_string_value)) # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
 
         # Excepto que es nan
-        except ValueError:  # cannot convert float NaN to integer
+        except ValueError:  # cannot convert float NaN to integer  # si elimino precios = nan, sacaria el try-except
             # No corrigo nada
             l_precios.append(None)
 
     # Guardo nueva columna precio
     new_col_precio = pd.Series(l_precios)  #si o si sera dtype float64 pues el NaN es un float64
     print("Se corrigio el precio correctamente ")
-    return new_col_precio #antes devolcia col_precio
+    return new_col_precio
 
 '''
 # def main para hacer pruebas en este archivo independientemente de main.py

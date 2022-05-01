@@ -110,7 +110,7 @@ def delete_attr_x_values(df):
     # Defino variables
     PORC_MUCHOS_VAL = 0.5
     # columnas_no_eliminar = ["Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
-    columnas_no_eliminar = ["id_publicacion", "precio", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
+    columnas_no_eliminar = ["id_alternativa", "precio", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
 
     # Por cada atributo
     for columna in df.columns:
@@ -146,7 +146,7 @@ def delete_attr_x_values(df):
 
 def correct_opinion_column(df):
     # Recorrer cada fila, en part, la columna de opiniones y quitar hasta el punt
-    idx_opi = df.columns.get_loc("content")  # es una idea aplicable a varias funciones que ya hice
+    idx_opi = df.columns.get_loc("opinion")  # es una idea aplicable a varias funciones que ya hice
 
     # Por el largo del dataframe
     for i in range(len(df)):
@@ -160,6 +160,7 @@ def correct_opinion_column(df):
         # Reemplazo opinion por ella misma pero sin la fecha de emision
         df.iloc[i, idx_opi] = opinion[:idx]
 
+    print("Se ha quitado con exito la fecha de emision de cada opinion")
     # df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
     return df
 
@@ -192,7 +193,7 @@ def text_preparation(textos):  # creo que la voy a sacar y desde el main llamo a
         tokens = opinion.split()
 
         # (2) STOP WORD REMOVAL
-        tokens = tp.stop_word_removal(tokens)
+        tokens = tp.stop_word_removal(tokens)  #pruebo a no implementar stop word removal
         df_tokenizado.loc[len(df_tokenizado)] = [tokens]  # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
         # untoken = ' '.join(tokens)
         # df_cleaned.loc[len(df_cleaned)] = untoken
