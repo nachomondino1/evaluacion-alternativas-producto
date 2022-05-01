@@ -76,7 +76,7 @@ def sample_analyze_entity_sentiment(text_content):
     # print(u"Language of the text: {}".format(response.language))
     return data
 
-# sample_analyze_entity_sentiment(text_content = 'Grapes are good. Bananas are bad.')
+sample_analyze_entity_sentiment(text_content = 'Grapes are good. Bananas are bad.')
 # sample_analyze_entity_sentiment(text_content = 'Uvas son buenas. Bananas son malas.')
 # sample_analyze_entity_sentiment("Excelente el telefono samsung z flip 3. Es practico elegante , distinguido. Muy funcional. Solo la bateria no es de larga duracion. A mi no me afecta porque lo uso muy poco. Lo cargo cada 48 hs. Feliz con este equipo.")
 # sample_analyze_entity_sentiment("Los puntos buenos primero, es rapido, la bateria dura casi 2 dias y se carga super rapido, en menos de 1 hora tenes carga completa. No tiene mas los botones en la pantalla pero los podes poner. La pantalla tiene colores muy nitidos. Podes elegir el estilo de los accesos a las app y el tipo de letra. Para mejorar la camara, no es muy estable. Todos los motorolas guardan las fotos en google fotos y a mi no me parece comodo.Hace 3 meses")

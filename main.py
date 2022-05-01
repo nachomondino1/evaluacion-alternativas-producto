@@ -4,7 +4,7 @@ import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_understanding import describe_data, explore_data
 from data_preparation import format_data, clean_data, construct_data
-# from modelling import sentiment_atribution, clustering
+from modelling import sentiment_atribution
 import requests
 
 def main():
@@ -119,12 +119,13 @@ def main():
     # customer_needs.to_csv('/Users/nachomondino/Desktop/customer_needs.csv', index=False)
     # df_alternativas.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx')
 
-    '''
+
     print(" (3) MODELLING ".center(120, "#"))
     print(" (3.1) ATRIBUCION ".center(120))
     print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
     df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi sin limpieza
 
+    '''
     print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio
