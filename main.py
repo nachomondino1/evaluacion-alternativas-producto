@@ -34,12 +34,9 @@ def main():
     df_opiniones, df_alternativas = main_collect_data.data_extractor(product, df_opiniones, df_alternativas)
 
     '''
-    # Prueba
-    l_col = ['Marca', 'Línea', 'Modelo', 'Modelo alfanumérico', 'Voltaje', 'Frecuencia', 'Es smart', 'Sistema operativo', 'Con apagado automático', 'Con sistema de montaje VESA incorporado', 'Ancho x Profundidad x Altura', 'Peso', 'Ancho con soporte', 'Profundidad con soporte', 'Altura con soporte', 'Peso con soporte', 'Cantidad de parlantes', 'Potencia máxima de los parlantes', 'Modos de sonido', 'Tipo de pantalla', 'Tamaño de la pantalla', 'Tipo de resolución', 'Con HDR', 'Resolución máxima', 'Relación de aspecto', 'Frecuencia de actualización de la pantalla', 'Con USB', 'Con HDMI', 'Cantidad de puertos HDMI', 'Cantidad de puertos USB', 'Con Wi-Fi', 'Con ethernet', 'Con entrada S/PDIF', 'Con entrada por video componentes', 'Con entrada por video compuesto', 'Con entrada de antena RF', 'Accesorios incluidos', 'Con función screen share', 'Apps integradas', 'Es 3D', 'Es curvo', 'Es portátil', 'Capacidad de almacenamiento', 'Con cables ocultos', 'Relación de contraste', 'Con Bluetooth', 'Con VGA', 'Brillo', 'Tiempo de respuesta', 'Con comando de voz integrado', 'Ancho', 'Ángulo de visión horizontal', 'Ángulo de visión vertical', 'Asistentes virtuales integrados', 'Cantidad de núcleos del procesador']
-
     # Levanto el dataframe ES PRUEBA DE (2)
-    df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_alternativas_tv.xlsx')
-    df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_tv.xlsx')
+    df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_alternativas_celulares.xlsx')
+    df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
 
 
     print(" (1.2) DESCRIBE DATA ".center(120))
@@ -101,31 +98,25 @@ def main():
 
     # Limpio las opiniones
     df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['opinion'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
+    print(df_opiniones_tokenizado.head(5))
     # df_opiniones_customer.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
     print(" (2.3) CONSTRUCT DATA ".center(120))
-    # Defino customer needs (ngrams = 3) y relevant words para el sentiment (ngrams=1)
-    print("2.3.1 Defino posibles customer needs del producto...".center(120))
-    # attr_name_words = construct_data.get_attributes_name_words(df_alternativas)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES  --> 1º intento
-    attr_name_words = construct_data.get_attributes_name_words(l_col)  # TENGO QUE TERMINAR DE DESARROLLAR LAS FUNCIONES --> 3º intento
-    possible_costumer_needs = construct_data.define_possible_customer_needs(df_opiniones_tokenizado)  # df_opi limpio
-
-    print("2.3.2 Selecciono customer needs del producto...".center(120))
-    customer_needs, customer_needs_one_word = construct_data.select_customer_needs(possible_costumer_needs, attr_name_words)
+    print("Selecciono customer needs del producto...".center(120))
+    # customer_needs, customer_needs_one_word = construct_data.select_customer_needs(df_opiniones_tokenizado)
 
     # Exporto customer needs Ojo es una lista...
     # customer_needs.to_csv('/Users/nachomondino/Desktop/customer_needs.csv', index=False)
     # df_alternativas.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx')
 
-
+    '''
     print(" (3) MODELLING ".center(120, "#"))
     print(" (3.1) ATRIBUCION ".center(120))
     print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
     df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi sin limpieza
 
-    '''
     print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio

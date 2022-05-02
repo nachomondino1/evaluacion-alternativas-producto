@@ -1,26 +1,30 @@
 # Importo librerias
 import pandas as pd
-from modelling import google_sentiment_api
-
+import nltk
+from sentiment_analysis_spanish import sentiment_analysis
 
 def to_customer_needs(df_opiniones, customer_needs_one_word):
     """
-    Identifica, si hay, customer needs en opiniones y mediante la api de Google, determina el sentiment o score para
-    cada una
-    :param df_opiniones: Dataframe cuya unidad de analisis son opiniones
+    Identifica, si hay, customer needs en opiniones y asigna el sentiment a cada una mediante la libreria pysentimiento
+    :param df_opiniones: Dataframe cuya unidad de analisis son opiniones (sin limpiar pues necesito los puntos...aunque para verr si la palabra esta en la frase esta debe ser lower y sin acentos...)
     :param customer_needs_one_word: Lista de customer needs como frases de 1 sola palabra
     :return: Dataframe cuya unidad de analisis es una opinion y cuyas columnas son cada customer need. La celda es el
     sentiment de la customer need en la opinion, o bien si la opinion no habla de la customer need, None.
     """
     # DEFINO VARIABLES
     # Defino indices utiles para tener flexibilidad en codigo (posibilidad de columnas en otra posicion)
-    idx_id = df_opiniones.columns.get_loc("id_publicacion")  # indice de columna que contiene ids de publicaciones
-    idx_opi = df_opiniones.columns.get_loc("content")  #  indice de columna que contiene opiniones
+    idx_id = df_opiniones.columns.get_loc("id_alternativa")  # indice de columna que contiene ids de publicaciones
+    idx_opi = df_opiniones.columns.get_loc("opinion")  #  indice de columna que contiene opiniones
     # Defino dataframe a retornar
-    df_costumer_needs_sent = pd.DataFrame(columns=["id_publicacion"] + customer_needs_one_word)
+    df_costumer_needs_sent = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)
     # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs (lo hago aca?)
     d_palabras_adic = {'camara': ['camaras', 'foto', 'fotos'], 'memoria': ['fluidez', 'almacenamiento', 'ram'],
                        "procesador": ["velocidad", "funcionamiento","software"], 'bateria':'duracion'}
+
+    sent = sentiment_analysis.SentimentAnalysisSpanish()
+
+    """FALTA IMPLEMENTAR CASO EN QUE LA CUSTOMER NEED SEA NOMBRADA EN MAS DE UNA FRASE.... """
+    """FALTA LOWER Y ELIMINAR ACENTOS DE FRASE AL VER SI LA CUSTOMER NEED ESTA O NO EN ELLA"""
 
     # POR OPINION
     for i in range(len(df_opiniones)):
@@ -29,52 +33,57 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
         print("NºFila:", i)
         print("Opinion:", opinion)
 
-        # OBTENGO SENTIMENT DE CADA ENTITY (alguna podria ser una customer need) DE LA OPINION USANDO LA API DE GOOGLE
-        d_entities_sent = google_sentiment_api.sample_analyze_entity_sentiment(opinion)
+        # POR FRASE DE OPINION
+        for frase in nltk.tokenize.sent_tokenize(opinion):
+            print(frase)
 
-        # POR CUSTOMER NEED
-        for customer_need in customer_needs_one_word:
+            # OBTENGO SENTIMENT DE FRASE CON PYSENTIMIENTO
+            sent_frase = sent.sentiment(frase)
 
-            # ANTES DE VER SI LA CUSTOMER NEED ESTA EN LA OPINION, AGREGO, SI HAY, PALABRAS ADICIONALES A LA CUSTOMER
-            # NEED QUE LA PUEDAN AYUDAR A IDENTIFICAR MEJOR
-            # Si la customer need tiene palabras adicionales
-            if customer_need in d_palabras_adic.keys():
-                # Agrego palabras adicionales a palabras a buscar
-                palabras_a_buscar = [customer_need] + d_palabras_adic[customer_need]
+            # POR CUSTOMER NEED
+            for customer_need in customer_needs:
 
-            # Si la customer need no tiene palabras adicionales
-            else:
-                # Solo la customer need como palabra a buscar
-                palabras_a_buscar = [customer_need]
+                # ANTES DE VER SI LA CUSTOMER NEED ESTA EN LA FRASE, AGREGO, SI HAY, PALABRAS ADICIONALES A LA CUSTOMER
+                # NEED QUE LA PUEDAN AYUDAR A IDENTIFICAR MEJOR
+                # Si la customer need tiene palabras adicionales
+                if customer_need in d_palabras_adic.keys():
+                    # Agrego palabras adicionales a palabras a buscar
+                    palabras_a_buscar = [customer_need] + d_palabras_adic[customer_need]
 
-            # Variable para cortar busqueda de sentiment de customer need con palabras adicionales
-            bool = True
+                # Si la customer need no tiene palabras adicionales
+                else:
+                    # Solo la customer need como palabra a buscar
+                    palabras_a_buscar = [customer_need]
 
-            # POR PALABRA A BUSCAR
-            for palabra_a_buscar in palabras_a_buscar:
+                # Variable para cortar busqueda de sentiment de customer need con palabras adicionales
+                bool = True
 
-                # SI LA PALABRA ESTA EN LA OPINION
-                if palabra_a_buscar in d_entities_sent.keys():
+                # POR PALABRA A BUSCAR
+                for palabra_a_buscar in palabras_a_buscar:
 
-                    # GUARDO SU SCORE O SENTIMENT
-                    fila.append(d_entities_sent[palabra_a_buscar])
+                    # SI LA PALABRA ESTA EN LA OPINION
+                    if palabra_a_buscar in frase:
 
-                    # EN CASO DE HABER PALABRAS ADICIONALES, DEJO DE BUSCAR PALABRAS PARA ESTA CUSTOMER NEED
-                    bool = False
-                    break
+                        # ASIGNO SENTIMENT DE FRASE
+                        fila.append(sent_frase)
 
-            # SI LA OPINION NO MENCIONA A LA CUSTOMER NEED
-            if bool:
-                # ASIGNO SCORE O SENTIMENT NONE
-                fila.append(None)
+                        # EN CASO DE HABER PALABRAS ADICIONALES, DEJO DE BUSCAR PALABRAS PARA ESTA CUSTOMER NEED
+                        bool = False
+                        break
 
-        # TRAS OBTENERE SENTIMENT DE TODAS LAS CUSTOMER NEEDS EN UNA OPINION, AGREGO FILA AL DATAFRAME
-        df_costumer_needs_sent.loc[i] = fila
-        print("Fila:", fila)
+                # SI LA OPINION NO MENCIONA A LA CUSTOMER NEED
+                if bool:
+                    # ASIGNO SCORE O SENTIMENT NONE
+                    fila.append(None)
+
+            # TRAS OBTENER SENTIMENT DE TODAS LAS CUSTOMER NEEDS EN UNA OPINION, AGREGO FILA AL DATAFRAME
+            df_costumer_needs_sent.loc[i] = fila
+            print("Fila:", fila)
 
     # EXPORTO DATAFRAME
     # df_costumer_needs_sent.to_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_5.xlsx', 'Hoja de datos',index=False)
     print(df_costumer_needs_sent)
+
     return df_costumer_needs_sent
 
 def create_relation_matrix(atributos, customer_needs):
@@ -283,7 +292,7 @@ relation_matrix = create_relation_matrix(atributos, customer_needs)
 print(relation_matrix)
 '''
 
-
+'''
 # Probando to_attr_values()
 df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx', index_col=0)
 df_costumer_needs_sent = pd.read_excel('/Users/nachomondino/Desktop/df_costumer_needs_sent_sin_limp_abs_5.xlsx')
@@ -297,7 +306,7 @@ df = to_attribute_value(df_modelos, df_costumer_needs_sent, create_relation_matr
 # df = to_attribute_value(df_modelos, df_costumer_needs_sent, relation_matrix)
 # df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_14.xlsx', 'Hoja de datos')
 df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
-
+'''
 
 '''
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
