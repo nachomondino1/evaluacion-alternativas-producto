@@ -1,34 +1,93 @@
 # Importo librerias
 import pandas as pd
-import data_preparation.preparacion_texto as tp
+from data_preparation.utils import preparacion_texto
 
 
-def delete_repeated_rows(df):
+def delete_date_of_issue_from_opinion(df_opiniones):
     """
-     La funcion debe obtener los indices de las filas a borrar
-
-    :param df: Dataframe al cual revisar valores duplicados
-    :return: Lista de indices de las filas del dataframe a borrar
+    Elimina fecha de emision de cada opinion
+    :param df_opiniones: Dataframe opiniones
+    :return: Dataframe opiniones cuyas opiniones ya no tienen fecha de emision
     """
-    # Defino lista donde guardar los indices de las filas a borrar
-    idx = []
+    # Defino variable
+    idx_opi = df_opiniones.columns.get_loc("opinion")  # indice de columna "opinion"
 
-    # Defino cantidad de filas
-    cant_filas = df.shape[0]
-    print("Originalmente el dataframe tenia {} filas.".format(cant_filas), end=" ")
+    # POR OPINION
+    for i in df_opiniones.index:
+        opinion = df_opiniones.iloc[i, idx_opi]  # Busco una opinion
 
-    # Elimino filas duplicadas
-    df = df.drop_duplicates()
+        # BUSCO EL INDICE DEL ULTIMO PUNTO DE ESTA (despues del punto esta la fecha de emision)
+        idx = opinion.rfind('.')  # rfind() (r de reverse?) busca desde atras en cambio find() desde adelante
 
-    for i in range(len(df)):
-        if i not in df.index:
-            idx.append(i)
+        # REEMPLAZO OPINION POR ELLA MISMA PERO HASTA ANTES DEL ULTIMO PUNTO
+        df_opiniones.iloc[i, idx_opi] = opinion[:idx]
 
-    # Defino nueva cantidad de filas
-    cant_filas = df.shape[0]
-    print("Tras eliminar las filas duplicadas, el dataframe tiene {} filas".format(cant_filas))
+    print("Se ha quitado con exito la fecha de emision de cada opinion")
+    # df_opiniones['opinion'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
+    return df_opiniones
 
-    return idx
+def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main llamo a cada funcion directo de preparacion_texto.py
+    """
+    Procesa opiniones: convierto a miniscula, elimino acentos, elimino puntuacion, tokenizo y elimino palabras vacias
+    :param opiniones: Columna "opinion" de dataframe opiniones
+    :return: Dataframe con columna "tokens" cuyos valores son las opiniones procesadas
+    """
+    # Creo objeto de clase TextPreparation para tener disponible herramientas de procesamiento de texto
+    tp = preparacion_texto.TextPreparation(df_opiniones['opinion'])
+
+    print("Convierto opiniones a miniscula")
+    df_opiniones['opinion'] = tp.to_lower()
+    print(df_opiniones.head(5))
+
+    print("Remuevo acentos de opiniones")
+    df_opiniones['opinion'] = tp.delete_accent()
+    print(df_opiniones.head(5))
+
+    print("Quito puntuacion de opiniones")
+    df_opiniones['opinion'] = tp.delete_punctuation()
+    print(df_opiniones.head(5))
+
+    print("Tokenizo opiniones")
+    df_opiniones['opinion'] = tp.tokenize()
+    print(df_opiniones.head(5))
+
+    print("Remuevo palabras vacias")
+    df_opiniones['opinion'] = tp.stop_word_removal()
+    print(df_opiniones.head(5))
+
+    '''
+    # POR OPINION
+    for opinion in opiniones:
+
+        # CONVIERTO A MINÚSCULAS
+        opinion = opinion.lower()
+
+        # Correccion de repeticiones 'largooo' en vez de 'largo'
+        # Correccion de palabras (mala escritura) 'espectativas' en vez de 'expectativas'
+        # Correccion de abreviaturas 'q' en vez de 'que'
+
+        # ELIMINO ACENTOS
+        opinion = tp.delete_accent(opinion)
+        # print(opinion)
+
+        # ELIMINO PUNTUACION
+        opinion = tp.delete_punctuation(opinion)
+        # print(opinion)
+
+        # (1) TOKENIZATION: SEPARO SUS PALABRAS POR ESPACIOS EN BLANCO
+        tokens = opinion.split()
+
+        # (2) STOP WORD REMOVAL: ELIMINO PALABRAS VACIAS COMO POR EJEMPLO ARTICULOS
+        tokens = tp.stop_word_removal(tokens)  #pruebo a no implementar stop word removal
+
+        # GUARDO OPINION PROCESADA
+        df_tokenizado.loc[len(df_tokenizado)] = [tokens]  # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
+        # untoken = ' '.join(tokens)
+        # df_cleaned.loc[len(df_cleaned)] = untoken
+    
+    '''
+
+    return df_opiniones
 
 def categorize_numeric_columns(df):
     """
@@ -144,70 +203,15 @@ def delete_attr_x_values(df):
 
     return df
 
-def correct_opinion_column(df):
-    # Recorrer cada fila, en part, la columna de opiniones y quitar hasta el punt
-    idx_opi = df.columns.get_loc("opinion")  # es una idea aplicable a varias funciones que ya hice
+''' Prueba
+df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
+pd.set_option("display.max.columns", None)  # para ver todas las columnas del df y no que las colapse
+pd.set_option("display.precision", 2)  # mostrar maximo dos decimales
+print(df_opiniones['opinion'].head(5))
+df = clean_text(df_opiniones['opinion'])
+print(df.head(5))
+'''
 
-    # Por el largo del dataframe
-    for i in range(len(df)):
-
-        # Busco una opinion
-        opinion = df.iloc[i, idx_opi]
-
-        # Busco el ultimo punto.... se hace con rfind(), r debe ser de reverse
-        idx = opinion.rfind('.')
-
-        # Reemplazo opinion por ella misma pero sin la fecha de emision
-        df.iloc[i, idx_opi] = opinion[:idx]
-
-    print("Se ha quitado con exito la fecha de emision de cada opinion")
-    # df['content'].to_csv('/Users/nachomondino/Desktop/df_opiniones.csv', index=False)
-    return df
-
-def text_preparation(textos):  # creo que la voy a sacar y desde el main llamo a cada funcion directo de preparacion_texto.py
-    # df = pd.DataFrame(columns=["col"])
-    df_tokenizado = pd.DataFrame(columns=['tokens'])
-    df_aux =  pd.DataFrame(columns=['tokens'])
-    # df_cleaned = pd.DataFrame(columns=['content'])
-    # df_steamed = pd.DataFrame(columns=['tokens'])
-
-    # POR OPINION
-    for opinion in textos:
-
-        # Lo convierto en miniscula
-        opinion = opinion.lower()
-
-        # Correccion de repeticiones 'largooo' en vez de 'largo'
-        # Correccion de palabras (mala escritura) 'espectativas' en vez de 'expectativas'
-        # Correccion de abreviaturas 'q' en vez de 'que'
-
-        # Elimino acentos
-        opinion = tp.delete_accent(opinion)
-        # print(opinion)
-
-        # Elimino puntuacion
-        opinion = tp.delete_punctuation(opinion)
-        # print(opinion)
-
-        # (1) TOKENIZATION: SEPARO SUS PALABRAS POR ESPACIOS EN BLANCO
-        tokens = opinion.split()
-
-        # (2) STOP WORD REMOVAL
-        tokens = tp.stop_word_removal(tokens)  #pruebo a no implementar stop word removal
-        df_tokenizado.loc[len(df_tokenizado)] = [tokens]  # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
-        # untoken = ' '.join(tokens)
-        # df_cleaned.loc[len(df_cleaned)] = untoken
-
-        '''
-        # (3) STEAM
-        tokens = tp.steamming(tokens)
-        df_steamed = df_steamed.append({"tokens": tokens}, ignore_index=True)
-
-        for token in tokens:
-            df = df.append({"col": token}, ignore_index=True)
-        '''
-
-    return df_tokenizado    # tambien podria devolver df_cleaned, pero no lo uso
 
 
 '''
@@ -252,4 +256,33 @@ def main():  # esto lo implemento en main.py, dsp de terminar el archivo, la pas
 
 
 main()
+'''
+
+
+'''
+def delete_repeated_rows(df):
+    """
+     La funcion debe obtener los indices de las filas a borrar
+    :param df: Dataframe
+    :return: Lista de indices de las filas del dataframe a borrar
+    """
+    # Defino lista donde guardar los indices de las filas a borrar
+    idx = []
+
+    # Defino cantidad de filas
+    cant_filas = df.shape[0]
+    print("Originalmente el dataframe tenia {} filas.".format(cant_filas), end=" ")
+
+    # Elimino filas duplicadas
+    df = df.drop_duplicates()
+
+    for i in range(len(df)):
+        if i not in df.index:
+            idx.append(i)
+
+    # Defino nueva cantidad de filas
+    cant_filas = df.shape[0]
+    print("Tras eliminar las filas duplicadas, el dataframe tiene {} filas".format(cant_filas))
+
+    return idx
 '''

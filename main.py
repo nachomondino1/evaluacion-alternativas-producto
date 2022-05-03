@@ -4,6 +4,7 @@ import pandas as pd
 from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
 from data_understanding import describe_data, explore_data
 from data_preparation import format_data, clean_data, construct_data
+from data_preparation.utils import preparacion_texto
 from modelling import sentiment_atribution
 import requests
 
@@ -73,18 +74,12 @@ def main():
     print("B) Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
     df_alternativas = format_data.yes_no_column_to_one_zero_column(df_alternativas)
 
-
     print("C) Dataframe Alternativas: Corrigiendo columna precio...".center(120))
     df_alternativas['precio'].dropna()  # ESTOY PROBANDO
     df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])
 
 
     print("(2.2) CLEAN DATA ".center(120))  #podria dividirlo por dataframe...
-    # print("2.2.1 Dataframe Opiniones: Eliminando none values...".center(120))
-    # df_opiniones.dropna()  # borra las pocas filas que no tienen title
-
-    print("2.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
-    df_opiniones = df_opiniones.drop(clean_data.delete_repeated_rows(df_opiniones['opinion']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
 
     print("2.2.2 Dataframe Alternativas: Categorizando campos numericos continuos...".center(120))
     df_alternativas.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alternativas.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
@@ -94,11 +89,16 @@ def main():
 
     print("2.2.4 Dataframe Opiniones: Preparando opiniones...".center(120))
     # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
-    df_opiniones = clean_data.correct_opinion_column(df_opiniones)
+    df_opiniones = clean_data.delete_date_of_issue_from_opinion(df_opiniones)
+
+    print("2.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
+    df_opiniones = df_opiniones.drop_duplicates(subset='opinion')  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
+
+    df_opiniones_tokenizado = clean_data.clean_opinions(df_opiniones)  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
+    print(df_opiniones_tokenizado.head(5))
 
     # Limpio las opiniones
-    df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['opinion'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
-    print(df_opiniones_tokenizado.head(5))
+    # df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['opinion'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
     # df_opiniones_customer.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
     # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)

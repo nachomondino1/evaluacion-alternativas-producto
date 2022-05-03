@@ -1,17 +1,19 @@
 import pandas as pd
 
-def check_if_numeric_column(columna):
+def is_inherently_numerical(columna):
     """
     Determina si una columna con valores string puede ser convertida a una columna con valores numericos. Esto se podra
     solo si todos los valores strings contienen un numero, tipicamente son de la forma <numero + espacio en blanco +
     unidad>
     :param columna: Columna de valores string
-    :return: True si la columna puede ser convertida a numerica, o bien, False en caso contrario.
+    :return: True si la columna puede ser convertida a numerica, o en caso contrario, False
     """
-    # Por valor de la columna
+    # POR VALOR DE LA COLUMNA
     for valor in columna:
 
+        # SI EL VALOR NO ES NAN
         try:
+            # ME FIJO CANTIDAD DE NUMEROS QUE CONTIENE
             # Intento separar el valor, por un lado, la parte numerica y por otro los strings
             value_words = valor.split()
             cant_num = 0
@@ -28,8 +30,8 @@ def check_if_numeric_column(columna):
                 except ValueError:
                     pass
 
-            # Al terminar de revisar palabras de un valor, veo cuantos numeros encontre
-            # Si encontre un numero
+            # DEPENDIENDO DE CANTIDAD DE NUMEROS, SIGO ITERANDO O CORTO
+            # Si encontre mas de un numero
             if cant_num > 1:
                 # Retorno false pues la columna es numerica pero no es de la forma <nro + blank space + unidad>
                 print("'{}' es numerica pero no es posible extraer un numero pues hay mas de uno. Valor que fallo: {}".format(columna.name, valor))
@@ -47,11 +49,12 @@ def check_if_numeric_column(columna):
                 # Sigo recorriendo valores para verificar que todos contengan un numero
                 pass
 
-        # Excepto si el valor es un none value
+        # SI EL VALOR ES NAN
         except AttributeError:
             # print("Deberia ser nan:", valor)
             pass
 
+    # IMPRIMO MENSAJE DE QUE LA COLUMNA ES NUMERICA
     print("'{}' es numerica!".format(columna.name))
     return True
 
@@ -62,6 +65,7 @@ def string_column_to_numeric_column(df):
     :param df: Dataframe al cual hacer la conversion
     :return: Dataframe convertido
     """
+    # DEFINO PASAJE DE UNIDADES
     # unidades de memoria a GB, unidades de superficie a m2, unidades de peso a kg, unidad de longitud a metro, unidad
     # densidad de imagen a ppi, unidades de carga ekectrica a mah, unidades de cant de pixeles a mpx
     d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA
@@ -73,34 +77,36 @@ def string_column_to_numeric_column(df):
          'mpx': 1, # CANTIDAD DE PIXELES
          }
 
-    # Por cada columna de las columnas del df
+    # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
 
-        # Si la columna contiene strings
+        # SI LA COLUMNA CONTIENE STRINGS
         if df[columna].dtype == "object":
 
-            # y si los strings contienen valores numericos
-            if check_if_numeric_column(df[columna]):
+            # Y ESTOS CONTIENEN VALORES NUMERICOS
+            if is_inherently_numerical(df[columna]):
 
                 # Defino variables
                 valores = list(df[columna])  # lista con valores (de forma <nro + blank space + unidad>) de la columna
                 nuevos_valores = []  # lista con los nuevos valores numericos (<nro>) de la columna
                 unidades = set()  # lista de unidades (<unidad>) de la columna
 
-                # OBTENGO VALORES NUMERICOS POR UN LADO Y UNIDADES POR OTRO
-                for value in df[columna]:
+                # POR VALOR DE LA COLUMNA
+                for valor in valores:
 
-                    # Separo value en substrings
+                    # SI EL VALOR NO ES NAN
                     try:
-                        value_substrings = value.split()  # separo en [<nro>,<unidad>]
+                        # OBTENGO SU VALOR NUMERICO
+                        # Separo valor en substrings
+                        valor_substrings = valor.split()  # separo en [<nro>,<unidad>]
 
-                        # Si el valor es <numero + espacio en blanco + unidad>
-                        if len(value_substrings) == 2:
+                        # Si el valor es de la forma <numero + espacio en blanco + unidad>
+                        if len(valor_substrings) == 2:
 
-                            # obtengo valor numerico por un lado y unidad por otro
-                            valor_numerico, unidad = float(value_substrings[0]), value_substrings[1].lower()
+                            # Obtengo valor numerico por un lado y unidad por otro
+                            valor_numerico, unidad = float(valor_substrings[0]), valor_substrings[1].lower()
 
-                            # si hay que hacer cambio de unidad
+                            # Hago pasaje de unidades
                             if unidad in d.keys():
                                 valor_numerico *= d[unidad]
                             else:
@@ -111,25 +117,32 @@ def string_column_to_numeric_column(df):
                             nuevos_valores.append(valor_numerico)
                             unidades.add(unidad)
 
+                        # Si el valor no es de la forma <numero + espacio en blanco + unidad>
                         else:
                             print("La funcion no pudo hacer la conversion pues esta preparada para convertir strings "
                                   "que sean de la forma <numero + espacio en blanco + unidad>")
 
-                    # Excepto si el valor es 'nan'
+                    # SI EL VALOR ES NAN
                     except AttributeError:
                         # Guardo valor 'nan'
-                        nuevos_valores.append(value)
+                        nuevos_valores.append(valor)
                         # print("Deberia ser nan:", valor)
 
+                # REEMPLAZO VALORES POR SUS VALORES NUMERICOS
+                df[columna] = df[columna].replace(valores, nuevos_valores)
+
+                # IMPRIMO WARNINGS EN CASO NECESARIO
                 # Imprimo aviso si hice o no conversion de unidades
                 if len(unidades) > 1:
-                    print("CUIDADO! Verificar conversiones de unidad. Unidades: {}".format(unidades))
+                    print("CUIDADO! Originalmente habia mas de una unidad, por lo que, algunos valores sufrieron"
+                          " una conversion de unidades. Unidades: {}".format(unidades))
                 else:
-                    print("No se hicieron cambios de conversion. Unidad: {}".format(unidades))
+                    print("Originalmente habia una sola unidad, por lo que, no se hizo conversion de unidades. Unidad: "
+                          "{}".format(unidades))
 
-                # REEMPLAZO VALORES POR VALORES NUMERICOS
-                df[columna] = df[columna].replace(valores, nuevos_valores)
-                print('Verificar cambio de dtype:', df[columna].dtype)
+                # Verificacion de columna datatype
+                if (df[columna].dtype != "float64") or (df[columna].dtype != 'int64'):
+                    print('ATENCION! Algo no salio bien y no se realizo correctamente el cambio de dtype de la columna {}'.format(columna))
 
     return df
 
@@ -142,20 +155,17 @@ def yes_no_column_to_one_zero_column(df):
     # Defino variables
     valores_buscados = {"si": 1, "sí": 1, "no": 0}  # Defino lista con los valores buscados
 
-    # POR COLUMNA DE LAS COLUMNAS DEL DATAFRAME
+    # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
 
-        # SI LA COLUMNA ES DE STRINGS
+        # SI LA COLUMNA CONTIENE STRINGS
         if df[columna].dtype == 'object':
-
-            # OBTENGO VALORES UNICOS DE LA COLUMNA
-            valores_unicos = df[columna].value_counts()  # el nan no es considerado un valor. Los valores son el index
 
             # A priori supongo que la columna es del tipo si no
             columna_si_no = True
 
-            # POR CADA VALOR UNICO
-            for valor in valores_unicos.index:
+            # POR VALOR UNICO
+            for valor in df[columna].dropna().unique():  # Alternativamente, df[columna].value_counts().index
 
                 # SI EL VALOR ES SI O NO
                 if valor.lower() in valores_buscados.keys():
@@ -174,13 +184,13 @@ def yes_no_column_to_one_zero_column(df):
 
                 # Por valor
                 for i in range(len(df[columna])):
-
+                    # Si el valor no es nan
                     try:
                         # Reemplazo valor "Si" o "no" por 1 o 0 respectivamente
                         valor_si_no = df[columna].iloc[i].lower()
                         df.loc[i, columna] = valores_buscados[valor_si_no]
 
-                    # El valor es un nan
+                    # Si el valor es nan
                     except:
                         pass
 
@@ -195,11 +205,12 @@ def correct_price_column(col_precio):
     # Defino variables
     l_precios = []
 
-    # Por cada valor de columna precio
+    # POR VALOR DE COLUMNA "PRECIO"
     for i in range(len(col_precio)):
 
-         # Intento corregir el valor
+         # SI EL VALOR NO ES NAN
         try:
+            # ARREGLO EL VALOR
             # Convierto valor a string
             string_value = str(col_precio.iloc[i])  # numpy.float64 no tiene method replace()
 
@@ -209,12 +220,12 @@ def correct_price_column(col_precio):
             # Lo convierto a numero entero y lo reemplazo en la columna
             l_precios.append(int(correct_string_value)) # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
 
-        # Excepto que es nan
+        # SI EL VALOR ES NAN
         except ValueError:  # cannot convert float NaN to integer  # si elimino precios = nan, sacaria el try-except
-            # No corrigo nada
+            # NO CORRIJO NADA
             l_precios.append(None)
 
-    # Guardo nueva columna precio
+    # GUARDO COLUMNA PRECIO CORREGIDA
     new_col_precio = pd.Series(l_precios)  #si o si sera dtype float64 pues el NaN es un float64
     print("Se corrigio el precio correctamente ")
     return new_col_precio

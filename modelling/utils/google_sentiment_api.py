@@ -1,6 +1,6 @@
 from google.cloud import language_v1
 import os
-import data_preparation.preparacion_texto as tp
+import data_preparation.utils.preparacion_texto as tp
 
 # Credentials
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/meli-project-347018-2d3b34b14be4.json"

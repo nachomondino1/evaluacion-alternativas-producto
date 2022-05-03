@@ -27,9 +27,14 @@ def id_uniqueness_check(df_alt, df_opi):
     :param df_opi: Dataframe opiniones
     :return: funcion sin retorno
     """
+    # Obtengo cantidad de ids unicos en cada dataframe
+    cant_ids_opi = len(df_opi['id_alternativa'].unique())
+    cant_ids_alt = len(df_alt['id_alternativa'].unique())
+
+    # Imprimo resultados por pantalla
     print("Deberia haber {} ids unicos".format(len(df_alt)))
-    print("Hay {} ids unicos en Dataframe opiniones".format(len(df_opi['id_alternativa'].unique())))
-    print("Hay {} ids unicos en Dataframe alternativas".format(len(df_alt['id_alternativa'].unique())))
+    print("Hay {} ids unicos en Dataframe opiniones".format(cant_ids_opi))
+    print("Hay {} ids unicos en Dataframe alternativas".format(cant_ids_alt))
     print()
 
 
@@ -42,44 +47,41 @@ def n_opi_by_value(df_alt, df_opi):
     :param df_opi: Dataframe opiniones
     :return: exporta archivo excel con Dataframe
     """
-    # Defino cantidad de opiniones por id_publicacion
-    cant_opi_x_id = df_opi['id_alternativa'].value_counts()
-    # print(cant_opi_x_id)
-
     # Defino variables utiles
-    df = pd.DataFrame(columns=["campo_esp", "valor", "cant_pub", "cant_opi_pubs"])
+    df = pd.DataFrame(columns=["campo_esp", "valor", "cant_alt", "cant_opi_alt"])  # defino dataframe a retornar
+    cant_opi_x_id = df_opi['id_alternativa'].value_counts()  # Defino cantidad de opiniones por id_publicacion
 
-    # Por campo especifico de los campos especificos
+    # Por atributo o campo especifico del producto
     for campo_esp in df_alt.columns[2:]:
 
-        # Obtengo valores del campo y su frecuencia
+        # Obtengo valores del atributo y su frecuencia
         valores_campo_y_frec = df_alt[campo_esp].value_counts()
         valores_campo = valores_campo_y_frec.index
         # print(" ++++ {} ++++".format(campo_esp))
         # print(valores_campo)
 
-        # Por valor de los valores del campo
+        # Por valor
         for valor in valores_campo:
 
-            # obtengo dataframe filtrado por valor
+            cant_opi = 0  # Reinicio cantidad de opiniones por valor
+
+            # Selecciono alternativas cuyo <atributo> toma <valor> y obtengo sus ids
             df_un_val = df_alt[df_alt[campo_esp] == valor]
             ids_val = df_un_val['id_alternativa']
-            cant_opi = 0
 
             # Por id de los id cuyos <campo especifico> toma <valor>
             for id in ids_val:
 
-                # obtener cantidad de opiniones de esos ids
-                # Sumar y obtener la cantidad de opiniones para ese valor
+                # Obtener cantidad de opiniones de alternativa
                 cant_opi += cant_opi_x_id.loc[id]
 
-            # Guardo datos del valor y su cantidad de opiniones
-            new_df = pd.DataFrame(data={"campo_esp": campo_esp, "valor": valor, "cant_pub": valores_campo_y_frec[valor],
-                                        "cant_opi_pubs": cant_opi}, index=[0])
+            # Recorridos todos los ids, guardo el valor y su cantidad de opiniones
+            new_df = pd.DataFrame(data={"campo_esp": campo_esp, "valor": valor, "cant_alt": valores_campo_y_frec[valor],
+                                        "cant_opi_alt": cant_opi}, index=[0])
             df = pd.concat([df, new_df])
 
     # Exporto archivo excel con los datos recabados
-    path = '/Users/nachomondino/Desktop/df_campo_valores.xlsx'
+    path = '/Users/nachomondino/Desktop/df_opiniones_per_value.xlsx'
     print("Se guarda el archivo en {}".format(path))
     return df.to_excel(path, 'Hoja de datos', index=False)
 
