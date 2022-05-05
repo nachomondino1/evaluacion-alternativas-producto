@@ -5,22 +5,16 @@ import requests
 from nltk.stem import SnowballStemmer
 
 
-""" ALTERNATIVA 1: CON CLASE """
-# Te da la opcion de usar solo si queres algunas funcionalidades
-# podria decidir hacer steam para establecer customerr needs y no para el modelo de sentiment por ejemplo. te da esa funcionalidad.
-# Ademas puedo usar esta clase para otro proyecto...
-# igual no pienso crear dos objetos por corrida y limpiar las opiniones dos veces... en ese caso no seria necesaria la clase..
-
 class TextPreparation:
     """Techniques to prepare text"""
 
     def __init__(self, textos):
-        self.textos = textos
+        self.textos = textos  # debe ser una serie de pandas y no una frase suelta
 
     def to_lower(self):
         """
-        Convierte texto a miniscula
-        :return:
+        Convierte a miniscula los textos de la Serie de texto
+        :return: Serie del texto en miniscula
         """
         # Defino variables
         new_texts = []
@@ -40,9 +34,8 @@ class TextPreparation:
 
     def delete_accent(self):
         """
-        Remueve acentos de una cadena de texto
-        :param text: Texto en minuscula
-        :return: Texto en miniscula sin acentos
+        Remueve acentos de textos de una Serie de texto
+        :return: Serie del texto sin acentos
         """
         # Defino variables
         d = {'á': "a", 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}  # diccionario, letra con acento en key y sin en value
@@ -75,8 +68,8 @@ class TextPreparation:
 
     def delete_punctuation(self):
         """
-        Elimina cualquier signo de puntuacion
-        :return:
+        Elimina cualquier signo de puntuacion de textos de una Serie de texto
+        :return: Serie del texto sin puntuacion
         """
         # Defino variables
         new_texts = []
@@ -106,6 +99,12 @@ class TextPreparation:
         return self.textos
 
     def tokenize(self):
+        """
+        Tokeniza textos de una Serie de texto, es decir, convierte cada texto en una lista cuyos elementos es cada
+        palabra de este.
+        :return: Serie del texto tokenizado
+        """
+        # Defino variables
         new_texts = []
 
         # Por text
@@ -124,9 +123,8 @@ class TextPreparation:
 
     def stop_word_removal(self):
         """
-
-        :param tokens:
-        :return:
+        Elimina palabras vacias de textos de una Serie de texto
+        :return: Serie del texto sin palabras vacias
         """
         # Read lista de palabras a remover (vacias.txt)
         path = '/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data_preparation/utils/vacias.txt'
@@ -164,101 +162,37 @@ class TextPreparation:
         return self.textos
 
     def dowload_stop_word_removal_file(self):
+        """
+        Descarga archivo que contiene todas las palabras vacias
+        :return:
+        """
         url = 'https://raw.githubusercontent.com/7PartidasDigital/AnaText/master/datos/diccionarios/vacias.txt'
         r = requests.get(url, allow_redirects=True)
         return open('vacias.txt', 'wb').write(r.content)
 
-    def steamming(self, tokens):
-        new_tokens = []
+    def steamming(self):
+        """
+        Aplica steamming de textos de una Serie de texto
+        :return: Serie del texto con palabras steam
+        """
+        # Defino variables
+        new_text = []
+        new_texts = []
         spanish_stemmer = SnowballStemmer('spanish')
 
-        for token in tokens:
-            new_tokens.append(spanish_stemmer.stem(token))
+        # Por token
+        for token in self.textos:
 
-        return new_tokens
+            # Por palabra
+            for word in token:
 
+                # Le hago steam a la palabra
+                new_text.append(spanish_stemmer.stem(word))
 
-'''
-""" ALTERNATIVA 2: SIN CLASE """
-def delete_accent(text):
-    """
-    Remueve acentos de una cadena de texto
-    :param text: Texto en minuscula
-    :return: Texto en miniscula sin acentos
-    """
-    # Defino variables
-    d = {'á': "a", 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}  # diccionario, letra con acento en key y sin en value
-    new_text = str()  # nuevo texto sin acentos
+            # Guardo texto procesado
+            new_texts.append(new_text)
 
-    # Recorro cada letra del texto
-    for i in range(len(text)):
-        if text[i] in d.keys():
-             new_text += d[text[i]]
-        else:
-            new_text += text[i]
+        # Reemplazo textos por textos procesados
+        self.textos = pd.Series(new_texts)
 
-    return new_text
-
-def delete_punctuation(text):
-    # Defino variables
-    new_text = str()  # nuevo texto sin acentos
-
-    # Recorro cada letra del texto
-    for i in range(len(text)):
-
-        # si es un signo de puntuacion
-        if text[i] in string.punctuation:
-            # guardar string vacio
-            new_text += ""
-
-        # no es un signo de puntuacion
-        else:
-            # guardo string
-            new_text += text[i]
-
-    return new_text
-
-def stop_word_removal(tokens):
-    """
-
-    :param tokens:
-    :return:
-    """
-    # Read lista de palabras a remover (vacias.txt)
-    path = '/data_preparation/vacias.txt'
-    palabras_vacias = pd.read_csv(path)
-    palabras_vacias = list(palabras_vacias['palabra'])  # ['palabra'] hace que acceda a la columna y lo convierto en lista para poder hacer la comparacion if token in palabras vacias
-
-    # Defino variable
-    new_tokens = []  # Lista de tokens nuevos sin las palabras vacias
-
-    # Por token en tokens
-    for token in tokens:
-
-        # Si el token es una palabra vacia
-        if token in palabras_vacias:
-
-            # No guardar el token
-            pass
-
-        # Si el token no es una palabra vacia
-        else:
-            # Guardo token
-            new_tokens.append(token)
-
-    return new_tokens
-
-def dowload_stop_word_removal_file():
-    url = 'https://raw.githubusercontent.com/7PartidasDigital/AnaText/master/datos/diccionarios/vacias.txt'
-    r = requests.get(url, allow_redirects=True)
-    return open('vacias.txt', 'wb').write(r.content)
-
-def steamming(tokens):
-    new_tokens = []
-    spanish_stemmer = SnowballStemmer('spanish')
-
-    for token in tokens:
-        new_tokens.append(spanish_stemmer.stem(token))
-
-    return new_tokens
-'''
+        return self.textos

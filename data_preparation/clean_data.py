@@ -29,11 +29,14 @@ def delete_date_of_issue_from_opinion(df_opiniones):
 def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main llamo a cada funcion directo de preparacion_texto.py
     """
     Procesa opiniones: convierto a miniscula, elimino acentos, elimino puntuacion, tokenizo y elimino palabras vacias
-    :param opiniones: Columna "opinion" de dataframe opiniones
-    :return: Dataframe con columna "tokens" cuyos valores son las opiniones procesadas
+    :param opiniones: Dataframe opiniones
+    :return: Dataframe opiniones con opiniones procesadas
     """
     # Creo objeto de clase TextPreparation para tener disponible herramientas de procesamiento de texto
     tp = preparacion_texto.TextPreparation(df_opiniones['opinion'])
+
+    print("Originalmente el dataframe luce como sigue")
+    print(df_opiniones.head(5))
 
     print("Convierto opiniones a miniscula")
     df_opiniones['opinion'] = tp.to_lower()
@@ -43,7 +46,7 @@ def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main lla
     df_opiniones['opinion'] = tp.delete_accent()
     print(df_opiniones.head(5))
 
-    print("Quito puntuacion de opiniones")
+    print("Quito puntuacion de opiniones")  # a priori creo que no lo removeria peus necesito los puntos para obtener cada frase de la opinion y
     df_opiniones['opinion'] = tp.delete_punctuation()
     print(df_opiniones.head(5))
 
@@ -54,38 +57,6 @@ def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main lla
     print("Remuevo palabras vacias")
     df_opiniones['opinion'] = tp.stop_word_removal()
     print(df_opiniones.head(5))
-
-    '''
-    # POR OPINION
-    for opinion in opiniones:
-
-        # CONVIERTO A MINÚSCULAS
-        opinion = opinion.lower()
-
-        # Correccion de repeticiones 'largooo' en vez de 'largo'
-        # Correccion de palabras (mala escritura) 'espectativas' en vez de 'expectativas'
-        # Correccion de abreviaturas 'q' en vez de 'que'
-
-        # ELIMINO ACENTOS
-        opinion = tp.delete_accent(opinion)
-        # print(opinion)
-
-        # ELIMINO PUNTUACION
-        opinion = tp.delete_punctuation(opinion)
-        # print(opinion)
-
-        # (1) TOKENIZATION: SEPARO SUS PALABRAS POR ESPACIOS EN BLANCO
-        tokens = opinion.split()
-
-        # (2) STOP WORD REMOVAL: ELIMINO PALABRAS VACIAS COMO POR EJEMPLO ARTICULOS
-        tokens = tp.stop_word_removal(tokens)  #pruebo a no implementar stop word removal
-
-        # GUARDO OPINION PROCESADA
-        df_tokenizado.loc[len(df_tokenizado)] = [tokens]  # df_tokenizado = df_tokenizado.append({"tokens": tokens}, ignore_index=True)
-        # untoken = ' '.join(tokens)
-        # df_cleaned.loc[len(df_cleaned)] = untoken
-    
-    '''
 
     return df_opiniones
 
@@ -98,6 +69,7 @@ def categorize_numeric_columns(df):
     """
     # DEFINO VARIABLES
     PERCENTILES = 1 / 6
+    CANT_CLASES = int(1 / PERCENTILES)  # cantidad de clases con ≠ amplitud (basado en percentiles)
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
@@ -105,46 +77,42 @@ def categorize_numeric_columns(df):
         # SI LA COLUMNA ES NUMERICA
         if (df[columna].dtype == 'float64') or (df[columna].dtype == 'int64'):
 
-            # Y SI ES CONTINUA, ES DECIR, TOMA MUCHO VALORES DISTINTOS (NO ES DISCRETA)
             # Defino variables
             cant_valores_unicos = len(df[columna].value_counts())
             cant_opt_valores_unicos = len(df[columna]) ** 0.5  # cant clases ideales = raiz(nro datos)
 
-            # Si toma mas valores que la cantidad optima
+            # SI LA COLUMNA ES CONTINUA (toma muchos valores distintos, especificamente, mas que la cantidad optima)
             if cant_valores_unicos > cant_opt_valores_unicos:  # Aqui se podria aplicar "factor de holgura"
                 print("La columna '{}' sera categorizada...".format(columna))
 
-                # DEFINO CLASES (con ≠ amplitud (basado en percentiles)
+                # CREO CLASES QUE TENDRA LA VARIABLE
                 # Defino variables
-                cant_clases = int(1 / PERCENTILES)
+                d = {}  # diccionario con valores maixmos y medios de cada clase
                 valores = list(df[columna]) # lista de valores de la columna
                 valores_unicos = sorted(list(df[columna].dropna().unique()))
-                print(valores_unicos)
-                valores_limite_max = []  # lista con valores maximos
-                d = {}
+                print("Valores unicos", valores_unicos)
 
-                # Por clase
-                for i in range(cant_clases):
+                # Creo cada clase
+                for i in range(CANT_CLASES):
+                    # Obtengo indices de valor min y max para la clase
                     idx_valor_min_clase = int(len(valores_unicos) * PERCENTILES * i) # valor min para estar en clase i
-                    idx_valor_max_clase = int(len(valores_unicos) * PERCENTILES * (i + 1)) - 1 # valor min para estar en clase i
-                    # el -1 seria porque el idx de la lista arranca en 0
+                    idx_valor_max_clase = int(len(valores_unicos) * PERCENTILES * (i + 1)) - 1 # valor min para estar en clase i. El -1 seria porque el idx de la lista arranca en 0
 
+                    # Obtengo valores min y max de la clase a partir de los indices
                     valor_min_clase = valores_unicos[idx_valor_min_clase]
                     valor_max_clase = valores_unicos[idx_valor_max_clase]
                     valor_med_clase = (valor_max_clase + valor_min_clase) / 2  # valor medio de clase i
 
-                    # guardo valor maximo de la clase
-                    valores_limite_max.append(valor_max_clase)
+                    # guardo valor maximo y medio de la clase
                     d[valor_max_clase] = valor_med_clase
-
                     print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_clase, valor_med_clase, valor_max_clase))
 
-                # REEMPLAZO VALORES POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
+                # REEMPLAZO VALORES CONTINUOS POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
                 # Por valor del atributo
                 for i in range(len(valores)):
 
                     # Por valor maximo de las clases
-                    for valor_limite in valores_limite_max:
+                    for valor_limite in list(d.keys()):
 
                         # Si el valor es menor al valor maximo de la clase
                         if df[columna].iloc[i] <= valor_limite:
@@ -155,64 +123,59 @@ def categorize_numeric_columns(df):
                             # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
                             break
 
-            # la columna es numerica pero discreta (toma pocos valores distintos)
+            # SI LA COLUMNA ES DISCRETA (toma pocos valores distintos)
             else:
+                # imprimo mensaje
                 print("La columna '{}' es numerica pero toma valores discretos".format(columna))
 
-        # la columna no es numerica
+        # SI LA COLUMNA NO ES NUMERICA
         else:
+            # imprimo mensaje
             print("La columna '{}' no es numerica!".format(columna))
 
     return df
 
 def delete_attr_x_values(df):
+    """
+    Elimino columnas del dataframe que toman un solo valor constante, o bien, toma muchos valores
+    :param df: Dataframe
+    :return: Dataframe sin columnas que tomen un solo valor o, por el contrario, muchos
+    """
     # Defino variables
     PORC_MUCHOS_VAL = 0.5
-    # columnas_no_eliminar = ["Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
-    columnas_no_eliminar = ["id_alternativa", "precio", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
+    col_excepciones = ["id_alternativa", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
 
-    # Por cada atributo
+    # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
 
-        # Obtengo lista de frecuencia de sus valores
-        unique_values = list(df[columna].value_counts())
-        cant_unique_values = len(unique_values)
-        cant_posible_values = len(df[columna])
+        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
+        if columna not in col_excepciones:
 
-        if columna not in columnas_no_eliminar:
+            # Obtengo lista de frecuencia de sus valores
+            unique_values = list(df[columna].dropna().unique())  # dropna para evitar que NaN sea una valor unico
+            cant_unique_values = len(unique_values)
+            cant_posible_values = len(df[columna])
 
-            # SI LA COLUMNA ES CONSTANTE (ES DECIR, UN UNICO VALOR)
+            # SI LA COLUMNA ES CONSTANTE (TOMA UN UNICO VALOR)
             if cant_unique_values == 1:
 
                 # Elimino el atributo
                 print("Elimino columna {} por tomar 1 solo valor".format(columna))
                 df = df.drop([columna], axis=1)
 
-            # SI LA COLUMNA TOMA MUCHOS VALORES DISTINTOS
+            # SI LA COLUMNA ES CONTINUA (TOMA MUCHOS VALORES DISTINTOS)
             elif cant_unique_values > PORC_MUCHOS_VAL * cant_posible_values:
 
                 # Elimino el atributo
                 print("Elimino columna {} por tomar muchos valores distintos".format(columna))
                 df = df.drop([columna], axis=1)
 
-            # SI LA COLUMNA TOMA VALORES DISCRETOS (ni 1 ni muchos)
+            # SI LA COLUMNA ES DISCRETA (no toma ni 1 valor ni muchos)
             else:
-                # NO HACER NADA
+                # No hacer nada
                 print("La columna {} toma valores discretos! (ni 1 ni muchos)".format(columna))
-                pass
 
     return df
-
-''' Prueba
-df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
-pd.set_option("display.max.columns", None)  # para ver todas las columnas del df y no que las colapse
-pd.set_option("display.precision", 2)  # mostrar maximo dos decimales
-print(df_opiniones['opinion'].head(5))
-df = clean_text(df_opiniones['opinion'])
-print(df.head(5))
-'''
-
-
 
 '''
 def main para hacer pruebas en este archivo independientemente de main.py
@@ -256,33 +219,4 @@ def main():  # esto lo implemento en main.py, dsp de terminar el archivo, la pas
 
 
 main()
-'''
-
-
-'''
-def delete_repeated_rows(df):
-    """
-     La funcion debe obtener los indices de las filas a borrar
-    :param df: Dataframe
-    :return: Lista de indices de las filas del dataframe a borrar
-    """
-    # Defino lista donde guardar los indices de las filas a borrar
-    idx = []
-
-    # Defino cantidad de filas
-    cant_filas = df.shape[0]
-    print("Originalmente el dataframe tenia {} filas.".format(cant_filas), end=" ")
-
-    # Elimino filas duplicadas
-    df = df.drop_duplicates()
-
-    for i in range(len(df)):
-        if i not in df.index:
-            idx.append(i)
-
-    # Defino nueva cantidad de filas
-    cant_filas = df.shape[0]
-    print("Tras eliminar las filas duplicadas, el dataframe tiene {} filas".format(cant_filas))
-
-    return idx
 '''

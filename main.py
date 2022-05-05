@@ -24,7 +24,7 @@ def main():
 
     # Obtengo atributos o caracteristicas mas relevantes del producto
     print("B) Buscando atributos del producto...".center(120))
-    product.atributos, name_attrs = product.get_product_attributes()  # el segundo return es parrte de la prueba...
+    product.atributos = product.get_product_attributes()
 
     # En base al producto a buscar, creo los data
     df_opiniones = dataframe_creator.create_dataframe_opiniones()
@@ -61,62 +61,54 @@ def main():
     # df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
     # df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_alternativas_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
 
-    # Levanto el dataframe ES PRUEBA DE (2)
-    # df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
-    # df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
-
-
     print(" (2) DATA PREPARATION ".center(120, "#"))
     print(" (2.1) FORMAT DATA ".center(120))
-    print("A) Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
+    print("2.1.1 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
     df_alternativas = format_data.string_column_to_numeric_column(df_alternativas)
 
-    print("B) Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
+    print("2.1.2 Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
     df_alternativas = format_data.yes_no_column_to_one_zero_column(df_alternativas)
 
-    print("C) Dataframe Alternativas: Corrigiendo columna precio...".center(120))
+    print("2.1.3 Dataframe Alternativas: Corrigiendo columna precio...".center(120))
     df_alternativas['precio'].dropna()  # ESTOY PROBANDO
     df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])
 
 
-    print("(2.2) CLEAN DATA ".center(120))  #podria dividirlo por dataframe...
+    print("(2.2) CLEAN DATA ".center(120))
+    print("2.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
+    df_opiniones = df_opiniones.drop_duplicates(subset='opinion',ignore_index=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
 
-    print("2.2.2 Dataframe Alternativas: Categorizando campos numericos continuos...".center(120))
+    print("2.2.2 Dataframe Opiniones: Preparando opiniones...".center(120))
+    df_opiniones = clean_data.delete_date_of_issue_from_opinion(df_opiniones)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
+    df_opiniones_tokenizado = df_opiniones.copy()  # el df_opiniones recibia el mismo procesamiento que df_opiniones tokenizado, no se por que
+    df_opiniones_tokenizado = clean_data.clean_opinions(df_opiniones_tokenizado)  # Limpio las opiniones
+
+    print("2.2.3 Dataframe Alternativas: Discretizando campos numericos continuos...".center(120))
     df_alternativas.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alternativas.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
 
-    print("2.2.3 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
-    df_alternativas = clean_data.delete_attr_x_values(df_alternativas)  # elimino columnas que toman 1 o muchos valores
+    print("2.2.4 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
+    df_alternativas = clean_data.delete_attr_x_values(df_alternativas)
 
-    print("2.2.4 Dataframe Opiniones: Preparando opiniones...".center(120))
-    # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
-    df_opiniones = clean_data.delete_date_of_issue_from_opinion(df_opiniones)
-
-    print("2.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
-    df_opiniones = df_opiniones.drop_duplicates(subset='opinion')  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
-
-    df_opiniones_tokenizado = clean_data.clean_opinions(df_opiniones)  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
-    print(df_opiniones_tokenizado.head(5))
-
-    # Limpio las opiniones
-    # df_opiniones_tokenizado = clean_data.text_preparation(df_opiniones['opinion'])  # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
-    # df_opiniones_customer.dropna()  # borra las pocas filas que no tienen title. Al remover palabras innecesarias quedo al menos 1 opinion vacia...
-    # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx', 'Hoja de datos', index=False)
-    # df_opiniones.to_excel('/Users/nachomondino/Desktop/df_opiniones_menos_cleaned.xlsx', 'Hoja de datos', index=False)
 
     print(" (2.3) CONSTRUCT DATA ".center(120))
     print("Selecciono customer needs del producto...".center(120))
-    # customer_needs, customer_needs_one_word = construct_data.select_customer_needs(df_opiniones_tokenizado)
+    customer_needs, customer_needs_one_word = construct_data.select_customer_needs(df_opiniones_tokenizado)
 
     # Exporto customer needs Ojo es una lista...
     # customer_needs.to_csv('/Users/nachomondino/Desktop/customer_needs.csv', index=False)
     # df_alternativas.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx')
 
-    '''
+    # Ojo que el df_opi_token ya no tiene columna "token" sino "opinion" --> va a crashear (creo q lo arregluee)_
+    df_opiniones_tokenizado.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
+
+
     print(" (3) MODELLING ".center(120, "#"))
     print(" (3.1) ATRIBUCION ".center(120))
     print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
-    df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi sin limpieza
+    print(df_opiniones)
+    df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi falta eliminar acentos...
 
+    '''
     print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio
