@@ -2,6 +2,7 @@ import pandas as pd
 from data_preparation.utils import preparacion_texto
 
 
+'''
 d = {'a': 1, 'b': 2, 'c': 3}
 
 if 'c' in d.keys():
@@ -20,7 +21,7 @@ for a in df['col1']:
 # df = df['col1'].unique()
 # df = df.drop_duplicates(subset='col2', ignore_index=True)
 #print(df)
-
+'''
 
 
 '''
