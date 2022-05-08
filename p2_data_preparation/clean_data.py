@@ -1,6 +1,6 @@
 # Importo librerias
 import pandas as pd
-from data_preparation.utils import preparacion_texto
+from p2_data_preparation.utils import preparacion_texto
 
 
 def delete_date_of_issue_from_opinion(df_opiniones):

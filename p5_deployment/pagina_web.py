@@ -216,7 +216,7 @@ def main():
         # PROCESAMIENTO DE PESOS Y DATOS
         # importar matriz de relaciones
         # relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relations_matrixes.xlsx')  # dsp la importare desde otro lugar
-        # relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/relation_matrix.xlsx', index_col=0)  # dsp la importare desde otro lugar
+        # relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/p3_modelling/relation_matrix.xlsx', index_col=0)  # dsp la importare desde otro lugar
         relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relations_matrixes.xlsx', index_col=0)  # dsp la importare desde otro lugar
         print(relation_matrix)
 

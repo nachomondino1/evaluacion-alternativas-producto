@@ -2,8 +2,8 @@
 import random
 from time import sleep
 from selenium import webdriver
-from data_understanding.collect_data import dataframe_creator, corte_extraccion_datos
-from data_understanding.collect_data.mercadolibre_crawler import MercadoLibreCrawler
+from p1_data_understanding.collect_data import dataframe_creator, corte_extraccion_datos
+from p1_data_understanding.collect_data.mercadolibre_crawler import MercadoLibreCrawler
 
 
 def data_extractor(producto, df_opiniones, df_alternativas):
@@ -16,6 +16,8 @@ def data_extractor(producto, df_opiniones, df_alternativas):
     producto.
     :return: Dataframes opiniones y alterenativas cargados con los datos extraidos del producto
     """
+    df_alternativas_reps = df_alternativas.copy()
+
     # CREO OBJETO "CRAWLER" DE CLASE MercadoLibreCrawler(), ASI TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
     options = webdriver.ChromeOptions()
     options.add_argument("start-maximized")
@@ -26,7 +28,7 @@ def data_extractor(producto, df_opiniones, df_alternativas):
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-browser-side-navigation")
     options.add_argument("--disable-gpu")
-    driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
+    driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
     crawler = MercadoLibreCrawler(driver, producto)
 
     # DEFINO PARAMETROS DE CORTE, TIEMPOS DE ESPERA Y VARIABLES UTILES
@@ -109,6 +111,12 @@ def data_extractor(producto, df_opiniones, df_alternativas):
                     # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
                     crawler.driver.back()
 
+                    """Pruebo a extraer alternativas a pesar de opis reps (ver cuantas son)"""
+                    # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
+                    d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
+                    df_alternativas_reps = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas_reps)
+                    print(df_alternativas_reps)
+
             # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones), ENTONCES NO EXTRAIGO NADA
             else:
                 print("PUBLICACION SIN OPINIONES")
@@ -148,6 +156,10 @@ def data_extractor(producto, df_opiniones, df_alternativas):
 
     # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
     corte_extraccion_datos.explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
+
+    # Exporto dfs en prueba...
+    df_alternativas_reps.to_excel("/Users/nachomondino/Desktop/df_alt_reps_{}.xlsx".format(producto.nombre), 'Hoja de datos', index=False)
+    df_alternativas.to_excel('/Users/nachomondino/Desktop/df_alt_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
 
     return df_opiniones, df_alternativas
 

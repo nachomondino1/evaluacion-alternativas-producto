@@ -1,15 +1,14 @@
 # Importo Librerias
-import data_understanding.collect_data.dataframe_creator
 import pandas as pd
-from data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
-from data_understanding import describe_data, explore_data
-from data_preparation import format_data, clean_data, construct_data
-from data_preparation.utils import preparacion_texto
-from modelling import sentiment_atribution
+from p1_data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
+from p1_data_understanding import describe_data, explore_data
+from p2_data_preparation import format_data, clean_data, construct_data
+from p2_data_preparation.utils import preparacion_texto
+from p3_modelling import sentiment_atribution
 import requests
 
 def main():
-    '''
+
     print(" (1) DATA UNDERSTANDING ".center(120, '#'))
     print(" (1.1) COLLECT INITIAL DATA ".center(120))
     # Pido producto a relevar al administrador
@@ -96,28 +95,28 @@ def main():
 
     # Exporto customer needs Ojo es una lista...
     # customer_needs.to_csv('/Users/nachomondino/Desktop/customer_needs.csv', index=False)
-    # df_alternativas.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned_2.xlsx')
 
-    # Ojo que el df_opi_token ya no tiene columna "token" sino "opinion" --> va a crashear (creo q lo arregluee)_
-    df_opiniones_tokenizado.to_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
+    df_alternativas.to_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx')
+    df_opiniones_tokenizado.to_excel('/Users/nachomondino/Desktop/df_opiniones_celulares_cleaned.xlsx')
 
 
     print(" (3) MODELLING ".center(120, "#"))
     print(" (3.1) ATRIBUCION ".center(120))
     print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
     print(df_opiniones)
-    df_sent = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi falta eliminar acentos...
+    df_opinion_cust_need = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi falta eliminar acentos...
 
-    '''
     print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio
     relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index=False)
 
+
     print("3.1.3 Atribuyo sentiment a valores de los atributos del producto...".center(120))
-    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_alternativas, df_sent, relation_matrix)
+    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
 
+    
     print(" (3.2) CLUSTERING ".center(120))
     print("3.2.1 Creo dataframe para clustering...".center(120))
     df_clustering = clustering.create_clustering_dataframe(df_alternativas, df_sent_por_valor)
@@ -126,20 +125,6 @@ def main():
     print("3.2.2 Corro modelo clustering...".center(120))
     clustering.k_means(df_clustering)
     '''
-
-    '''
-    url = GoogleDrive.leer_archivo('relation_matrix.xlsx')
-    print(url)
-
-    s = requests.get(url).content
-    print(s)
-    df = pd.read_csv(s)
-    print(df)
-    '''
-
-    # GoogleDrive.bajar_archivo_por_nombre('relation_matrix.xlsx', '/Users/nachomondino/Desktop/prueba/')  # funciona!
-    # GUARDO RESULTADOS EN MY SQL?
-
 
 if __name__ == '__main__':
     main()

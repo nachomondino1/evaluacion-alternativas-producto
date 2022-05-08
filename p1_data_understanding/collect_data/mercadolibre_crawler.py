@@ -1,5 +1,5 @@
 # Importo librerias
-from data_understanding.utils.web_scraping.crawler import Crawler
+from p1_data_understanding.utils.web_scraping.crawler import Crawler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
@@ -74,8 +74,8 @@ class MercadoLibreCrawler(Crawler):
         """
         # INTENTO OBTENER URL DE "VER TODAS LAS OPINIONES"
         try:
-            url = self.driver.find_element(By.XPATH, '//div[@class="ui-pdp-reviews__actions__container"]/a') \
-                .get_attribute("href")
+            # url = self.driver.find_element(By.XPATH, '//div[@class="ui-pdp-reviews__actions__container"]/a').get_attribute("href")  #antes de cambio de codigo html
+            url = self.driver.find_element(By.XPATH,'//a[@class="andes-button ui-review-button__action andes-button--small andes-button--transparent"]').get_attribute("href")
 
         # SI NO LA ENCONTRE
         except NoSuchElementException:
@@ -387,7 +387,7 @@ class Product:
         # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-        driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
+        driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
 
         # Inicializo variables
         d = {}  # diccionario donde guardare los atributos y su frecuencia
@@ -475,6 +475,5 @@ class Product:
         # RESUMO LOS RESULTADOS DE LA EXTRACCION DE ATRIBUTOS
         print("Los {} atributos y su frecuencia (cortare en frec {}):".format(len(d.keys()), frec_corte), d)
         print('Los {} atributos mas frecuentes:'.format(len(atributos)), atributos)
-        print(d.keys())
 
-        return atributos, d.keys()       # ESTO ES UNA PRUEBA!
+        return atributos
