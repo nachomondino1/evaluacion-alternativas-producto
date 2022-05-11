@@ -95,7 +95,7 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
         print(df_opinion_cust_needs)
 
     # EXPORTO DATAFRAME
-    df_opinion_cust_needs.to_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx', 'Hoja de datos',index=False)
+    df_opinion_cust_needs.to_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx', 'Hoja de datos', index=False)
     print(df_opinion_cust_needs)
 
     return df_opinion_cust_needs
@@ -248,7 +248,7 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
 
     return df_values_attrs_sent_pond
 
-def quantity_opinions_weighing(df_attr):  #no la revise...
+def quantity_opinions_weighing(df_attr):  # FALTA IMPLEEMENTAR INTENTO 2...
     """
     Pondera sentiment de cada valor de un atributo del producto segun cantidad de opiniones en que se basa
     :param df_attr: Dataframe cuya unidad de analisis son los valores de un mismo atributo del producto. Sus columnas
@@ -258,7 +258,7 @@ def quantity_opinions_weighing(df_attr):  #no la revise...
     """
     # Defino variables
     df = pd.DataFrame(columns=['valor', 'atributo', 'sent'])
-    FACTOR = 0.5
+    FACTOR = 1 # en el intento 1 usaba 0.5, ahora creo que no es necesario para el intento 2...
     attr = df_attr.loc[0, 'atributo']
 
     # Obtengo el menor sentiment de sus valores
@@ -365,9 +365,9 @@ relation_matrix = create_relation_matrix(atributos, customer_needs)
 print(relation_matrix)
 '''
 
-'''
+
 # Probando to_attr_values()
-df_alt = pd.read_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx', index_col=0)
+df_alt = pd.read_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx')
 df_opinion_cust_need = pd.read_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx')
 # relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx')
 atributos = list(df_alt.columns[1:])
@@ -381,7 +381,8 @@ df = to_attribute_value(df_alt, df_opinion_cust_need, create_relation_matrix(atr
 # df = to_attribute_value(df_modelos, df_costumer_needs_sent, relation_matrix)
 # df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_14.xlsx', 'Hoja de datos')
 # df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
-'''
+
+
 
 '''
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
