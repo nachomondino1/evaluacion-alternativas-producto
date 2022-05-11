@@ -1,6 +1,11 @@
 import pandas as pd
-from data_preparation.utils import preparacion_texto
+# from data_preparation.utils import preparacion_texto
 
+df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')
+print(df_alternativas)
+df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
+print(df_alternativas)
+df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_cleaned_{}.xlsx'.format('celulares'), 'Hoja de datos', index=False)
 
 '''
 d = {'a': 1, 'b': 2, 'c': 3}
@@ -26,7 +31,7 @@ for a in df['col1']:
 
 '''
 # 3. Data preparation - Preparacion texto
-df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_celulares.xlsx')
+df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opiniones_celulares.xlsx')
 textos = df_opiniones['opinion']
 texto = "Las hojas caen sobre mi casa"
 

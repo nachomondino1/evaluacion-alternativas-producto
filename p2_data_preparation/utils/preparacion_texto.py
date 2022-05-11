@@ -127,7 +127,7 @@ class TextPreparation:
         :return: Serie del texto sin palabras vacias
         """
         # Read lista de palabras a remover (vacias.txt)
-        path = '/p2_data_preparation/utils/vacias.txt'
+        path = '/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p2_data_preparation/utils/vacias.txt'
         palabras_vacias = pd.read_csv(path)
         palabras_vacias = list(palabras_vacias['palabra'])  # ['palabra'] hace que acceda a la columna y lo convierto en lista para poder hacer la comparacion if token in palabras vacias
 

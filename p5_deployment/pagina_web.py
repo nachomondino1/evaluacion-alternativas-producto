@@ -241,7 +241,7 @@ def main():
         st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas '
                  'para usted')
 
-        df_modelos_original = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx', 'Hoja de datos')
+        df_modelos_original = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_celulares.xlsx', 'Hoja de datos')
         # df_modelos_original['precio'] = show_correct_price(df_modelos_original['precio'])
         df_alts_recommend = recommend_table(df_modelos_original, df_alts_val_fin)
         # df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
@@ -263,7 +263,7 @@ def main():
     # si es empresa
     else:
         # Importo resultados de clustering
-        # df_clustering = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_clustering_labels.xlsx', 'Hoja de datos')
+        # df_clustering = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_clustering_labels.xlsx', 'Hoja de datos')
 
         # Le muestro resultados al cliente
         st.write('## Tabla 1: Promedio de scores por grupo')

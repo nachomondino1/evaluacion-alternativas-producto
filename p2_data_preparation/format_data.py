@@ -55,7 +55,7 @@ def is_inherently_numerical(columna):
             pass
 
     # IMPRIMO MENSAJE DE QUE LA COLUMNA ES NUMERICA
-    print("'{}' es numerica!".format(columna.name))
+    print("'{}' es inherentemente numerica!".format(columna.name))
     return True
 
 def string_column_to_numeric_column(df):
@@ -71,6 +71,7 @@ def string_column_to_numeric_column(df):
     d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA
          "g": 1/1000, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO
          'mm': 1/1000, 'cm': 1/100, 'm': 1,  # UNIDADES DE LONGITUD
+         'pulgadas': 1 , '"': 1,  # UNIDADES DE LONGITUD (sistema ingles)
          'm2': 1, 'ha': 10000,  # UNIDADES DE LONGITUD
          'ppi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN
          'mah': 1, 'a': 1000, # UNIDADES DE CARGA ELECTRICA
@@ -132,16 +133,19 @@ def string_column_to_numeric_column(df):
                 df[columna] = df[columna].replace(valores, nuevos_valores)
 
                 # IMPRIMO WARNINGS EN CASO NECESARIO
-                # Imprimo aviso si hice o no conversion de unidades
+                # si la columna tenia mas de una unidad
                 if len(unidades) > 1:
+                    # Imprimo aviso de que hice conversion de unidades
                     print("CUIDADO! Originalmente habia mas de una unidad, por lo que, algunos valores sufrieron"
                           " una conversion de unidades. Unidades: {}".format(unidades))
+                # si la columna tenia una unidad
                 else:
+                    # Imprimo aviso de que no hice conversion de unidades
                     print("Originalmente habia una sola unidad, por lo que, no se hizo conversion de unidades. Unidad: "
                           "{}".format(unidades))
 
                 # Verificacion de columna datatype
-                if (df[columna].dtype != "float64") or (df[columna].dtype != 'int64'):
+                if (df[columna].dtype != "float64") and (df[columna].dtype != 'int64'):
                     print('ATENCION! Algo no salio bien y no se realizo correctamente el cambio de dtype de la columna {}'.format(columna))
 
     return df
@@ -196,7 +200,7 @@ def yes_no_column_to_one_zero_column(df):
 
     return df
 
-def correct_price_column(col_precio):
+def correct_price_column(col_precio):  #tal vez no la aplique...
     """
     Corrige columna precio dado que el punto es entendido como una coma (Por ejemplo, 20.000 los entiende como 20)
     :param col_precio: Columna precio
@@ -234,7 +238,7 @@ def correct_price_column(col_precio):
 # def main para hacer pruebas en este archivo independientemente de main.py
 def main():
     # Levanto el dataframe
-    df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_celulares.xlsx')
+    df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_celulares.xlsx')
 
     # 1) NUMERIC COLUMNS NOT IDENTIFIED
     print("+++ (1) CONVERSION DE COLUMNAS STRING CON NUMEROS A COLUMNAS NUMERICAS +++")
@@ -250,7 +254,7 @@ def main():
     print("+++ (3) CORRECCION COLUMNA PRECIO +++")
     df_modelos['precio'] = correct_price_column(df_modelos['precio'])
     # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
-    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
+    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
 
 
 main()

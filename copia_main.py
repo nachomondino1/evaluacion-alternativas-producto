@@ -74,7 +74,7 @@ def main():
     df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])
 
     print("2.1.1 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
-    df_alternativas = format_data.string_column_to_numeric_column(df_alternativas)
+    df_alternativas = format_data.string_column_to_numeric_column(df_alternativas) # SALIENDO DE ACA TODAVIA ENTIENDE LA VARIABLE PRECIO
 
     print("2.1.1 Dataframe Alternativas: Elimino outliers...".center(120))
     df_alternativas = clean_data.delete_alternatives_with_outliers(df_alternativas)  # falta agrergarr a documentaicon
@@ -109,7 +109,7 @@ def main():
     df_alternativas.to_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx')
     df_opiniones_tokenizado.to_excel('/Users/nachomondino/Desktop/df_opiniones_celulares_cleaned.xlsx')
 
-
+    '''
     print(" (3) MODELLING ".center(120, "#"))
     print(" (3.1) ATRIBUCION ".center(120))
     print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
@@ -126,7 +126,7 @@ def main():
     df_sent_por_valor = sentiment_atribution.to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix)
     df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
 
-    '''
+    
     print(" (3.2) CLUSTERING ".center(120))
     print("3.2.1 Creo dataframe para clustering...".center(120))
     df_clustering = clustering.create_clustering_dataframe(df_alternativas, df_sent_por_valor)

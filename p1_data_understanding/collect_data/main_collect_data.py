@@ -16,9 +16,7 @@ def data_extractor(producto, df_opiniones, df_alternativas):
     producto.
     :return: Dataframes opiniones y alterenativas cargados con los datos extraidos del producto
     """
-    df_alternativas_reps = df_alternativas.copy()
-
-    # CREO OBJETO "CRAWLER" DE CLASE MercadoLibreCrawler(), ASI TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
+    # CREO OBJETO DE CLASE MercadoLibreCrawler(), TAL QUE TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
     options = webdriver.ChromeOptions()
     options.add_argument("start-maximized")
     options.add_argument("enable-automation")
@@ -48,15 +46,15 @@ def data_extractor(producto, df_opiniones, df_alternativas):
     # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO
     crawler.driver.get(producto.home_page_url)  # hasta que no se carga toda la pagina, no sigue...
 
-    # INGRESO A CICLO QUE RECORRERA EL CRAWLER PARA EXTRAR LOS DATOS
+    # POR PAGINA DE PAGINACION
     while (ult_pub_sin_data == 0) and (pag_num < PAG_MAX) and (no_mas_paginas == 0):  # Hasta que los param de corte lo indiquen...
 
-        # EXTRAIGO URLS QUE EL CRAWLER SEGUIRA. (A) X URLS DE PUBLICACIONES DE 1 PAG Y (B) 1 URL DE SIGUIENTE PAGINA
+        # EXTRAIGO URLS DE PUBLICACIONES DE LA PAGINA Y URL DE SIGUIENTE PAGINA
         urls_publicaciones = crawler.get_publications_url()
         url_paginacion = crawler.get_pagination_url()
         print("Cantidad de pubs:", len(urls_publicaciones))
 
-        # POR CADA PUBLICACION DE UNA PAGINA (tipicamente 1 pagina tiene 50 a 55 publicaciones)
+        # POR CADA PUBLICACION DE LA PAGINA (tipicamente 1 pagina tiene 50 a 55 publicaciones)
         for url_publicacion in urls_publicaciones:
             print("Publicacion numero:", len(historico_paginas), ". URL:", url_publicacion)  # imprimo nro de pub y url
 
@@ -69,6 +67,17 @@ def data_extractor(producto, df_opiniones, df_alternativas):
             # OBTENGO SU IDENTIFICADOR DE PUBLICACION ("id_publicacion")
             id_alternativa = crawler.get_publication_id(url_publicacion)
 
+            """Pruebo a extraer alternativas a pesar de opis reps (ver cuantas son)"""
+            # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
+            d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
+            df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
+            print(df_alternativas)
+
+            # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
+            crawler.driver.back()
+            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
+
+
             # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
             url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
 
@@ -80,7 +89,7 @@ def data_extractor(producto, df_opiniones, df_alternativas):
                 sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
                 # SI LAS OPINIONES SON NUEVAS (pues ≠ publicaciones pueden tener = opiniones)
-                if crawler.verification_new_opinions(l_prim_opiniones):
+                if crawler.are_opinions_new(l_prim_opiniones):
 
                     pagina_extraida = 1  # Cambio su valor a 1 pues pude extraer datos de la pub (param de corte 1)
 
@@ -93,63 +102,46 @@ def data_extractor(producto, df_opiniones, df_alternativas):
                     l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
                     # publicacion para poder hacer la verificacion de opiniones nuevas
                     df_opiniones = dataframe_creator.add_lines_to_dataframe(d_opiniones_alternativa, df_opiniones)
-                    # print(df_opiniones)
+                    print(df_opiniones)
 
-                    # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
-                    crawler.driver.back()
-                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-                    # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
-                    d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
-                    df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
-                    # print(df_alternativas)
-
-                # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN), ENTONCES NO EXTRAIGO NADA.
+                # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
                 else:
+                    # ENTONCES NO EXTRAIGO OPINIONES
                     print("OPINIONES REPETIDAS")
 
-                    # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
-                    crawler.driver.back()
+                # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
+                crawler.driver.back()
+                sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
-                    """Pruebo a extraer alternativas a pesar de opis reps (ver cuantas son)"""
-                    # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
-                    d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
-                    df_alternativas_reps = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas_reps)
-                    print(df_alternativas_reps)
-
-            # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones), ENTONCES NO EXTRAIGO NADA
+            # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones)
             else:
+                # ENTONCES NO EXTRAIGO OPINIONES
                 print("PUBLICACION SIN OPINIONES")
 
-            # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
-            crawler.driver.back()
-            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-            # VERIFICO PARAMETRO DE CORTE 1 (corta si las ultimas publicaciones no tienen datos)
+            # VERIFICO PARAMETRO DE CORTE
             historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
-
             # Si las ultimas publicaciones tienen muy pocos datos
             if corte_extraccion_datos.ultimas_pub_sin_data(historico_paginas, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
-
                 # corto la extraccion de datos (parametro de corte 1)
-                ult_pub_sin_data = True
+                ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
                 break
 
-        # SI ENCONTRE URL DE SIGUIENTE PAGINA
+        # HAGO CLICK EN SIGUIENTE PAGINA DE PAGINACION
+        # Si encontre url de siguiente pagina
         print("Proxima pagina a relevar: ", url_paginacion)
         if url_paginacion is not None:
 
-            # HAGO CLICK EN LA "SIGUIENTE PAGINA"
+            # Hago click en la siguiente pagina
             crawler.driver.get(url_paginacion)
             sleep(random.uniform(8, 10))  # Intentando humanizar mis acciones y tambien esperar a carga de nueva pagina
             pag_num += 1  # variable que si llega a <PAG_MAX>, hace cortar la extraccion de datos (parametro de corte 2)
 
-        # SI NO ENCONTRE LA URL DE LA SIGUIENTE PAGINA
+        # Si no encontre la url de la siguiente pagina
         else:
-            # CORTO LA EXTRACCION DE DATOS (PARAMETRO DE CORTE 3)
-            no_mas_paginas = True
+            # Corto la extraccion de datos
+            no_mas_paginas = True  # parametro de corte 3
 
-        print("++++++++++++++++++++++++++++++++++++ CAMBIO DE PAGINA ++++++++++++++++++++++++++++++++++++")
+        print(" CAMBIO DE PAGINA ".center(120, '#'))
 
     # FINALIZADA LA EXTRACCION, CIERRO EL WEB BROWSER AUTOMATICO
     crawler.driver.close()
@@ -157,9 +149,8 @@ def data_extractor(producto, df_opiniones, df_alternativas):
     # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
     corte_extraccion_datos.explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
 
-    # Exporto dfs en prueba...
-    df_alternativas_reps.to_excel("/Users/nachomondino/Desktop/df_alt_reps_{}.xlsx".format(producto.nombre), 'Hoja de datos', index=False)
-    df_alternativas.to_excel('/Users/nachomondino/Desktop/df_alt_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+    # Elimino alternativas repetidas
+    df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
 
     return df_opiniones, df_alternativas
 
@@ -184,8 +175,8 @@ def main():
     df_opiniones, df_modelos = data_extractor(producto, df_opiniones, df_modelos)
 
     # Exporto data
-    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
-    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opiniones_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
+    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_{}.xlsx'.format(producto.nombre), 'Hoja de datos', index=False)
 
 
 main()

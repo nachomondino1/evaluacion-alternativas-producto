@@ -198,7 +198,7 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
             ids = df_alternativas[df_alternativas[atributo] == valor_unico]['id_alternativa']
             print(ids)
             # Filtro dataframe "df_opinion_cust_need" quedandome con opiniones cuyo id este en ids
-            df_opinion_cust_need_filt = df_opinion_cust_need[df_opinion_cust_need.id_alternativa.isin(ids)]
+            df_opinion_cust_need_filt = df_opinion_cust_need[df_opinion_cust_need.id_alternativa.isin(ids)]  # ver si falla o no con alternativas sin opiniones
             print(df_opinion_cust_need_filt['id_alternativa'].unique())
             # print(df_opinion_cust_need_filt)
 
@@ -394,7 +394,7 @@ cant_opinines_ponderacion(df)
 
 '''
 # Levanto el dataset --> en la vida real le paso df_cleanded
-df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/df_extraccion_datos/df_modelos_formateado.xlsx')
+df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_formateado.xlsx')
 df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
 relevant_words = ['precio', 'bateria', 'camara', 'memoria', 'tamaño', 'pantalla', 'resolucion']
 df_sent = to_customer_needs(df_opiniones, relevant_words)
