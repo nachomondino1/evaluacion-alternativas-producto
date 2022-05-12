@@ -173,8 +173,6 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
     df_values_attrs_sent_pond = pd.DataFrame(columns=['valor', 'atributo', 'sent'])
     df_attr_value_sent_2 = pd.DataFrame(columns=['valor', 'atributo', 'cant_opi_con_sent', 'sent'])
 
-    print(relation_matrix)
-
     # POR CAMPO ESPECIFICO O ATRIBUTO DEL PRODUCTO
     for atributo in relation_matrix.columns:
         print(atributo)
@@ -188,60 +186,40 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
             print(valor_unico)
 
             # Defino variables
-            fila_df_val_att_sent = []  # Reinicio fila del dataframe para valores del atributo
-            relaciones = []  # los saco...
-            l_prom_sent = []  #
             cant_opi_con_sent, prom_sent = 0, 0  # inicializo variables pues el atrib puede tener relacion con mas de una customer need
 
             # SELECCIONO LAS OPINIONES SEGUN IDS DE ALTERNATIVAS CUYO ATRIBUTO TOMA EL VALOR
             # Obtengo ids de alternativas cuyo atributo toma el valor
             ids = df_alternativas[df_alternativas[atributo] == valor_unico]['id_alternativa']
-            print(ids)
             # Filtro dataframe "df_opinion_cust_need" quedandome con opiniones cuyo id este en ids
             df_opinion_cust_need_filt = df_opinion_cust_need[df_opinion_cust_need.id_alternativa.isin(ids)]  # ver si falla o no con alternativas sin opiniones
-            print(df_opinion_cust_need_filt['id_alternativa'].unique())
             # print(df_opinion_cust_need_filt)
 
             # POR CUSTOMER NEED
             for customer_need in df_opinion_cust_need_filt.columns[1:]:  # no incluyo id_alt --> por que no use index de matriz de relaciones? que no tiene el id...
 
-                # Obtengo relacion entre atributo y customer need
+                # obtengo relacion entre customer need y relacion
                 relacion = relation_matrix.loc[customer_need, atributo]
 
-                # Si hay relacion
+                # SI HAY RELACION ENTRE CUSTOMER NEED Y ATRIBUTO
                 if relacion > 0:
 
-                    # Obtengo cantidad de opiniones y prom sent (ponderado segun relaciones)
+                    # OBTENGO CANTIDAD DE OPINIONES Y SENTIMENT PROMEDIO
                     cant_opi_con_sent += len(df_opinion_cust_need_filt[customer_need].dropna())
-                    prom_sent += df_opinion_cust_need_filt[customer_need].dropna().mean() / sum_relaciones # lo quiero probar en vez de las lineas que estan abajo en comentario...
-                    print("Atributo = {}, Customer need = {}, Relacion = {}, Promedio sentiment: {}".format(atributo, customer_need, relacion, prom_sent))
+                    prom_sent += df_opinion_cust_need_filt[customer_need].dropna().mean() / sum_relaciones
+                    print("Atributo = {}, Customer need = {}, Relacion = {}, Sentiment prom: {}".format(atributo, customer_need, relacion, prom_sent))
 
             # GUARDO VALOR, ATRIBUTO AL QUE PERTENECE, CANT DE OPINIONES Y SENTIMENT
-            # comentar...
-            fila_df_val_att_sent.append(valor_unico), fila_df_val_att_sent.append(atributo)
-            if cant_opi_con_sent > 0 and prom_sent != 0:
-                fila_df_val_att_sent.append(cant_opi_con_sent), fila_df_val_att_sent.append(prom_sent)
-            else:
-                fila_df_val_att_sent.append(None), fila_df_val_att_sent.append(None)
-
-            df_values_attr_sent.loc[len(df_values_attr_sent)] = fila_df_val_att_sent  # rabino el index pero funciona joya
-            print("Fila:", fila_df_val_att_sent)
+            if cant_opi_con_sent == 0 and prom_sent == 0:
+                cant_opi_con_sent, prom_sent = None, None
+            df_values_attr_sent.loc[len(df_values_attr_sent)] = [valor_unico, atributo, cant_opi_con_sent, prom_sent]
+            print("Fila:", [valor_unico, atributo, cant_opi_con_sent, prom_sent])
 
         df_attr_value_sent_2 = pd.concat([df_attr_value_sent_2, df_values_attr_sent], ignore_index=True)  # para ver cantidad de opiniones en que se basa el sent de cada valor
-        # GUARDO EL ATRIBUTO, SUS VALORES Y SUS SENTIMENT SOLO SI EL ATRIBUTO TIENE AL MENOS UNA RELACION
-        # Si el atributo tiene relacion con al menos una customer need
-        if sum_relaciones > 0:
 
-            # Pondero sentiment de cada valor del atributo segun cantidad de opiniones
-            df_values_attr_sent_pond = quantity_opinions_weighing(df_values_attr_sent)
-
-            # Guardo datos del atributo
-            df_values_attrs_sent_pond = pd.concat([df_values_attrs_sent_pond, df_values_attr_sent_pond], ignore_index=True)
-
-        # Si el atributo no tiene relacion con las customer needs
-        else:
-            # No guardo el atributo
-            print("El atributo {} no tiene relacion con ninguna customer need".format(atributo))
+        # PONDERO SENITMENT POR CANTIDAD DE OPINIONES PARA EL ATRIBUTO
+        df_values_attr_sent_pond = quantity_opinions_weighing(df_values_attr_sent)
+        df_values_attrs_sent_pond = pd.concat([df_values_attrs_sent_pond, df_values_attr_sent_pond], ignore_index=True)
 
     df_attr_value_sent_2.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
     df_values_attrs_sent_pond.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos')
@@ -257,41 +235,43 @@ def quantity_opinions_weighing(df_attr):  # FALTA IMPLEEMENTAR INTENTO 2...
     son valor, atributo al que perenece y el sentiment ponderado segun cantidad de opiniones
     """
     # Defino variables
-    df = pd.DataFrame(columns=['valor', 'atributo', 'sent'])
-    FACTOR = 1 # en el intento 1 usaba 0.5, ahora creo que no es necesario para el intento 2...
-    attr = df_attr.loc[0, 'atributo']
-
-    # Obtengo el menor sentiment de sus valores
-    max_cant_opi_attr = df_attr["cant_opi_con_sent"].max()  # max y no sum porque no quiero modificar los sentiment de los que tienen muchas opis
-    print(max_cant_opi_attr)
+    df = pd.DataFrame(columns=['valor', 'atributo', 'sent'])  # Dataframe a retornar
+    attr = df_attr.loc[0, 'atributo']  # nombre del atributo al que pertencen los valores cuyos sentiment se ponderaran
+    max_cant_opi_attr = df_attr["cant_opi_con_sent"].max()  # factor 1, cant de opiniones max de un valor del atributo
+    cant_opi_opt = df_attr["cant_opi_con_sent"].sum() / len(df_attr)  # factor 2, cant optima de opis por valor del atributo
+    print("Ponderacion de sentiments por cantidad de opiniones para atributo {}".center(120, "-").format(attr))
 
     # POR VALOR DEL ATRIBUTO
     for valor in df_attr['valor']:
-        print(valor)
 
         # SI EL VALOR TIENE SENTIMENT
         try:
-            # Obtengo cant de opis del valor y prom_sent
+            # OBTENGO SU CANTIDAD DE OPINIONES DEL VALOR Y SU SENTIMENT
             cant_opi_valor = int(df_attr[df_attr['valor'] == valor]['cant_opi_con_sent'])
             sent_valor = float(df_attr[df_attr['valor'] == valor]['sent'])
-            print(cant_opi_valor, sent_valor)
+            print("Valor: {} ; Sentiment: {:.3f}; Cantidad de opis: {}".format(valor, sent_valor, cant_opi_valor))
 
-            # Calculo factor
-            porc_cant_opi = cant_opi_valor / max_cant_opi_attr
-            # print("porcentaje:", porc_cant_opi)
-            sent_a_atenuar = sent_valor * (1 - porc_cant_opi) # ate = prom_sent_valor - prom_sent_valor * porc_cant_opi
-            # print("ate:", ate)
+            # CALCULO FACTOR
+            # Calculo factor 1
+            porc_max_cant_opi = cant_opi_valor / max_cant_opi_attr
+            # Calculo factor 2
+            porc_opt_cant_opi = cant_opi_valor / cant_opi_opt
+            # Calculo factor final
+            factor_final = (0.5 * porc_max_cant_opi + 1.5 * porc_opt_cant_opi) / 2  # asigno mas peso a factor 2
+            if factor_final > 1:  # si el factor final es mayor que 1
+                factor_final = 1  # lo seteo a 1
+            print("Factor 1: {:.2f}; Factor 2: {:.2f}; Factor final: {:.2f}".format(porc_max_cant_opi, porc_opt_cant_opi, factor_final))
 
-            # Afecto sentiment
-            new_sent_valor = sent_valor - FACTOR * sent_a_atenuar
-            print("nuevo sentiment:", new_sent_valor)
+            # PONDERO SENTIMENT CON FACTOR
+            sent_valor_pond = sent_valor * factor_final
+            print("Sentiment ponderado: {:.3f}".format(sent_valor_pond))
 
-            # Guardo fila del valor
-            df.loc[len(df)] = [valor, attr, new_sent_valor]
+            # GUARDO FILA DEL VALOR
+            df.loc[len(df)] = [valor, attr, sent_valor_pond]
 
         # SI EL VALOR TIENE SENTIMENT NAN
         except TypeError:
-            # No pondero el sentiment y lo guardo como NaN
+            # NO PONDERO EL SENTIMENT Y LO GUARDO COMO NAN
             df.loc[len(df)] = [valor, attr, None]
             print("El valor {} tiene sentiment NaN".format(valor))
 
@@ -402,4 +382,55 @@ df_sent = to_customer_needs(df_opiniones, relevant_words)
 atrib = ['precio', 'Marca']
 customer_needs = ['precio', 'bateria', 'camara']
 df_sent_x_modelo = to_attribute_value(df_modelos, df_sent, create_relation_matrix(atrib, customer_needs))
+'''
+
+
+
+''' INTENTO 2
+def quantity_opinions_weighing(df_attr):  # FALTA IMPLEEMENTAR INTENTO 2...
+    """
+    Pondera sentiment de cada valor de un atributo del producto segun cantidad de opiniones en que se basa
+    :param df_attr: Dataframe cuya unidad de analisis son los valores de un mismo atributo del producto. Sus columnas
+    son valor, atributo al que perenece, cantidad de opiniones en que se basa en sentiment y el sentiment
+    :return: Dataframe cuya unidad de analisis son los valores de un mismo atributo del producto. Sus columnas
+    son valor, atributo al que perenece y el sentiment ponderado segun cantidad de opiniones
+    """
+    # Defino variables
+    df = pd.DataFrame(columns=['valor', 'atributo', 'sent'])
+    FACTOR = 1.5 # en el intento 1 usaba 0.5, ahora creo que no es necesario para el intento 2...
+    attr = df_attr.loc[0, 'atributo']
+
+    # Obtengo cantidad de opiniones del atributo
+    cant_opi_attr = df_attr["cant_opi_con_sent"].sum()
+    porc_opt_opi_valor = 1 / len(df_attr)
+
+    # POR VALOR DEL ATRIBUTO
+    for valor in df_attr['valor']:
+        print(valor)
+
+        # SI EL VALOR TIENE SENTIMENT
+        try:
+            # Obtengo cant de opis del valor y prom_sent
+            cant_opi_valor = int(df_attr[df_attr['valor'] == valor]['cant_opi_con_sent'])
+            sent_valor = float(df_attr[df_attr['valor'] == valor]['sent'])
+
+            # Defino porcentaje real de opiniones del valor
+            porc_real_opi_valor = cant_opi_valor / cant_opi_attr
+
+            # Si el porcentaje real de opiniones del valor es menor al porcentaje optimo
+            if porc_real_opi_valor < porc_opt_opi_valor:
+                # Pondero sentiment segun cuan lejos o cerca este del porcentaje optimo
+                sent_valor *= FACTOR * (porc_real_opi_valor / porc_opt_opi_valor)
+                print("Nuevo sentiment: ", sent_valor)
+
+            # Guardo fila del valor
+            df.loc[len(df)] = [valor, attr, sent_valor]
+
+        # SI EL VALOR TIENE SENTIMENT NAN
+        except TypeError:
+            # No pondero el sentiment y lo guardo como NaN
+            df.loc[len(df)] = [valor, attr, None]
+            print("El valor {} tiene sentiment NaN".format(valor))
+
+    return df
 '''

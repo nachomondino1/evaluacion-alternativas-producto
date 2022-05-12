@@ -60,8 +60,13 @@ def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main lla
 
     return df_opiniones
 
-def delete_alternatives_with_outliers(df_alt):
-
+def delete_alternatives_with_wrong_values(df_alt):
+    """
+    Elimina alternativas que tengan al menos un valor cargado incorrectamente en la publicacion de Mercado Libre. Solo
+    tiene en cuenta valores de atributos numericos.
+    :param df_alt: Dataframe alternativas
+    :return: Dataframe alternativas sin alternativas con valores mal cargados
+    """
     # DEFINO VARIABLE
     indice_fila_a_borrar = []
 
@@ -72,7 +77,7 @@ def delete_alternatives_with_outliers(df_alt):
         # SI LA COLUMNA ES NUMERICA
         if (df_alt[columna].dtype == 'float64') or (df_alt[columna].dtype == 'int64'):
 
-            # POR VALOR
+            # POR VALOR DE COLUMNA
             for i in range(len(df_alt)):
                 valor = df_alt.iloc[i, idx_col]
 
@@ -82,14 +87,14 @@ def delete_alternatives_with_outliers(df_alt):
                 desv = statistics.stdev(df_alt_sin_valor[columna].dropna())
                 # print(media, desv)
 
-                # SI ES VALOR ES UN OUTLIER
+                # SI EL VALOR ES PEOR AUN QUE UN OUTLIER
                 if (valor > media + 10 * desv) or (valor < media - 10 * desv):
 
-                    # GUARDO INDICE ALTERNATIVA QUE TIENE OUTLIER
+                    # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
                     indice_fila_a_borrar.append(i)
                     print("Se descubrio un outlier. Atributo: {}. Valor: {}. La media del atributo es {} y el desvio {}".format(columna, valor, media, desv))
 
-    # BORRO ALTERNATIVAS QUE TIENEN OUTLIER/S
+    # BORRO ALTERNATIVAS QUE TIENEN VALORES MAL CARGADOS
     for indice in indice_fila_a_borrar:
         df_alt = df_alt.drop([indice], axis=0)
 
@@ -118,8 +123,8 @@ def categorize_numeric_columns(df):
 
                 print("La columna '{}' sera categorizada pues tiene {} valores unicos cuando, en este caso, lo recomendado es {}.".format(columna, cant_clases, cant_clases_opt))
 
-                # Obtengo diccionario cuyas keys son los valores maximos de cada clase y los value los valores medios
-                d = create_classes(valores=df[columna], cant_clases=cant_clases_opt)
+                # OBTENGO VALORES MEDIOS Y MAXIMOS DE CADA CLASE
+                d = create_classes(valores=df[columna], cant_clases=cant_clases_opt)  # key=valor_max y val=valor_med
 
                 # REEMPLAZO VALORES CONTINUOS POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
                 # Por valor del atributo
@@ -151,7 +156,7 @@ def categorize_numeric_columns(df):
 
 def create_classes(valores, cant_clases):
     """
-    Obtiene las clases
+    Genera clases o categoria para un conjunto de valores numericos continuos
     :param valores: Lista de valores de una columna numerica continua
     :param cant_clases: Cantidad de clases a generar
     :return: Diccionario con valores maximos de cada clase como key y con valores medios de cada clase como value
@@ -187,7 +192,7 @@ def create_classes(valores, cant_clases):
     # Imprimo resultados de distribucion de valores en clase
     cant_val_por_clase = values_distribution_in_classes(d, valores_unicos)
 
-    # Determino % de clases vacias usando valores únicos → ojo no asigno valores pues alto costo computacional
+    # Determino % de clases con al menos un valor
     cant_clases_con_valor = len(cant_val_por_clase) - cant_val_por_clase.count(0)
     porc_clases_con_valor = cant_clases_con_valor / cant_clases
 
@@ -348,84 +353,4 @@ def main():  # esto lo implemento en main.py, dsp de terminar el archivo, la pas
 
 
 main()
-'''
-
-
-
-'''
-def categorize_numeric_columns(df):
-    """
-    Dado un dataframe, categoriza sus columnas numericas (las no numericas no porque al no haber una "distancia" entre
-    strings, no puedo determinar cual se asemeja con cual) continuas (las discretas no pues ya estan categorizadas)
-    :param df: Dataframe
-    :return: Dataframe con todas sus columnas numericas discretas
-    """
-    # DEFINO VARIABLES
-    PERCENTILES = 1 / 7
-    CANT_CLASES = int(1 / PERCENTILES)  # cantidad de clases con ≠ amplitud (basado en percentiles)
-
-    # POR COLUMNA DEL DATAFRAME
-    for columna in df.columns:
-        print()
-
-        # SI LA COLUMNA ES NUMERICA
-        if (df[columna].dtype == 'float64') or (df[columna].dtype == 'int64'):
-
-            # Defino variables
-            cant_valores_unicos = len(df[columna].value_counts())
-            cant_opt_valores_unicos = len(df[columna]) ** 0.5  # cant clases ideales = raiz(nro datos)
-
-            # SI LA COLUMNA ES CONTINUA (toma muchos valores distintos, especificamente, mas que la cantidad optima)
-            if cant_valores_unicos > cant_opt_valores_unicos:  # Aqui se podria aplicar "factor de holgura"
-                print("La columna '{}' sera categorizada...".format(columna))
-
-                # CREO CLASES QUE TENDRA LA VARIABLE
-                # Defino variables
-                d = {}  # diccionario con valores maixmos y medios de cada clase
-                valores = list(df[columna]) # lista de valores de la columna
-                valores_unicos = sorted(list(df[columna].dropna().unique()))
-                print("Valores unicos: ", valores_unicos)
-
-                # Creo cada clase
-                for i in range(CANT_CLASES):
-                    # Obtengo indices de valor min y max para la clase
-                    idx_valor_min_clase = int(len(valores_unicos) * PERCENTILES * i) # valor min para estar en clase i
-                    idx_valor_max_clase = int(len(valores_unicos) * PERCENTILES * (i + 1)) - 1 # valor min para estar en clase i. El -1 seria porque el idx de la lista arranca en 0
-
-                    # Obtengo valores min y max de la clase a partir de los indices
-                    valor_min_clase = valores_unicos[idx_valor_min_clase]
-                    valor_max_clase = valores_unicos[idx_valor_max_clase]
-                    valor_med_clase = (valor_max_clase + valor_min_clase) / 2  # valor medio de clase i
-
-                    # guardo valor maximo y medio de la clase
-                    d[valor_max_clase] = valor_med_clase
-                    print("Clase Nº{}: Valor min = {} ; Valor med = {} ; Valor max = {}".format(i, valor_min_clase, valor_med_clase, valor_max_clase))
-
-                # REEMPLAZO VALORES CONTINUOS POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
-                # Por valor del atributo
-                for i in range(len(valores)):
-
-                    # Por valor maximo de las clases
-                    for valor_limite in list(d.keys()):
-
-                        # Si el valor es menor al valor maximo de la clase
-                        if df[columna].iloc[i] <= valor_limite:
-
-                            # reemplazo valor por el valor medio de la clase
-                            df.loc[i, columna] = d[valor_limite]
-
-                            # dejo de comparar el valor con los valores maximos de las clases pues ya encontre su clase
-                            break
-
-            # SI LA COLUMNA ES DISCRETA (toma pocos valores distintos)
-            else:
-                # imprimo mensaje
-                print("La columna '{}' es numerica pero toma valores discretos".format(columna))
-
-        # SI LA COLUMNA NO ES NUMERICA
-        else:
-            # imprimo mensaje
-            print("La columna '{}' no es numerica!".format(columna))
-
-    return df
 '''

@@ -73,20 +73,16 @@ def main():
 
     print(" (2) DATA PREPARATION ".center(120, "#"))
     print(" (2.1) FORMAT DATA ".center(120))
-    print("2.1.3 Dataframe Alternativas: Corrigiendo columna precio...".center(120)) # tengo que ponerlo primero pues afecta la categorizacion de la columna precio
+    print("2.1.1 Dataframe Alternativas: Corrigiendo columna precio...".center(120))
     df_alternativas['precio'].dropna()  # ESTOY PROBANDO
     df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])  # DOCUMENTAR QUE LO HAGO PRIMERO...
     print()
 
-    print("2.1.1 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
+    print("2.1.2 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
     df_alternativas = format_data.string_column_to_numeric_column(df_alternativas)
     print()
 
-    print("2.1.1 Dataframe Alternativas: Elimino outliers...".center(120))
-    df_alternativas = clean_data.delete_alternatives_with_outliers(df_alternativas)  # falta agrergarr a documentaicon
-    print()
-
-    print("2.1.2 Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
+    print("2.1.3 Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
     df_alternativas = format_data.yes_no_column_to_one_zero_column(df_alternativas)
     print()
 
@@ -101,11 +97,15 @@ def main():
     df_opiniones_tokenizado = clean_data.clean_opinions(df_opiniones_tokenizado)  # Limpio las opiniones
     print()
 
-    print("2.2.3 Dataframe Alternativas: Discretizando campos numericos continuos...".center(120))
+    print("2.2.3 Dataframe Alternativas: Elimino outliers...".center(120))
+    df_alternativas = clean_data.delete_alternatives_with_wrong_values(df_alternativas)
+    print()
+
+    print("2.2.4 Dataframe Alternativas: Discretizando campos numericos continuos...".center(120))
     df_alternativas.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alternativas.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
     print()
 
-    print("2.2.4 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
+    print("2.2.5 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
     df_alternativas = clean_data.delete_attr_x_values(df_alternativas)
     print()
 
