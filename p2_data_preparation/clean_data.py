@@ -169,11 +169,11 @@ def create_classes(valores, cant_clases):
     # respecto de clases
     rango = valor_max - valor_min
     amplitud_clase = rango / cant_clases
-    cant_clases_perc = int(0.7 * cant_clases)  # cantidad de clases utilizando percentiles
+    cant_clases_perc = int(round(0.65 * cant_clases, 0))  # cantidad de clases utilizando percentiles
     percentiles = 1 / cant_clases_perc  # percentil
     # inicializo variables
     d = {}  # diccionario a retornar (con valores maximos y medios de cada clase)
-    PORC_MIN_CLASES_CON_VALOR, PORC_MAX_CLASES_CON_VALOR = 0.5, 0.72  # porcentajes min y max de clases con valores (es decir, no vacias)
+    PORC_MIN_CLASES_CON_VALOR, PORC_MAX_CLASES_CON_VALOR = 0.4, 0.72  # porcentajes min y max de clases con valores (es decir, no vacias)
 
     # CREO CLASES CON MISMA AMPLITUD
     print("Creo {} clases con amplitud de {:.0f}".format(cant_clases, amplitud_clase))

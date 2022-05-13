@@ -218,15 +218,16 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
         df_attr_value_sent_2 = pd.concat([df_attr_value_sent_2, df_values_attr_sent], ignore_index=True)  # para ver cantidad de opiniones en que se basa el sent de cada valor
 
         # PONDERO SENITMENT POR CANTIDAD DE OPINIONES PARA EL ATRIBUTO
-        df_values_attr_sent_pond = quantity_opinions_weighing(df_values_attr_sent)
-        df_values_attrs_sent_pond = pd.concat([df_values_attrs_sent_pond, df_values_attr_sent_pond], ignore_index=True)
+        if sum_relaciones > 0:  #Pues sino agrego atributos sin relacion y por ende con sent None y rompe el clustering..
+            df_values_attr_sent_pond = quantity_opinions_weighing(df_values_attr_sent)
+            df_values_attrs_sent_pond = pd.concat([df_values_attrs_sent_pond, df_values_attr_sent_pond], ignore_index=True)
 
     df_attr_value_sent_2.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
     df_values_attrs_sent_pond.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos')
 
     return df_values_attrs_sent_pond
 
-def quantity_opinions_weighing(df_attr):  # FALTA IMPLEEMENTAR INTENTO 2...
+def quantity_opinions_weighing(df_attr):
     """
     Pondera sentiment de cada valor de un atributo del producto segun cantidad de opiniones en que se basa
     :param df_attr: Dataframe cuya unidad de analisis son los valores de un mismo atributo del producto. Sus columnas
@@ -382,55 +383,4 @@ df_sent = to_customer_needs(df_opiniones, relevant_words)
 atrib = ['precio', 'Marca']
 customer_needs = ['precio', 'bateria', 'camara']
 df_sent_x_modelo = to_attribute_value(df_modelos, df_sent, create_relation_matrix(atrib, customer_needs))
-'''
-
-
-
-''' INTENTO 2
-def quantity_opinions_weighing(df_attr):  # FALTA IMPLEEMENTAR INTENTO 2...
-    """
-    Pondera sentiment de cada valor de un atributo del producto segun cantidad de opiniones en que se basa
-    :param df_attr: Dataframe cuya unidad de analisis son los valores de un mismo atributo del producto. Sus columnas
-    son valor, atributo al que perenece, cantidad de opiniones en que se basa en sentiment y el sentiment
-    :return: Dataframe cuya unidad de analisis son los valores de un mismo atributo del producto. Sus columnas
-    son valor, atributo al que perenece y el sentiment ponderado segun cantidad de opiniones
-    """
-    # Defino variables
-    df = pd.DataFrame(columns=['valor', 'atributo', 'sent'])
-    FACTOR = 1.5 # en el intento 1 usaba 0.5, ahora creo que no es necesario para el intento 2...
-    attr = df_attr.loc[0, 'atributo']
-
-    # Obtengo cantidad de opiniones del atributo
-    cant_opi_attr = df_attr["cant_opi_con_sent"].sum()
-    porc_opt_opi_valor = 1 / len(df_attr)
-
-    # POR VALOR DEL ATRIBUTO
-    for valor in df_attr['valor']:
-        print(valor)
-
-        # SI EL VALOR TIENE SENTIMENT
-        try:
-            # Obtengo cant de opis del valor y prom_sent
-            cant_opi_valor = int(df_attr[df_attr['valor'] == valor]['cant_opi_con_sent'])
-            sent_valor = float(df_attr[df_attr['valor'] == valor]['sent'])
-
-            # Defino porcentaje real de opiniones del valor
-            porc_real_opi_valor = cant_opi_valor / cant_opi_attr
-
-            # Si el porcentaje real de opiniones del valor es menor al porcentaje optimo
-            if porc_real_opi_valor < porc_opt_opi_valor:
-                # Pondero sentiment segun cuan lejos o cerca este del porcentaje optimo
-                sent_valor *= FACTOR * (porc_real_opi_valor / porc_opt_opi_valor)
-                print("Nuevo sentiment: ", sent_valor)
-
-            # Guardo fila del valor
-            df.loc[len(df)] = [valor, attr, sent_valor]
-
-        # SI EL VALOR TIENE SENTIMENT NAN
-        except TypeError:
-            # No pondero el sentiment y lo guardo como NaN
-            df.loc[len(df)] = [valor, attr, None]
-            print("El valor {} tiene sentiment NaN".format(valor))
-
-    return df
 '''

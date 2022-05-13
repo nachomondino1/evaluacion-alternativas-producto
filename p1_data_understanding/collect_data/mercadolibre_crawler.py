@@ -72,7 +72,8 @@ class MercadoLibreCrawler(Crawler):
         # SI TIENE BOTON "VER TODAS LAS OPINIONES"
         try:
             # OBTENGO URL DE "VER TODAS LAS OPINIONES"
-            url = self.driver.find_element(By.XPATH,'//a[@class="andes-button ui-review-button__action andes-button--small andes-button--transparent"]').get_attribute("href")
+            url = self.driver.find_element(By.XPATH, '//a[@class="andes-button ui-review-button__action andes-button--small andes-button--transparent"]').get_attribute("href")
+            print("URL 'Ver todas las opiniones': ", url)
 
         # SI NO TIENE BOTON "VER TODAS LAS OPINIONES"
         except NoSuchElementException:

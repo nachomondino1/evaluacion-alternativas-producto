@@ -67,16 +67,10 @@ def data_extractor(producto, df_opiniones, df_alternativas):
             # OBTENGO SU IDENTIFICADOR DE PUBLICACION ("id_publicacion")
             id_alternativa = crawler.get_publication_id(url_publicacion)
 
-            """Pruebo a extraer alternativas a pesar de opis reps (ver cuantas son)"""
             # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
             d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
             df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
             print(df_alternativas)
-
-            # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
-            crawler.driver.back()
-            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
 
             # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
             url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
@@ -117,6 +111,10 @@ def data_extractor(producto, df_opiniones, df_alternativas):
             else:
                 # ENTONCES NO EXTRAIGO OPINIONES
                 print("PUBLICACION SIN OPINIONES")
+
+            # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
+            crawler.driver.back()
+            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
             # VERIFICO PARAMETRO DE CORTE
             historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion

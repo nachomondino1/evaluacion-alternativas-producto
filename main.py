@@ -4,11 +4,11 @@ from p1_data_understanding.collect_data import main_collect_data, dataframe_crea
 from p1_data_understanding import describe_data, explore_data
 from p2_data_preparation import format_data, clean_data, construct_data
 from p2_data_preparation.utils import preparacion_texto
-from p3_modelling import sentiment_atribution
+# from p3_modelling import sentiment_atribution
 import requests
 
 def main():
-    '''
+
     print(" (1) DATA UNDERSTANDING ".center(120, '#'))
     print(" (1.1) COLLECT INITIAL DATA ".center(120))
     # Pido producto a relevar al administrador
@@ -75,6 +75,7 @@ def main():
     print(" (2.1) FORMAT DATA ".center(120))
     print("2.1.1 Dataframe Alternativas: Corrigiendo columna precio...".center(120))
     df_alternativas['precio'].dropna()  # ESTOY PROBANDO
+    df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
     df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])  # DOCUMENTAR QUE LO HAGO PRIMERO...
     print()
 
@@ -97,8 +98,9 @@ def main():
     df_opiniones_tokenizado = clean_data.clean_opinions(df_opiniones_tokenizado)  # Limpio las opiniones
     print()
 
-    print("2.2.3 Dataframe Alternativas: Elimino outliers...".center(120))
+    print("2.2.3 Dataframe Alternativas: Elimino datos erroneos...".center(120))
     df_alternativas = clean_data.delete_alternatives_with_wrong_values(df_alternativas)
+    df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
     print()
 
     print("2.2.4 Dataframe Alternativas: Discretizando campos numericos continuos...".center(120))
@@ -121,13 +123,13 @@ def main():
     df_alternativas.to_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx', index=False)
     df_opiniones_tokenizado.to_excel('/Users/nachomondino/Desktop/df_opiniones_celulares_cleaned.xlsx')
 
-
+    
     print(" (3) MODELLING ".center(120, "#"))
     print(" (3.1) ATRIBUCION ".center(120))
     print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
     df_opinion_cust_need = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi falta eliminar acentos...
 
-    '''
+
     print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     # relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio
