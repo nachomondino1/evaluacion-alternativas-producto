@@ -4,6 +4,95 @@ import nltk
 from pysentimiento import create_analyzer
 
 
+def split_text_into_sentences(text, sep):
+    """
+    Separate a text string into sentences by element
+    :param text: Text string
+    :param sep: Separating element
+    :return: list whose elements are each setence
+    """
+    # Defino variables
+    sentences = []
+    pos_ini = 0
+
+    # Por caracter de la cadena
+    for pos, char in enumerate(text):
+
+        # Si el caracter es el separador
+        if (char == sep):
+
+            # Obtengo sentence
+            sentences.append(text[pos_ini:pos])
+            pos_ini = pos + 1
+
+    # Si el separador no es el ultimo caracter del texto
+    if pos_ini != len(text):
+
+        # Guardo ultima sentence
+        sentences.append(text[pos_ini:len(text)])
+
+    return sentences
+
+def delete_parentesis(text):
+    # Defino variables
+    elem = "("
+    sentence = text
+
+    # Si el elemento esta en el texto
+    if "(" in text:
+
+        # Por caracter de la cadena
+        for pos, char in enumerate(text):
+
+            # Si el caracter es el simbolo de abrir parentesis
+            if (char == elem):
+
+                # Obtengo sentence sin parentesis
+                sentence = text[:pos]
+
+    '''Funciona mal, repite el ult elemeento de string..
+    # Si hay texto luego del cierre del parentesis
+    idx_cierre = text.find(')')
+    if idx_cierre != len(text):
+        # Guardo texto luego del parentesis sentence
+        sentence +=text[idx_cierre:len(text)]
+    '''
+
+    return sentence
+
+def words_mentioned_in_text(text, words):
+    # inicializo el diccionario a retornar
+    d = {}
+    for word in words:
+        d[word] = 0
+
+    # POR WORD
+    for word in words:
+
+        # BUSCO PALABRAS RELACIONADAS A LA WORD (para identificar mejor customer need en frase)
+        palabras_a_buscar = palabras_relacionadas(word)
+
+        # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
+        for palabra_a_buscar in palabras_a_buscar:
+
+            # SI LA PALABRA ESTA EN LA FRASE (uso frase limpia)
+            if palabra_a_buscar in text:
+
+                # Asigno 1 a palabra pues es mencionada en texto
+                d[word] = 1
+
+                break  # Dejo de buscar palabras relacionadas pues ya asigne sentiment a la customer need
+
+    return d
+
+def sentiemnt_sentence(analyzer, sentence):
+    # OBTENGO SENTIMENT DE FRASE
+    pred = analyzer.predict(sentence)  # ejemplo de output: AnalyzerOutput(output=NEU, probas={NEU: 0.802, NEG: 0.188, POS: 0.010})
+    sent_frase = pred.probas  # accedo a probas de AnalyzerOutput
+    score = sent_frase['POS'] - sent_frase['NEG']  # obtengo probabilidades de POS y NEG y calculo score
+    print("Sentiment frase: ", score)
+    return score
+
 def to_customer_needs(df_opiniones, customer_needs_one_word):
     """
     Identifica, si hay, customer needs en opiniones y asigna el sentiment a cada una mediante la libreria pysentimiento
@@ -28,55 +117,65 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
         fila_df_opi_cn = [id]  # inicializo variable que guardara la fila del nuevo dataframe
         df_frases_cust_needs = pd.DataFrame(columns=customer_needs_one_word)  #lo reinicio por opinion
 
-        print("NºFila:", i)
+        print("NºFila: {}".center(120).format(i))
         print("Opinion:", opinion)
 
         # POR FRASE DE LA OPINION
-        for frase in nltk.tokenize.sent_tokenize(opinion):  #esto funciona?? Espectacular pa
+        for frase in split_text_into_sentences(text=opinion, sep='.'):
+            # print("Frase: ", frase)
+
+            # ES PARTE DEE PRUEBA, VEO EL SENT QUE TENDRIA LA FRASE...
             print("Frase: ", frase)
+            sentiemnt_sentence(analyzer=analyzer, sentence=frase)
 
-            # Defino variables
-            fila_df_frase_cn = []  # Fila de sentiment de customer needs en la frase
+            if frase.count(',') >= 2:
+                frases_entre_comas = split_text_into_sentences(text=frase, sep=',') # si no tiene comas, no lo separa... ahora veo que hago con eso de que deberia tener al menos dos
+            else:
+                frases_entre_comas = [frase]
 
-            # LIMPIO FRASE PARA PODER IDENTIFICAR CUSTOMER NEEDS EN ELLA (la hago miniscula y quito acentos)
-            frase_limpia = delete_accent(frase.lower())
+            # POR FRASE ENTRE COMAS
+            for sentence in frases_entre_comas:
 
-            # OBTENGO SENTIMENT DE FRASE
-            pred = analyzer.predict(frase)  # ejemplo de output: AnalyzerOutput(output=NEU, probas={NEU: 0.802, NEG: 0.188, POS: 0.010})
-            sent_frase = pred.probas  # accedo a probas de AnalyzerOutput
-            score = sent_frase['POS'] - sent_frase['NEG']  # obtengo probabilidades de POS y NEG y calculo score
-            print("Sentiment frase: ", score)
+                sentence = delete_parentesis(sentence)
+                print("Frase entre comas: ", sentence)
 
-            # POR CUSTOMER NEED
-            for customer_need in customer_needs_one_word:
+                # Defino variables
+                fila_df_frase_cn = []  # Fila de sentiment de customer needs en la frase
 
-                # Defino variable
-                bool = True  # Variable para cortar busqueda de sentiment de customer need con palabras adicionales
+                # LIMPIO FRASE PARA PODER IDENTIFICAR CUSTOMER NEEDS EN ELLA (la hago miniscula y quito acentos)
+                sentence_limpia = delete_accent(sentence.lower())
 
-                # BUSCO PALABRAS RELACIONADAS A LA CUSTOMER NEED (para identificar mejor customer need en frase)
-                palabras_a_buscar = palabras_relacionadas(customer_need)
+                # IDENTIFICO QUE CUSTOMER NEEDS MENCIONA
+                # funcion que me devuelva dict con key cada cn y cuo values es 0 o 1 segun si es menciona o no en la frase.
+                d_cust_needs_mentioned = words_mentioned_in_text(words=customer_needs_one_word, text=sentence_limpia)
+                n_cust_need_ment = sum(d_cust_needs_mentioned.values())
 
-                # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
-                for palabra_a_buscar in palabras_a_buscar:
+                # SI LA FRASE MENCIONA AL MENOS UNA CUSTOMER NEED
+                if n_cust_need_ment >= 1:
 
-                    # SI LA PALABRA ESTA EN LA FRASE (uso frase limpia)
-                    if palabra_a_buscar in frase_limpia:
+                    # OBTENGO SENTIMENT
+                    sent_frase = sentiemnt_sentence(analyzer=analyzer, sentence=sentence)
 
-                        # ASIGNO SENTIMENT DE FRASE A LA CUSTOMER NEED
-                        fila_df_frase_cn.append(score)
+                    # Por customer need Por cn mencionada, asignar sent y si no none?
+                    for cust_need in d_cust_needs_mentioned.keys():
 
-                        # Dejo de buscar palabras relacionadas pues ya asigne sentiment a la customer need
-                        bool = False
-                        break
+                        # Si la customer need es mencionada
+                        if d_cust_needs_mentioned[cust_need] == 1:
+                            # Asigno sentiment de frase
+                            fila_df_frase_cn.append(sent_frase)
 
-                # SI LA CUSTOMER NEED NO ESTA EN LA FRASE
-                if bool:
-                    # ASIGNO SENTIMENT NONE
-                    fila_df_frase_cn.append(None)
+                        # Si la customer need no es mencionada
+                        else:
+                            # Asigno sentiment None
+                            fila_df_frase_cn.append(None)
 
-            # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA FRASE
-            df_frases_cust_needs.loc[len(df_frases_cust_needs)] = fila_df_frase_cn
-            print(df_frases_cust_needs)
+                    # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA FRASE
+                    df_frases_cust_needs.loc[len(df_frases_cust_needs)] = fila_df_frase_cn
+                    print(df_frases_cust_needs)
+
+                # SI LA FRASE NO MENCIONA CUSTOMER NEEDS
+                else:
+                    pass
 
         # OBTENGO SENTIMENT DE CUSTOMER NEEDS EN OPINION (pues puede aparecer en mas de una frase)
         # Por customer need
@@ -84,7 +183,7 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
 
             # Obtengo promedio de sentiment en frases en que es mencionada
             sent_cn_opi = df_frases_cust_needs[customer_need].dropna().mean()
-            print("Customer neeed: {}, sentiment: {}".format(customer_need, sent_cn_opi))
+            print("Customer need: {}, sentiment: {}".format(customer_need, sent_cn_opi))
 
             # Guardo el sentiment de la customer need en la opinion
             fila_df_opi_cn.append(sent_cn_opi)
@@ -92,7 +191,7 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
         # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA OPINION
         df_opinion_cust_needs.loc[i] = fila_df_opi_cn
         print("Fila:", fila_df_opi_cn)
-        print(df_opinion_cust_needs)
+        # print(df_opinion_cust_needs)
 
     # EXPORTO DATAFRAME
     df_opinion_cust_needs.to_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx', 'Hoja de datos', index=False)
@@ -124,6 +223,8 @@ def create_relation_matrix(atributos, customer_needs):
 
     # DEFINO VARIABLES
     relation_matrix = pd.DataFrame(columns=atributos, index=customer_needs)  # Dataframe a retornar
+    print("Los atributos son: ", atributos)
+    print("Las customer needs son: ", customer_needs)
 
     # POR ATRIBUTO O CAMPO ESPECIFICO DEL PRODUCTO
     for atributo in atributos:
@@ -175,7 +276,6 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
 
     # POR CAMPO ESPECIFICO O ATRIBUTO DEL PRODUCTO
     for atributo in relation_matrix.columns:
-        print(atributo)
 
         # Defino variables
         df_values_attr_sent = pd.DataFrame(columns=['valor', 'atributo', 'cant_opi_con_sent', 'sent'])  # Dataframe para valores del atributo
@@ -183,7 +283,6 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
 
         # POR VALOR DEL ATRIBUTO
         for valor_unico in df_alternativas[atributo].dropna().unique():  # hay modelos cuyo atrib toma valor none por eso hago un dropna(), funciona joya
-            print(valor_unico)
 
             # Defino variables
             cant_opi_con_sent, prom_sent = 0, 0  # inicializo variables pues el atrib puede tener relacion con mas de una customer need
@@ -222,8 +321,9 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
             df_values_attr_sent_pond = quantity_opinions_weighing(df_values_attr_sent)
             df_values_attrs_sent_pond = pd.concat([df_values_attrs_sent_pond, df_values_attr_sent_pond], ignore_index=True)
 
-    df_attr_value_sent_2.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
-    df_values_attrs_sent_pond.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos')
+    # Exporto (solo en pruebas)
+    df_attr_value_sent_2.to_excel("/Users/nachomondino/Desktop/df_value_sent_opis.xlsx")
+    df_values_attrs_sent_pond.to_excel("/Users/nachomondino/Desktop/df_value_sent.xlsx")
 
     return df_values_attrs_sent_pond
 
@@ -346,24 +446,23 @@ relation_matrix = create_relation_matrix(atributos, customer_needs)
 print(relation_matrix)
 '''
 
-
+'''
 # Probando to_attr_values()
-df_alt = pd.read_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx')
-df_opinion_cust_need = pd.read_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx')
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_celulares_cleaned.xlsx')
+df_opinion_cust_need = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_opinion_cust_need_celulares.xlsx')
+customer_needs_one_word = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/customer_needs_one_word_celulares.xlsx', index_col=0)
+customer_needs_one_word = list(customer_needs_one_word[0])
+# print(df_alt)
+# print(df_opinion_cust_need)
+# print(customer_needs_one_word)
+
 # relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx')
 atributos = list(df_alt.columns[1:])
-# customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 'resolucion']
-customer_needs = ['precio', 'bateria', 'camara', 'pantalla', 'memoria', 'carga', 'cargador']
+# customer_needs = ['precio', 'bateria', 'camara', 'pantalla', 'memoria', 'carga', 'cargador']
 
-# df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
-# customer_needs_one_word = ['pantalla', 'camara']
-
-df = to_attribute_value(df_alt, df_opinion_cust_need, create_relation_matrix(atributos, customer_needs))
-# df = to_attribute_value(df_modelos, df_costumer_needs_sent, relation_matrix)
-# df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_14.xlsx', 'Hoja de datos')
-# df.to_excel('/Users/nachomondino/Desktop/df_attr_value_sent_cant_opi.xlsx', 'Hoja de datos')
-
-
+df = to_attribute_value(df_alt, df_opinion_cust_need, create_relation_matrix(atributos, customer_needs_one_word))
+df.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_value_sent.xlsx')
+'''
 
 '''
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
@@ -383,4 +482,106 @@ df_sent = to_customer_needs(df_opiniones, relevant_words)
 atrib = ['precio', 'Marca']
 customer_needs = ['precio', 'bateria', 'camara']
 df_sent_x_modelo = to_attribute_value(df_modelos, df_sent, create_relation_matrix(atrib, customer_needs))
+'''
+
+
+
+
+'''
+def to_customer_needs(df_opiniones, customer_needs_one_word):
+    """
+    Identifica, si hay, customer needs en opiniones y asigna el sentiment a cada una mediante la libreria pysentimiento
+    :param df_opiniones: Dataframe opiniones cuya unidad de analisis son opiniones que no tienen procesamiento
+    :param customer_needs_one_word: Lista de customer needs como frases de 1 sola palabra
+    :return: Dataframe cuya unidad de analisis es una opinion y cuyas columnas son cada customer need. La celda es el
+    sentiment de la customer need en la opinion, o bien si la opinion no habla de la customer need, None.
+    """
+    # DEFINO VARIABLES
+    # Defino indices utiles para tener flexibilidad en codigo (posibilidad de columnas en otra posicion)
+    idx_id, idx_opi = df_opiniones.columns.get_loc("id_alternativa"), df_opiniones.columns.get_loc("opinion")
+    # Defino dataframe a retornar
+    df_opinion_cust_needs = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)
+    # Uso funcion create_analyzer para realizar el sentiment de las frases
+    analyzer = create_analyzer(task="sentiment", lang="es")
+
+    # POR OPINION
+    for i in range(len(df_opiniones)):
+
+        # Defino variables
+        id, opinion = df_opiniones.iloc[i, idx_id], df_opiniones.iloc[i, idx_opi]  # Defino id y opinion
+        fila_df_opi_cn = [id]  # inicializo variable que guardara la fila del nuevo dataframe
+        df_frases_cust_needs = pd.DataFrame(columns=customer_needs_one_word)  #lo reinicio por opinion
+
+        print("NºFila:", i)
+        print("Opinion:", opinion)
+
+        # POR FRASE DE LA OPINION
+        for frase in nltk.tokenize.sent_tokenize(opinion):  #esto funciona?? Espectacular pa
+            print("Frase: ", frase)
+
+            # Defino variables
+            fila_df_frase_cn = []  # Fila de sentiment de customer needs en la frase
+
+            # LIMPIO FRASE PARA PODER IDENTIFICAR CUSTOMER NEEDS EN ELLA (la hago miniscula y quito acentos)
+            frase_limpia = delete_accent(frase.lower())
+
+            # OBTENGO SENTIMENT DE FRASE
+            pred = analyzer.predict(frase)  # ejemplo de output: AnalyzerOutput(output=NEU, probas={NEU: 0.802, NEG: 0.188, POS: 0.010})
+            sent_frase = pred.probas  # accedo a probas de AnalyzerOutput
+            score = sent_frase['POS'] - sent_frase['NEG']  # obtengo probabilidades de POS y NEG y calculo score
+            print("Sentiment frase: ", score)
+
+            # POR CUSTOMER NEED
+            for customer_need in customer_needs_one_word:
+
+                # Defino variable
+                bool = True  # Variable para cortar busqueda de sentiment de customer need con palabras adicionales
+
+                # BUSCO PALABRAS RELACIONADAS A LA CUSTOMER NEED (para identificar mejor customer need en frase)
+                palabras_a_buscar = palabras_relacionadas(customer_need)
+
+                # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
+                for palabra_a_buscar in palabras_a_buscar:
+
+                    # SI LA PALABRA ESTA EN LA FRASE (uso frase limpia)
+                    if palabra_a_buscar in frase_limpia:
+
+                        # ASIGNO SENTIMENT DE FRASE A LA CUSTOMER NEED
+                        fila_df_frase_cn.append(score)
+
+                        # Dejo de buscar palabras relacionadas pues ya asigne sentiment a la customer need
+                        bool = False
+                        break
+
+                # SI LA CUSTOMER NEED NO ESTA EN LA FRASE
+                if bool:
+                    # ASIGNO SENTIMENT NONE
+                    fila_df_frase_cn.append(None)
+
+            # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA FRASE
+            df_frases_cust_needs.loc[len(df_frases_cust_needs)] = fila_df_frase_cn
+            print(df_frases_cust_needs)
+
+        # OBTENGO SENTIMENT DE CUSTOMER NEEDS EN OPINION (pues puede aparecer en mas de una frase)
+        # Por customer need
+        for customer_need in customer_needs_one_word:
+
+            # Obtengo promedio de sentiment en frases en que es mencionada
+            sent_cn_opi = df_frases_cust_needs[customer_need].dropna().mean()
+            print("Customer neeed: {}, sentiment: {}".format(customer_need, sent_cn_opi))
+
+            # Guardo el sentiment de la customer need en la opinion
+            fila_df_opi_cn.append(sent_cn_opi)
+
+        # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA OPINION
+        df_opinion_cust_needs.loc[i] = fila_df_opi_cn
+        print("Fila:", fila_df_opi_cn)
+        # print(df_opinion_cust_needs)
+
+    # EXPORTO DATAFRAME
+    df_opinion_cust_needs.to_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx', 'Hoja de datos', index=False)
+    print(df_opinion_cust_needs)
+
+    return df_opinion_cust_needs
+
 '''

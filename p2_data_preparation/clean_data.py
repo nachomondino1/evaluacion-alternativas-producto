@@ -1,7 +1,7 @@
 # Importo librerias
 import pandas as pd
 from p2_data_preparation.utils import preparacion_texto
-import statistics
+import statistics as st
 
 def delete_date_of_issue_from_opinion(df_opiniones):
     """
@@ -60,43 +60,127 @@ def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main lla
 
     return df_opiniones
 
-def delete_alternatives_with_wrong_values(df_alt):
+def drop_alternatives_with_most_na(df_alt, df_opi):
+    """
+    Elimina alternativas con mayoria de valores NaN
+    :param df_alt: Dataframe alternativas
+    :param df_opi: Dataframe opiniones
+    :return: Dataframe alternativas sin alternativas con mayoria de NaN values
+    """
+    # Defino variables
+    l_idx_a_borrar = []
+    n_valores_posibles = len(df_alt.columns[1:])  # excluyo id
+    ids_con_opi = df_opi['id_alternativa'].unique()
+
+    # Por alternativa del dataframe
+    for i in range(len(df_alt)):
+
+        # Defino variables
+        valores_alt = list(df_alt.iloc[i, 1:])  # valores de la alternativa (excluyo id)
+        n_valores_nan = 0  # reinicio variable de cantidad de nan de alternativa
+        id_alt = df_alt.loc[i, "id_alternativa"]  # id de la alternativa
+
+        # Por valor de la alternativa
+        for valor in valores_alt:
+
+            # Si el valor es NaN
+            if str(valor) == 'nan':
+
+                # Sumo 1 a cantidad de valores nan de la alternativa
+                n_valores_nan += 1
+
+        # Si la alternativa tiene mas del 50% de valores NaN y no tiene opiniones asociadas
+        if (n_valores_nan / n_valores_posibles > 0.5) and (id_alt not in ids_con_opi):
+
+            # Guardo el indice de la alternativa
+            l_idx_a_borrar.append(i)
+
+    # Borro alternativas segun indices
+    print("Cantidad de alternativas borradas: ", len(l_idx_a_borrar))
+    for idx in l_idx_a_borrar:
+        df_alt = df_alt.drop([idx], axis=0)
+    return df_alt
+
+def drop_alternatives_with_wrong_values(df_alt, df_opi):
     """
     Elimina alternativas que tengan al menos un valor cargado incorrectamente en la publicacion de Mercado Libre. Solo
     tiene en cuenta valores de atributos numericos.
     :param df_alt: Dataframe alternativas
+    :param df_opi: Dataframe opiniones
     :return: Dataframe alternativas sin alternativas con valores mal cargados
     """
     # DEFINO VARIABLE
-    indice_fila_a_borrar = []
+    l_idx_alt_a_borrar = []  # lista de indices de alternativas a borrar
 
     # POR COLUMNA DEL DATAFRAME
-    for columna in df_alt.columns[1:]:
-        idx_col = df_alt.columns.get_loc(columna)
+    for columna in df_alt.columns[2:]:  #excluyo id y precio
+        print(columna.upper().center(120))
 
         # SI LA COLUMNA ES NUMERICA
         if (df_alt[columna].dtype == 'float64') or (df_alt[columna].dtype == 'int64'):
 
-            # POR VALOR DE COLUMNA
-            for i in range(len(df_alt)):
-                valor = df_alt.iloc[i, idx_col]
+            # OBTENGO VALORES EXTREMOS Y SU FRECUENCIA
+            val_min, val_max = df_alt[columna].min(), df_alt[columna].max()
+            frec_val_min, frec_val_max = len(df_alt[df_alt[columna] == val_min]), len(df_alt[df_alt[columna] == val_max])
+            d = {val_min: frec_val_min, val_max: frec_val_max}
 
-                # OBTENGO MEDIA Y DESVIO DE LA COLUMNA (sin el valor)
-                df_alt_sin_valor = df_alt.drop([i], axis=0)
-                media = statistics.mean(df_alt_sin_valor[columna].dropna())
-                desv = statistics.stdev(df_alt_sin_valor[columna].dropna())
-                # print(media, desv)
+            # POR VALOR EXTREMO
+            for valor_ext in d.keys():
 
-                # SI EL VALOR ES PEOR AUN QUE UN OUTLIER
-                if (valor > media + 10 * desv) or (valor < media - 10 * desv):
+                # Defino variable
+                frec_val = d[valor_ext]
+                frec_min = 0.01 * len(df_alt)
+                print("Valor extremo: {}; Frecuencia: {}.".format(valor_ext, frec_val), end=" ")
 
-                    # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
-                    indice_fila_a_borrar.append(i)
-                    print("Se descubrio un outlier. Atributo: {}. Valor: {}. La media del atributo es {} y el desvio {}".format(columna, valor, media, desv))
+                # SI SU FRECUENCIA ES BAJA
+                if frec_val < frec_min:
+
+                    idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor_ext]
+                    ids = [df_alt.loc[i, "id_alternativa"] for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor_ext]
+
+                    # Obtengo media y desvio para la columna sin considerar el valor
+                    df_alt_sin_valor = df_alt[df_alt[columna] != valor_ext]
+                    media = st.mean(df_alt_sin_valor[columna].dropna().unique())
+                    desv = st.stdev(df_alt_sin_valor[columna].dropna().unique())
+
+                    # SI EL VALOR ES UN OUTLIER
+                    if (valor_ext > media + 6 * desv) or (valor_ext < media - 6 * desv):
+                        print()
+
+                        # Por cada alternativa cuyo valor es un outlier
+                        for i in range(frec_val):
+
+                            idx = idxs[i]
+                            id = ids[i]
+                            print("Alternativa Nº{}: ".format(i+1), end=" ")
+
+                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
+                            if id in list(df_opi['id_alternativa'].unique()):
+
+                                # REEMPLAZO OUTLIER POR NAN
+                                df_alt.loc[idx, columna] = None
+                                print("Se descubrio un outlier. Atributo: {}. Valor: {}. La media del atributo es {:.2f} y el desvio {:.2f}.".format(columna, valor_ext, media, desv), end=" ")
+                                print("Dado que la alternativa tiene opiniones asociadas, reemplazo el outlier por NaN")
+
+                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
+                            else:
+                                # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
+                                l_idx_alt_a_borrar.append(idx)
+                                print("Se descubrio un outlier. Atributo: {}. Valor: {}. La media del atributo es {:.2f} y el desvio {:.2f}.".format(columna, valor_ext, media, desv), end=" ")
+                                print("Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
+
+                    # SI EL VALOR NO ES UN OUTLIER
+                    else:
+                        print("El valor tiene frecuencia baja pero no es un outlier")
+
+                # SI SU FRECUENCIA ES ALTA
+                else:
+                    print("El valor es muy frecuente para ser un outlier")
 
     # BORRO ALTERNATIVAS QUE TIENEN VALORES MAL CARGADOS
-    for indice in indice_fila_a_borrar:
-        df_alt = df_alt.drop([indice], axis=0)
+    print("Cantidad de alternativas eliminadas: ", len(l_idx_alt_a_borrar))
+    for idx in l_idx_alt_a_borrar:
+        df_alt = df_alt.drop([idx], axis=0)
 
     return df_alt
 
@@ -109,22 +193,21 @@ def categorize_numeric_columns(df):
     """
     # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
-        print()
+        print(columna.upper().center(120))
 
         # SI LA COLUMNA ES NUMERICA
         if (df[columna].dtype == 'float64') or (df[columna].dtype == 'int64'):
 
             # Defino variables
-            cant_clases = len(df[columna].dropna().unique())  # cant_valores_unicos = len(df[columna].value_counts())
-            cant_clases_opt = int(len(df[columna]) ** 0.5)  # cant clases ideales = raiz(nro datos)
+            n_clases = len(df[columna].dropna().unique())  # cant_valores_unicos = len(df[columna].value_counts())
+            n_clases_opt = int(len(df[columna].dropna()) ** 0.5)  # cant clases ideales = raiz(nro datos)  # borror nan de posibles valores pues son mentira
 
             # SI LA COLUMNA ES CONTINUA (toma muchos valores distintos, especificamente, mas que la cantidad optima)
-            if cant_clases > cant_clases_opt:  # Aqui se podria aplicar "factor de holgura"
-
-                print("La columna '{}' sera categorizada pues tiene {} valores unicos cuando, en este caso, lo recomendado es {}.".format(columna, cant_clases, cant_clases_opt))
+            if n_clases > n_clases_opt:  # Aqui se podria aplicar "factor de holgura"
+                print("La columna '{}' sera categorizada pues tiene {} valores unicos cuando, en este caso, lo recomendado es {}.".format(columna, n_clases, n_clases_opt))
 
                 # OBTENGO VALORES MEDIOS Y MAXIMOS DE CADA CLASE
-                d = create_classes(valores=df[columna], cant_clases=cant_clases_opt)  # key=valor_max y val=valor_med
+                d = create_classes(valores=df[columna], cant_clases=n_clases_opt)  # key=valor_max y val=valor_med
 
                 # REEMPLAZO VALORES CONTINUOS POR LA MEDIA DE LA CLASE A LA QUE PERTENECE
                 # Por valor del atributo
@@ -145,7 +228,7 @@ def categorize_numeric_columns(df):
             # SI LA COLUMNA ES DISCRETA (toma pocos valores distintos)
             else:
                 # imprimo mensaje
-                print("La columna '{}' es numerica pero toma valores discretos".format(columna))
+                print("La columna '{}' es numerica pero toma {} valores. Es una variable discreta!".format(columna, n_clases))
 
         # SI LA COLUMNA NO ES NUMERICA
         else:
@@ -176,7 +259,7 @@ def create_classes(valores, cant_clases):
     PORC_MIN_CLASES_CON_VALOR, PORC_MAX_CLASES_CON_VALOR = 0.4, 0.72  # porcentajes min y max de clases con valores (es decir, no vacias)
 
     # CREO CLASES CON MISMA AMPLITUD
-    print("Creo {} clases con amplitud de {:.0f}".format(cant_clases, amplitud_clase))
+    print("Creo {} clases con amplitud de {:.2f}".format(cant_clases, amplitud_clase))
     # Por clase
     for i in range(cant_clases):
 
@@ -275,39 +358,49 @@ def delete_attr_x_values(df):
     :return: Dataframe sin columnas que tomen un solo valor o, por el contrario, muchos
     """
     # Defino variables
-    PORC_MUCHOS_VAL = 0.2
+    PORC_MUCHOS_VAL = 2  # al menos el doble de clases que lo optimo
     col_excepciones = ["id_alternativa", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
+    col_eliminadas = []
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
+        print(columna.upper().center(120))
 
         # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
         if columna not in col_excepciones:
 
             # Obtengo lista de frecuencia de sus valores
             unique_values = list(df[columna].dropna().unique())  # dropna para evitar que NaN sea una valor unico
-            cant_unique_values = len(unique_values)
-            cant_posible_values = len(df[columna])
+            n_unique_values = len(unique_values)
+            n_opt_unique_values = int(len(df[columna].dropna()) ** 0.5)
+            print("Nºvalores: {}; Nºopt de valores: {}; Nºmax de valores: {}".format(n_unique_values, n_opt_unique_values, PORC_MUCHOS_VAL*n_opt_unique_values))
 
             # SI LA COLUMNA ES CONSTANTE (TOMA UN UNICO VALOR)
-            if cant_unique_values == 1:
+            if n_unique_values == 1:  #cuando hay muchas alt al menos hay 1 con valor distinto..
 
-                # Elimino el atributo
-                print("Elimino columna {} por tomar 1 solo valor".format(columna))
+                # Elimino atributo
                 df = df.drop([columna], axis=1)
+                col_eliminadas.append(columna)
+                print("Elimino la columna por tomar 1 solo valor")
 
             # SI LA COLUMNA ES CONTINUA (TOMA MUCHOS VALORES DISTINTOS)
-            elif cant_unique_values > PORC_MUCHOS_VAL * cant_posible_values:
+            elif n_unique_values > PORC_MUCHOS_VAL * n_opt_unique_values:
 
                 # Elimino el atributo
-                print("Elimino columna {} por tomar muchos valores distintos, especificamente, {} valores cuando como"
-                      "maximo permito tomar {} valores".format(columna, cant_unique_values, PORC_MUCHOS_VAL*cant_posible_values))
                 df = df.drop([columna], axis=1)
+                col_eliminadas.append(columna)
+                print("Elimino la columna por tomar muchos valores distintos")
 
             # SI LA COLUMNA ES DISCRETA (no toma ni 1 valor ni muchos)
             else:
                 # No hacer nada
-                print("La columna {} toma valores discretos! (ni 1 ni muchos)".format(columna))
+                print("No la elimino pues toma valores discretos.")
+
+        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
+        else:
+            print("Se especifico que la columna no debe ser revisada")
+
+    print("COLUMNAS ELIMINADAS: ", col_eliminadas)
 
     return df
 

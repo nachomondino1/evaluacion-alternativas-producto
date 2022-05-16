@@ -66,16 +66,15 @@ def string_column_to_numeric_column(df):
     :return: Dataframe convertido
     """
     # DEFINO PASAJE DE UNIDADES
-    # unidades de memoria a GB, unidades de superficie a m2, unidades de peso a kg, unidad de longitud a metro, unidad
+    # unidades de memoria a GB, unidades de superficie a m2, unidades de peso a kg, unidad de longitud a mm, unidad
     # densidad de imagen a ppi, unidades de carga ekectrica a mah, unidades de cant de pixeles a mpx
     d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA
          "g": 1/1000, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO
-         'mm': 1/1000, 'cm': 1/100, 'm': 1,  # UNIDADES DE LONGITUD
-         'pulgadas': 1 , '"': 1,  # UNIDADES DE LONGITUD (sistema ingles)
+         '"': 25.24, 'pulgadas': 25.24 , 'in': 25.24, 'mm': 1, 'cm': 100, 'm': 1000,  # UNIDADES DE LONGITUD
          'm2': 1, 'ha': 10000,  # UNIDADES DE LONGITUD
          'ppi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN
-         'mah': 1, 'a': 1000, # UNIDADES DE CARGA ELECTRICA
-         'mpx': 1, # CANTIDAD DE PIXELES
+         'mah': 1, 'ah': 1000, # UNIDADES DE CARGA ELECTRICA
+         'px': 1/1000000, 'mpx': 1, # CANTIDAD DE PIXELES
          }
 
     # POR COLUMNA DEL DATAFRAME
@@ -136,7 +135,7 @@ def string_column_to_numeric_column(df):
                 # si la columna tenia mas de una unidad
                 if len(unidades) > 1:
                     # Imprimo aviso de que hice conversion de unidades
-                    print("CUIDADO! Originalmente habia mas de una unidad, por lo que, algunos valores sufrieron"
+                    print("AVISO! Originalmente habia mas de una unidad, por lo que, algunos valores sufrieron"
                           " una conversion de unidades. Unidades: {}".format(unidades))
                 # si la columna tenia una unidad
                 else:

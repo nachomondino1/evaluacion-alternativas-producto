@@ -8,7 +8,7 @@ from p3_modelling import sentiment_atribution
 import requests
 
 def main():
-
+    '''
     print(" (1) DATA UNDERSTANDING ".center(120, '#'))
     print(" (1.1) COLLECT INITIAL DATA ".center(120))
     # Pido producto a relevar al administrador
@@ -134,6 +134,7 @@ def main():
     df_opinion_cust_need = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi falta eliminar acentos...
     df_opinion_cust_need.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_opinion_cust_need_{}.xlsx'.format("celulares"), index=False) # cuando corra tod@ junto pongo product.nombre
 
+    '''
     print("3.1.2 Creo matriz de relaciones...".center(120))
     # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
     # relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio

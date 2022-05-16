@@ -1,11 +1,56 @@
 import pandas as pd
 # from data_preparation.utils import preparacion_texto
 
+'''
+df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')
+df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opi_celulares.xlsx')
+
+print(df_alternativas.head())
+print(df_opiniones.head())
+j = 0
+for id_pub in df_opiniones['id_alternativa'].unique():
+    if id_pub not in list(df_alternativas['id_alternativa']):
+        j += 1
+        print(j)
+'''
+
+def sentences_in_text(text):
+    # Defino variables
+    punto = '.'
+    sentences = []
+    pos_ini = 0
+
+    for pos, char in enumerate(text):
+        if (char == punto):
+            sentences.append(text[pos_ini:pos])
+            pos_ini = pos + 1
+
+    # Si el punto no es el ultimo caracter del texto
+    if pos_ini != len(text):
+        # Guardo ultima sentence
+        sentences.append(text[pos_ini:len(text)])
+
+    return sentences
+
+text = 'Excelente producto relación precio equipo. Es fluido tiene un buen sonido. Las cámaras están muy bien aún en ambientes con sombras. El autofoco no es de los más rápidos pero funciona bien. El procesador tiene un buen rendimiento. Aún no puedo opinar de la autonomía. Viene con android 10 de raíz. La caja viene completa. Cargador usb auriculares funda templado. Mas no se puede pedir. Y la calidad del cartón es muy buena ,un cartón duro y sobrio llega en una caja negra con rígida con las letras de quantum frontal y de costado. No existen descripción alguna del equipo en la caja ,eso la hace muy sobria. Un equipo ideal para uso cotidiano. Yo habitualmente pruebo equipos y este equipo lo recomiendo. El up 32. El color bordo es hermoso. Tengan en cuenta que el quantum yolo es apenas más económico pero es 3g y tiene un procesador de 4 nucleos ( el up de 8) y una pantalla de 5 pulgadas (el up 5. 5 pulgadas ) y la batería del up es de 2700 mah '
+print(sentences_in_text(text))
+
+
+'''
+l = [1, 2, 3, 4]
+l_series = pd.Series(l)
+print(l_series)
+print(list(l_series.values))
+'''
+
+
+''' drop duplicates
 df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')
 print(df_alternativas)
 df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
 print(df_alternativas)
 df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_cleaned_{}.xlsx'.format('celulares'), 'Hoja de datos', index=False)
+'''
 
 '''
 d = {'a': 1, 'b': 2, 'c': 3}

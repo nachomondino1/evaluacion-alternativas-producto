@@ -14,7 +14,7 @@ def most_frequent_words(df_tokenizado):
     """
     print("BUSCO PALABRAS MAS FRECUENTES")
     # Defino variables
-    QUANT_WORDS = 40  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    QUANT_WORDS = 50  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     idx_token = df_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 

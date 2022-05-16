@@ -10,10 +10,10 @@ def create_clustering_dataframe(df_alt, df_attr_values):
     """
     Agrega informacion de distintos dataframes para crear el dataframe con todos valores numericos y sin NaN y asi poder
     hacer clustering
-    :param df_attr_values: Dataframe cuya unidad de analisis son los valores de los atributos del producto. Sus columnas
-    son valor, atributo al que perenece y su sentiment
     :param df_alt: Dataframe cuya unidad de analisis es cada una de las alternativas del producto, sus columnas
     son los atributos del producto y las celdas el valor que toma el atributo en una alternativa
+    :param df_attr_values: Dataframe cuya unidad de analisis son los valores de los atributos del producto. Sus columnas
+    son valor, atributo al que perenece y su sentiment
     :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
     atributos del producto y las celdas, a diferencia del df_attr_values, son los sentiment que toma el valor del
     atributo
@@ -25,10 +25,10 @@ def create_clustering_dataframe(df_alt, df_attr_values):
     for i in range(len(df_alt)):
         print("++++ Nº MODELO: {} ++++ ".format(i))
 
-        fila_alternativa = [df_alt.iloc[i, 0]]  # la reinicio para cada modelo, agrego el id_pub
+        fila_alternativa = [df_alt.iloc[i, 0]]  # la reinicio para cada modelo, aunque la inicializo con el id_alt
 
         # POR ATRIBUTO
-        for atributo in df.columns[1:]:  # tengo que evitar id_pub, linea y modelo
+        for atributo in df.columns[1:]:  # tengo que evitar id_alt, linea y modelo
             print("ATRIBUTO: ", atributo)
 
             # Obtengo valor del atributo para el modelo
@@ -36,7 +36,7 @@ def create_clustering_dataframe(df_alt, df_attr_values):
             valor = df_alt.iloc[i, idx_atrib]
 
             # SI EL VALOR DEL ATRIBUTO DE LA ALTERNATIVA NO ES NAN
-            if str(valor) != 'nan':  # isnan?
+            if str(valor) != 'nan':  # isnan() no lo pude implementar print(str(valor)!= 'nan', np.isnan(valor))
 
                 # BUSCO SENTIMENT DEL VALOR
                 prom_sent = float(df_attr_values[(df_attr_values['atributo'] == atributo) & (df_attr_values['valor'] == valor)]['sent'])
@@ -53,22 +53,16 @@ def create_clustering_dataframe(df_alt, df_attr_values):
 
         # Guardo fila de modelo
         print("Fila de sentiment de la alternativa: ", fila_alternativa)
-        # print("Cantidad de seentiments", len(l_prom_sent))
-        # print("Cantidad de columnas", len(df.columns))
         df.loc[len(df)] = fila_alternativa
 
-    # df.to_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', 'Hoja de datos')
     # Reemplazo valores Nan por valores medios de cada columna
-    df.iloc[:,1:] = replace_nan(df.iloc[:,1:])
-    # df.to_excel('/Users/nachomondino/Desktop/df_clustering_sin_nan.xlsx', 'Hoja de datos')
-    # df = df.dropna()  # elimina alternativas con NaN
+    df.iloc[:, 1:] = replace_nan(df.iloc[:, 1:])
 
     return df
 
 def replace_nan(df):
     """
-    Por columna del dataframe, reemplaza valores NaN (valores que no tienen sentiment asociado) por la media de dicha
-    columna
+    Reeemplaza valores NaN de cada columna del dataframe por la media de la respectiva columna
     :param df: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
     atributos del producto y las celdas son los sentiment que toma el valor del atributo pero contiene NaN values
     :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
@@ -104,7 +98,7 @@ def k_means(df_clustering):
     son los atributos del producto y la columna "label" con el cluster al que pertenece y las celdas son los sentiment
     que toma el valor del atributo
     """
-    print("columnas a clusterizar:", df_clustering.columns, len(df_clustering.columns))
+    print("Columnas a clusterizar:", df_clustering.columns, len(df_clustering.columns))
     # Defino datos
     X = np.array(df_clustering[df_clustering.columns])  #por ahi teenga que sacar algunas columnas..
 
@@ -179,39 +173,119 @@ def kMeansRes(scaled_data, k, alpha_k=0.04):  #lo subi de 0.02 a 0.06 para tener
 
     return scaled_inertia
 
-def create_table_0(df_clust):
+def create_table_cluster_centroids_sent(df_alt_clust):
+    """
 
-    table0 = pd.DataFrame(columns=df_clust.columns)
+    :param df_clust:
+    :return:
+    """
+    # Defino variable
+    df_centroids_sent = pd.DataFrame(columns=df_alt_clust.columns)
 
     # POR CLUSTER
-    for cluster in df_clust['label'].unique():
+    for cluster in df_alt_clust['label'].unique():
 
         # Defino variable
         fila = []  # donde guardare scores para un cluster
 
         # Selecciono alternativas de un solo cluster
-        df_grupo = df_clust[df_clust['label'] == cluster]
+        df_alt_one_cluster = df_alt_clust[df_alt_clust['label'] == cluster]
 
         # POR ATRIBUTO
-        for atributo in df_clust:  # salvo el id_pub
+        for atributo in df_alt_clust.iloc[:, 1:]:  # salvo el id_pub
 
             # OBTENGO PROMEDIO DE SCORES promedio de scores
-            score_prom = df_grupo[atributo].mean()
+            score_prom = df_alt_one_cluster[atributo].mean()
 
             # GUARDO SCORE
             fila.append(score_prom)
 
         # GUARDO FILA DEL CLUSTER
-        table0.loc[len(table0)] = fila
+        df_centroids_sent.loc[len(df_centroids_sent)] = fila
 
     # ORDENO LA TABLA POR Nº DE CLUSTER
-    table1 = table0.sort_values(by=['label'])
-    return table1
+    df_centroids_sent = df_centroids_sent.sort_values(by=['label'])
 
-def create_table_2(df_alt, df_clust):
+    print("Se exporto Dataframe con los centroides de cada cluster para poder darle nombre a clusters")
+    df_centroids_sent.to_excel('/Users/nachomondino/Desktop/df_centroids_sent.xlsx')
+    return df_centroids_sent
 
+def cluster_names(df_clust):
+    """
+
+    :param df_clust:
+    :return:
+    """
+    # Defino variable
+    d = {}
+
+    # Por cluster
+    for cluster in df_clust['label'].unique():
+        print("CLUSTER LABEL: ", cluster)
+
+        # Solicito nombre del cluster por terminal
+        nombre_cluster = input(str("Ingrese nombre del cluster: "))
+
+        # Guardo relacion entre label y nombre
+        d[cluster] = nombre_cluster
+
+    print("Label de clusters y su nombre: ", d)
+    return d
+
+def replace_labels_with_names(df_clust, d):
+    """
+
+    :param df_clust:
+    :param d:
+    :return:
+    """
+    # Defino variable
+    df_copia = pd.DataFrame(columns=df_clust.columns)
+
+    # Por cluster
+    for label in df_clust['label'].unique():
+
+        # Selecciono alternativas de un cluster
+        df_clust_filt_cluster = df_clust[df_clust['label'] == label]
+
+        # Reemplazo label por nombre del label
+        df_clust_filt_cluster = df_clust_filt_cluster.drop(['label'], axis=1)  # borro columna label
+        df_clust_filt_cluster = df_clust_filt_cluster.assign(label=d[label])  # creo nueva columna label con nombre de label
+
+        # Guardo
+        df_copia = pd.concat([df_copia, df_clust_filt_cluster])
+
+    return df_copia
+
+def create_table_num_alt_per_cluster(df_alt_clust):
+    """
+
+    :param df_clust:
+    :return:
+    """
+    df_alt_per_clust = pd.DataFrame(columns=['Cantidad de alternativas'], index=df_alt_clust['label'].unique())
+    df_alt_per_clust.index.name = 'Nombre de cluster'
+
+    # Por cluster
+    for cluster in df_alt_clust['label'].unique():
+
+        # Selecciono alternativas de un cluster
+        df_clust_filt_cluster = df_alt_clust[df_alt_clust['label'] == cluster]
+
+        df_alt_per_clust.loc[cluster] = len(df_clust_filt_cluster)
+
+    return df_alt_per_clust
+
+def create_table_cluster_centroids_values(df_alt, df_clust):
+    """
+
+    :param df_alt:
+    :param df_clust:
+    :return:
+    """
+    # Defino variable
     # seguro necesite df_modelos_formateado pues las numericas las promedio.. y las string pongo el mas freecueente......!
-    table2 = pd.DataFrame(columns=df_alt.columns[1:], index=df_clust['label'].unique())
+    df_centroids_values = pd.DataFrame(columns=df_alt.columns[1:], index=df_clust['label'].unique())
 
     # POR CLUSTER
     for cluster in df_clust['label'].unique():
@@ -247,14 +321,20 @@ def create_table_2(df_alt, df_clust):
 
         # Guardo fila por grupo
         print("Fila: ", fila)
-        table2.loc[cluster] = fila
+        df_centroids_values.loc[cluster] = fila
         # table2.loc[len(table2)] = fila
 
-    return table2
+    return df_centroids_values
 
-def create_table_4(df_alt, df_clust):
+def create_table_brand_per_cluster(df_alt, df_clust):
+    """
 
-    table4 = pd.DataFrame(index=df_clust['label'].unique(), columns=df_alt['Marca'].dropna().unique())
+    :param df_alt:
+    :param df_clust:
+    :return:
+    """
+    # Defino variable
+    df_brand_per_cluster = pd.DataFrame(index=df_clust['label'].unique(), columns=df_alt['Marca'].dropna().unique())
 
     # POR CLUSTER
     for cluster in df_clust['label'].unique():
@@ -276,121 +356,76 @@ def create_table_4(df_alt, df_clust):
         for i in range(len(marcas)):
 
             marca, frec = marcas.index[i], marcas.values[i]
-            table4.loc[cluster, marca] = frec
+            df_brand_per_cluster.loc[cluster, marca] = frec
 
-            # print(marcas.index[i])
-            # print(marcas.values[i])
+    return df_brand_per_cluster
 
-        # for marca in list(marcas.index), marcas.values:
-        #    print(marca)
-            # table4.loc[cluster, marca] = frec_marca
+def nose(df_alt_orig, df_alt_cluster):
+    """
+    Selecciono alternativas que no han sido eliminadas durante data preparation y agrego columna label
+    :param df_alt_orig:
+    :param df_alt_cluster:
+    :return:
+    """
+    # Selecciono ids de alternativas que no han sido borradas
+    ids_cleaned = df_alt_cluster["id_alternativa"]
 
-    return table4
+    # Filtro dataframe alternativas por ids
+    df_alt_orig = df_alt_orig[df_alt_orig.id_alternativa.isin(ids_cleaned)]
 
-def cluster_names(df_clust):
-    d = {}
+    # Agrego columna de label
+    df = df_alt_orig.copy()
+    df['label'] = df_alt_cluster['label']
 
-    for cluster in df_clust['label'].unique():
-        print("CLUSTER LABEL: ", cluster)
+    return df
 
-        nombre_cluster = input(str("Ingrese nombre del cluster: "))
 
-        d[cluster] = nombre_cluster
+def show_results(df_alt_orig, df_alt_clust):  #despues veo si la pongo en pagina_web.py o si la dejo
 
-    print("Label de clusters y su nombre: ", d)
-    return d
+    # Crear tabla de numero de alternativas por cluster
+    df_alt_per_clust = create_table_num_alt_per_cluster(df_alt_clust)
 
-def replace_labels_with_names(df_clust, d):
+    # Crear tabla de centroides de clusters de alternativas segun sentiment
+    df_centroids_sent = create_table_cluster_centroids_sent(df_alt_clust)  # tabla 0 pues el cliente no la ve, es solo para mi y asi poder definir nombres de clusters
 
-    df_copia = pd.DataFrame(columns=df_clust.columns)
-
-    for label in df_clust['label'].unique():
-
-        # Selecciono alternativas de un cluster
-        df_clust_filt_cluster = df_clust[df_clust['label'] == label]
-
-        # Reemplazo label por nombre del label
-        df_clust_filt_cluster = df_clust_filt_cluster.drop(['label'], axis=1)  # borro columna label
-        df_clust_filt_cluster = df_clust_filt_cluster.assign(label=d[label])
-        # df_clust_filt_cluster['label'] = d[label]  # creo nueva columna label con nombre de label
-
-        # Guardo
-        df_copia = pd.concat([df_copia, df_clust_filt_cluster])
-
-    return df_copia
-
-def create_table_1(df_clust):
-
-    table1 = pd.DataFrame(columns=['Cantidad de alternativas'], index=df_clust['label'].unique())
-    table1.index.name = 'Nombre de cluster'
-
-    # Por cluster
-    for cluster in df_clust['label'].unique():
-
-        # Selecciono alternativas de un cluster
-        df_clust_filt_cluster = df_clust[df_clust['label'] == cluster]
-
-        table1.loc[cluster] = len(df_clust_filt_cluster)
-
-    return table1
-
-def show_results(df_alt, df_clust):  #despues veo si la pongo en pagina_web.py o si la dejo
-
-    table0 = create_table_0(df_clust)  # tabla 0 pues el cliente no la ve, es solo para mi y asi poder definir nombres de clusters
-
+    # REEMPLAZO LABELS POR NOMBRES
     # Obtengo nombre de clusters
-    d = cluster_names(df_clust)
-
+    d_labels_names = cluster_names(df_alt_clust)
     # Reemplazo labels por nombre de labels
-    df_clust = replace_labels_with_names(df_clust, d)
-    df_clust.to_excel('/Users/nachomondino/Desktop/AAAAAA.xlsx')
+    df_alt_clust = replace_labels_with_names(df_alt_clust, d_labels_names)
 
-    table1 = create_table_1(df_clust)
+    # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
+    df_alt_orig = nose(df_alt_orig, df_alt_clust)
 
-    table2 = create_table_2(df_alt, df_clust)
+    # Crear tabla de centroides de clusters de alternativas segun valores de atributos
+    df_centroids_values = create_table_cluster_centroids_values(df_alt_orig, df_alt_clust)
 
-    table4 = create_table_4(df_alt, df_clust)
+    # Crear tabla de numero de marcas por cluster
+    df_brand_per_cluster = create_table_brand_per_cluster(df_alt_orig, df_alt_clust)
 
-    return table0, table1, table2, table4
+    return df_alt_orig, df_centroids_sent, df_alt_per_clust, df_centroids_values, df_brand_per_cluster
 
 
 def main():
-
     # Creo el dataframe para clustering
-    df_alt = pd.read_excel('/Users/nachomondino/Desktop/df_alt_celulares_cleaned.xlsx')  #index_col=0
-    df_alt_orig = pd.read_excel('/Users/nachomondino/Desktop/df_alt_celulares.xlsx')  #index_col=0
-    df_attr_values = pd.read_excel('/Users/nachomondino/Desktop/df_attr_value_sent.xlsx', 'Hoja de datos',index_col=0)
-    print(df_alt)
-    print(df_attr_values)
+    df_alt_orig = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')  #index_col=0
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_celulares_cleaned.xlsx')  #index_col=0
+    df_attr_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_value_sent.xlsx', index_col=0)
+    print(df_alt_orig), print(df_alt), print(df_attr_values)
+
+    # Create clustering dataframe
     df_input_clustering = create_clustering_dataframe(df_alt, df_attr_values)
     print(df_input_clustering)
-    # df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', 'Hoja de datos',index_col=0)
-
-    # df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos')
 
     # Proceso los datos
-    # df_clustering = pd.read_excel('/Users/nachomondino/Desktop/df_clustering.xlsx', index_col=0)
-    df_clustering = pd.concat([df_input_clustering['id_alternativa'], k_means(df_input_clustering.iloc[:, 1:])], axis=1)
-    # print("FINAL: ", df_clustering)
+    df_alt_cluster = pd.concat([df_input_clustering['id_alternativa'], k_means(df_input_clustering.iloc[:, 1:])], axis=1)
+    print("FINAL: ", df_alt_cluster)
 
-    df_clustering.to_excel('/Users/nachomondino/Desktop/df_clustering_labels.xlsx')
+    df_alt_clust, df_centroids_sent, df_alt_per_clust, df_centroids_values, df_brand_per_cluster = show_results(df_alt_orig, df_alt_cluster)
+    df_alt_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_alt_clust_{}.xlsx'.format('celulares'))
+    df_alt_per_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_alt_per_clust_{}.xlsx'.format('celulares'))
+    df_centroids_values.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_centroids_values_{}.xlsx'.format('celulares'))
+    df_brand_per_cluster.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_brand_per_cluster_{}.xlsx'.format('celulares'))
 
-
-    """ Table 3
-    ids_cleaned = df_clustering["id_alternativa"]
-    print(ids_cleaned, len(ids_cleaned))
-    # selecciono ids que no fueron eliminados
-    print(df_alt_orig.shape)
-    df_alt_orig = df_alt_orig[df_alt_orig.id_alternativa.isin(ids_cleaned)]
-    print(df_alt_orig.shape)
-    table3 = pd.concat([df_alt_orig, df_clustering['label']])
-    print(table3)
-    table3.to_excel('/Users/nachomondino/Desktop/df_clustering_table3.xlsx')
-    """
-
-    df0, df1, df2, df4 = show_results(df_alt, df_clustering)
-    df1.to_excel('/Users/nachomondino/Desktop/df_clustering_table_1.xlsx')
-    df2.to_excel('/Users/nachomondino/Desktop/df_clustering_table_2.xlsx')
-    df4.to_excel('/Users/nachomondino/Desktop/df_clustering_table_4.xlsx')
 
 main()

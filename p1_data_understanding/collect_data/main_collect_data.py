@@ -67,62 +67,67 @@ def data_extractor(producto, df_opiniones, df_alternativas):
             # OBTENGO SU IDENTIFICADOR DE PUBLICACION ("id_publicacion")
             id_alternativa = crawler.get_publication_id(url_publicacion)
 
-            # EXTRAIGO DATOS DE LA PUBLICACION Y LAS GUARDO EN UN DATAFRAME ("df_alternativas")
+            # EXTRAIGO DATOS DE LA PUBLICACION
             d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
-            df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
-            print(df_alternativas)
 
-            # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
-            url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
+            # SI LA ALTERNATIVA ES NUEVA
+            if is_alternative_new(df_alternativas, d_data_alternativas):
 
-            # SI EXISTE EL BOTON (en ese caso, la publicacion tiene opiniones)
-            if url_ver_todas_las_opiniones is not None:
+                # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
+                df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
+                print(df_alternativas)
 
-                # CLICKEO EN BOTON "VER TODAS LAS OPINIONES"
-                crawler.driver.get(url_ver_todas_las_opiniones)
-                sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
+                # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
+                url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
 
-                # SI LAS OPINIONES SON NUEVAS (pues ≠ publicaciones pueden tener = opiniones)
-                if crawler.are_opinions_new(l_prim_opiniones):
+                # SI EXISTE EL BOTON (en ese caso, la publicacion tiene opiniones)
+                if url_ver_todas_las_opiniones is not None:
 
-                    pagina_extraida = 1  # Cambio su valor a 1 pues pude extraer datos de la pub (param de corte 1)
-
-                    # HAGO SCROLL DOWN PARA CARGAR TODAS LAS OPINIONES
+                    # CLICKEO EN BOTON "VER TODAS LAS OPINIONES"
+                    crawler.driver.get(url_ver_todas_las_opiniones)
                     sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-                    crawler.ScrollDown()
 
-                    # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
-                    d_opiniones_alternativa = crawler.get_publication_opinions_data(id_alternativa)
-                    l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
-                    # publicacion para poder hacer la verificacion de opiniones nuevas
-                    df_opiniones = dataframe_creator.add_lines_to_dataframe(d_opiniones_alternativa, df_opiniones)
-                    print(df_opiniones)
+                    # SI LAS OPINIONES SON NUEVAS (pues ≠ publicaciones pueden tener = opiniones)
+                    if crawler.are_opinions_new(l_prim_opiniones):
 
-                # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
+                        pagina_extraida = 1  # Cambio su valor a 1 pues pude extraer datos de la pub (param de corte 1)
+
+                        # HAGO SCROLL DOWN PARA CARGAR TODAS LAS OPINIONES
+                        sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
+                        crawler.ScrollDown()
+
+                        # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
+                        d_opiniones_alternativa = crawler.get_publication_opinions_data(id_alternativa)
+                        l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
+                        # publicacion para poder hacer la verificacion de opiniones nuevas
+                        df_opiniones = dataframe_creator.add_lines_to_dataframe(d_opiniones_alternativa, df_opiniones)
+                        print(df_opiniones)
+
+                    # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
+                    else:
+                        # ENTONCES NO EXTRAIGO OPINIONES
+                        print("OPINIONES REPETIDAS")
+
+                    # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
+                    crawler.driver.back()
+                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
+
+                # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones)
                 else:
                     # ENTONCES NO EXTRAIGO OPINIONES
-                    print("OPINIONES REPETIDAS")
+                    print("PUBLICACION SIN OPINIONES")
 
-                # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
-                crawler.driver.back()
-                sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-            # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones)
-            else:
-                # ENTONCES NO EXTRAIGO OPINIONES
-                print("PUBLICACION SIN OPINIONES")
+                # VERIFICO PARAMETRO DE CORTE
+                historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
+                # Si las ultimas publicaciones tienen muy pocos datos
+                if corte_extraccion_datos.ultimas_pub_sin_data(historico_paginas, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
+                    # corto la extraccion de datos (parametro de corte 1)
+                    ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
+                    break
 
             # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
             crawler.driver.back()
             sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-            # VERIFICO PARAMETRO DE CORTE
-            historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
-            # Si las ultimas publicaciones tienen muy pocos datos
-            if corte_extraccion_datos.ultimas_pub_sin_data(historico_paginas, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
-                # corto la extraccion de datos (parametro de corte 1)
-                ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
-                break
 
         # HAGO CLICK EN SIGUIENTE PAGINA DE PAGINACION
         # Si encontre url de siguiente pagina
@@ -148,9 +153,47 @@ def data_extractor(producto, df_opiniones, df_alternativas):
     corte_extraccion_datos.explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
 
     # Elimino alternativas repetidas
-    df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
+    # print(df_alternativas.shape())
+    # df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
+    # print(df_alternativas.shape())
+    # df_alternativas = df_alternativas.drop_duplicates(subset=[id_alternativa])
+    # print(df_alternativas.shape())
 
     return df_opiniones, df_alternativas
+
+def is_alternative_new(df_alt, new_alt):
+    """
+    Verifica si una nueva alternativa se repite o no con otra alternativa ya extraida
+    :param df_alt: Dataframe alternativas
+    :param new_alt: Diccionario con las colummas del dataframe alternativas como keys y sus respectivos valores como
+    values.
+    :return: True si la nueva alternativa es nueva, de lo contrario, False.
+    """
+    # Defino variables
+    new_id = new_alt['id_alternativa']  # id de la nueva alternativa
+    new_atrib = list(new_alt.values())[2:]  # valores de atributos de la nueva alternativa (excluyo id y precio)
+
+    # Por alternativa
+    for i in range(len(df_alt)):
+
+        # Defino variables
+        id_alt = df_alt.iloc[i, 0]  # id de alternativa
+        atrib_alt = list(df_alt.iloc[i, 2:])  # valores de atributos de la alternativa (excluyo id y precio)
+
+        # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
+        if new_id == id_alt:
+            print("La alternativa tiene el mismo id que una alternativa ya extraida")
+            print(new_id, id_alt)
+            return False
+
+        # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
+        if new_atrib == atrib_alt:
+            print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
+            print(new_atrib, atrib_alt)
+            return False
+
+    # Si la alternativa nueva no se repite
+    return True
 
 
 ''' implementado en main.py
