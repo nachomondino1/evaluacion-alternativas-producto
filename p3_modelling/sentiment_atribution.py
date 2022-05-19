@@ -1,98 +1,11 @@
 # Importo librerias
 import pandas as pd
-import nltk
 from pysentimiento import create_analyzer
+import stanza
 
+pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')
 
-def split_text_into_sentences(text, sep):
-    """
-    Separate a text string into sentences by element
-    :param text: Text string
-    :param sep: Separating element
-    :return: list whose elements are each setence
-    """
-    # Defino variables
-    sentences = []
-    pos_ini = 0
-
-    # Por caracter de la cadena
-    for pos, char in enumerate(text):
-
-        # Si el caracter es el separador
-        if (char == sep):
-
-            # Obtengo sentence
-            sentences.append(text[pos_ini:pos])
-            pos_ini = pos + 1
-
-    # Si el separador no es el ultimo caracter del texto
-    if pos_ini != len(text):
-
-        # Guardo ultima sentence
-        sentences.append(text[pos_ini:len(text)])
-
-    return sentences
-
-def delete_parentesis(text):
-    # Defino variables
-    elem = "("
-    sentence = text
-
-    # Si el elemento esta en el texto
-    if "(" in text:
-
-        # Por caracter de la cadena
-        for pos, char in enumerate(text):
-
-            # Si el caracter es el simbolo de abrir parentesis
-            if (char == elem):
-
-                # Obtengo sentence sin parentesis
-                sentence = text[:pos]
-
-    '''Funciona mal, repite el ult elemeento de string..
-    # Si hay texto luego del cierre del parentesis
-    idx_cierre = text.find(')')
-    if idx_cierre != len(text):
-        # Guardo texto luego del parentesis sentence
-        sentence +=text[idx_cierre:len(text)]
-    '''
-
-    return sentence
-
-def words_mentioned_in_text(text, words):
-    # inicializo el diccionario a retornar
-    d = {}
-    for word in words:
-        d[word] = 0
-
-    # POR WORD
-    for word in words:
-
-        # BUSCO PALABRAS RELACIONADAS A LA WORD (para identificar mejor customer need en frase)
-        palabras_a_buscar = palabras_relacionadas(word)
-
-        # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
-        for palabra_a_buscar in palabras_a_buscar:
-
-            # SI LA PALABRA ESTA EN LA FRASE (uso frase limpia)
-            if palabra_a_buscar in text:
-
-                # Asigno 1 a palabra pues es mencionada en texto
-                d[word] = 1
-
-                break  # Dejo de buscar palabras relacionadas pues ya asigne sentiment a la customer need
-
-    return d
-
-def sentiemnt_sentence(analyzer, sentence):
-    # OBTENGO SENTIMENT DE FRASE
-    pred = analyzer.predict(sentence)  # ejemplo de output: AnalyzerOutput(output=NEU, probas={NEU: 0.802, NEG: 0.188, POS: 0.010})
-    sent_frase = pred.probas  # accedo a probas de AnalyzerOutput
-    score = sent_frase['POS'] - sent_frase['NEG']  # obtengo probabilidades de POS y NEG y calculo score
-    print("Sentiment frase: ", score)
-    return score
-
+################################################ FUNCIONES PRINCIPALES ################################################
 def to_customer_needs(df_opiniones, customer_needs_one_word):
     """
     Identifica, si hay, customer needs en opiniones y asigna el sentiment a cada una mediante la libreria pysentimiento
@@ -102,80 +15,123 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
     sentiment de la customer need en la opinion, o bien si la opinion no habla de la customer need, None.
     """
     # DEFINO VARIABLES
-    # Defino indices utiles para tener flexibilidad en codigo (posibilidad de columnas en otra posicion)
-    idx_id, idx_opi = df_opiniones.columns.get_loc("id_alternativa"), df_opiniones.columns.get_loc("opinion")
-    # Defino dataframe a retornar
-    df_opinion_cust_needs = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)
-    # Uso funcion create_analyzer para realizar el sentiment de las frases
-    analyzer = create_analyzer(task="sentiment", lang="es")
+    idx_id, idx_opi = df_opiniones.columns.get_loc("id_alternativa"), df_opiniones.columns.get_loc("opinion")  # indices utiles para tener flexibilidad en codigo (posibilidad de columnas en otra posicion)
+    df_opinion_cust_needs = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)  # dataframe a retornar
+    analyzer = create_analyzer(task="sentiment", lang="es")  # para realizar el sentiment
+    choose_sep = lambda text: "," if text.count(",") >= 1 else ';'
+    split_frase_in_commas = lambda frase: frase.split(choose_sep(frase)) if conviene_separar_comas(frase) else [frase]
 
     # POR OPINION
     for i in range(len(df_opiniones)):
 
         # Defino variables
         id, opinion = df_opiniones.iloc[i, idx_id], df_opiniones.iloc[i, idx_opi]  # Defino id y opinion
-        fila_df_opi_cn = [id]  # inicializo variable que guardara la fila del nuevo dataframe
+        opinion = delete_parentesis(opinion)  # quito todos los parentesis de la opinion
+        fila_df = [id]  # inicializo variable que guardara la fila del nuevo dataframe
         df_frases_cust_needs = pd.DataFrame(columns=customer_needs_one_word)  #lo reinicio por opinion
+        print("NºFila: {}".center(120).format(i)), print("Opinion:", opinion)
 
-        print("NºFila: {}".center(120).format(i))
-        print("Opinion:", opinion)
+        # OBTENGO SENTIMENT DE OPINION
+        sent_opi = sentiment(analyzer=analyzer, sentence=opinion)
 
         # POR FRASE DE LA OPINION
-        for frase in split_text_into_sentences(text=opinion, sep='.'):
-            # print("Frase: ", frase)
+        for frase in opinion.split("."):  # for frase in split_text_into_sentences(text=opinion, sep='.'):
+            print("Frase original: ", frase)
 
-            # ES PARTE DEE PRUEBA, VEO EL SENT QUE TENDRIA LA FRASE...
-            print("Frase: ", frase)
-            sentiemnt_sentence(analyzer=analyzer, sentence=frase)
+            # OBTENGO SENTIMENT DE FRASE
+            sent_frase = sentiment(analyzer=analyzer, sentence=frase)
 
-            if frase.count(',') >= 2:
-                frases_entre_comas = split_text_into_sentences(text=frase, sep=',') # si no tiene comas, no lo separa... ahora veo que hago con eso de que deberia tener al menos dos
-            else:
-                frases_entre_comas = [frase]
+            # IDENTIFICO QUE CUSTOMER NEEDS MENCIONA
+            frase_limpia = delete_accent(frase.lower())  # limpio la frase para poder identificar customer needs en ella
+            d_cust_needs_mentioned = words_mentioned_in_text(words=customer_needs_one_word, text=frase_limpia)  # diccionario con customer needs como key y 1 o 0 como value segun si la frase la menciona o no.
+            n_cust_need_ment = sum(d_cust_needs_mentioned.values())  # numero de customer needs mencionadas en frase
 
-            # POR FRASE ENTRE COMAS
-            for sentence in frases_entre_comas:
+            # SI MENCIONA AL MENOS 2 CUSTOMER NEEDS Y EL SENTIMENT NO ES CATEGORICO
+            if (n_cust_need_ment >= 2) and (sent_frase < 0.5 and sent_frase > -0.5):
 
-                sentence = delete_parentesis(sentence)
-                print("Frase entre comas: ", sentence)
+                # Divido frase segun comas
+                frases_entre_comas = split_frase_in_commas(frase)
+                print("Si tiene al menos una coma, entonces separo frase segun comas")
 
-                # Defino variables
-                fila_df_frase_cn = []  # Fila de sentiment de customer needs en la frase
+                # Por frase entre comas
+                for sentence in frases_entre_comas:
+                    print("Frase: ", sentence)
 
-                # LIMPIO FRASE PARA PODER IDENTIFICAR CUSTOMER NEEDS EN ELLA (la hago miniscula y quito acentos)
-                sentence_limpia = delete_accent(sentence.lower())
+                    # Identifico customer need en frase entre comas
+                    sentence_limpia = delete_accent(sentence.lower())
+                    d_cust_needs_mentioned = words_mentioned_in_text(words=customer_needs_one_word, text=sentence_limpia)
 
-                # IDENTIFICO QUE CUSTOMER NEEDS MENCIONA
-                # funcion que me devuelva dict con key cada cn y cuo values es 0 o 1 segun si es menciona o no en la frase.
-                d_cust_needs_mentioned = words_mentioned_in_text(words=customer_needs_one_word, text=sentence_limpia)
-                n_cust_need_ment = sum(d_cust_needs_mentioned.values())
+                    # Si hay una customer need
+                    if sum(d_cust_needs_mentioned.values()) >= 1:
 
-                # SI LA FRASE MENCIONA AL MENOS UNA CUSTOMER NEED
-                if n_cust_need_ment >= 1:
+                        # Obtengo sentiment de frase entre comas
+                        sent_frase_entre_comas = sentiment(analyzer=analyzer, sentence=sentence)
 
-                    # OBTENGO SENTIMENT
-                    sent_frase = sentiemnt_sentence(analyzer=analyzer, sentence=sentence)
+                        # Si contiene adjetivos
+                        if contains_adjective(sentence):
 
-                    # Por customer need Por cn mencionada, asignar sent y si no none?
-                    for cust_need in d_cust_needs_mentioned.keys():
+                            # PRUEBA: Si el sentiment de la frase no se corresponde con el de la opinion
+                            #if (sent_opi < -0.9 and sent_frase_entre_comas > 0) or (sent_opi > 0.9 and sent_frase_entre_comas < 0):
+                            #    print("Es probable que el sentiment de la frase sea incorrecto dado que el de la opinion es totalmente opuesto")
+                            #    pass
 
-                        # Si la customer need es mencionada
-                        if d_cust_needs_mentioned[cust_need] == 1:
-                            # Asigno sentiment de frase
-                            fila_df_frase_cn.append(sent_frase)
+                            # Si el sentiment de la frase se corresponde con el de la opinion
+                            #else:
+                            # df_frases_cust_needs.loc[len(df_frases_cust_needs)] = lambda x, y: assign_sentiment(x,y) if sum(x.values()) > 1 else
+                            df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas)
+                            print(df_frases_cust_needs)
 
-                        # Si la customer need no es mencionada
+                        # Si no hay adjetivos
                         else:
-                            # Asigno sentiment None
-                            fila_df_frase_cn.append(None)
+                            # pero el sentiment de la frase entre comas es categorico tal como el de la opinion
+                            if (sent_opi < -0.8 and sent_frase_entre_comas < -0.8) or (sent_opi > 0.8 and sent_frase_entre_comas > 0.8):
+                                print("La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
+                                df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas)
+                                print(df_frases_cust_needs)
 
-                    # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA FRASE
-                    df_frases_cust_needs.loc[len(df_frases_cust_needs)] = fila_df_frase_cn
+                            elif (sent_opi < -0.8 and sent_frase_entre_comas < -0.7) or (sent_opi > 0.8 and sent_frase_entre_comas > 0.7):
+                                print("Posible A")
+
+                            else:
+                                print("La frase no contiene adjetivos")
+
+                    # Si no hay customer needs
+                    else:
+                        print("La frase no contiene customer needs")
+
+            # SI MENCIONA UNA CUSTOMER NEED
+            elif n_cust_need_ment >= 1:  # ojo que puede haber frases que mencionen mas de una y sea categorica
+
+                # SI CONTIENE AL MENOS UN ADJETIVO
+                if contains_adjective(frase):
+
+                    '''
+                    # PRUEBA
+                    if (sent_opi < -0.9 and sent_frase > 0) or (sent_opi > 0.9 and sent_frase < -0):
+                        print("Es probable que el sentiment de la frase sea incorrecto dado que el de la opinion es totalmente opuesto")
+                        pass
+                    else:
+                    '''
+                    # ASIGNO SENTIMENT A CUSTOMER NEED MENCIONADA
+                    df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
                     print(df_frases_cust_needs)
 
-                # SI LA FRASE NO MENCIONA CUSTOMER NEEDS
+                # SI CONTIENE ADJETIVOS
                 else:
-                    pass
+                    if (sent_opi < -0.8 and sent_frase < -0.8) or (sent_opi > 0.8 and sent_frase > 0.8):
+                        df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
+                        print(df_frases_cust_needs)
+                        print("La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
+
+                    elif (sent_opi < -0.8 and sent_frase < -0.7) or (sent_opi > 0.8 and sent_frase > 0.7):
+                        print("Posible AA")
+
+                    else:
+                        print("La frase no contiene adjetivos")
+
+            # SI NO MENCIONA CUSTOMER NEEDS
+            else:
+                pass
 
         # OBTENGO SENTIMENT DE CUSTOMER NEEDS EN OPINION (pues puede aparecer en mas de una frase)
         # Por customer need
@@ -186,11 +142,11 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
             print("Customer need: {}, sentiment: {}".format(customer_need, sent_cn_opi))
 
             # Guardo el sentiment de la customer need en la opinion
-            fila_df_opi_cn.append(sent_cn_opi)
+            fila_df.append(sent_cn_opi)
 
         # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA OPINION
-        df_opinion_cust_needs.loc[i] = fila_df_opi_cn
-        print("Fila:", fila_df_opi_cn)
+        df_opinion_cust_needs.loc[i] = fila_df
+        print("Fila:", fila_df)
         # print(df_opinion_cust_needs)
 
     # EXPORTO DATAFRAME
@@ -251,6 +207,23 @@ def create_relation_matrix(atributos, customer_needs):
                 except ValueError:
                     # sigo en el ciclo while hasta que cargue la relacion correctamente
                     print("Ingreso no valido. El ingreso debe ser un numero, en particular, 0, 1, 3 o 9. ")
+
+        # ELIMINO ATRIBUTO QUE NO TIENE RELACION CON NINGUNA CUSTOMER NEED
+        # Si no tiene relacion con ninguna customer need
+        if sum(relation_matrix[atributo]) == 0:  # falta doc
+
+            # Borro el atributo
+            relation_matrix.drop([atributo], axis=1)
+            print("Se elimino el atributo '{}' dado que no tiene relacion con ninguna customer need del producto".format(atributo))
+
+    # ELIMINO CUSTOMER NEEDS QUE NO TIENE RELACION CON NINGUN ATRIBUTO
+    # Por customer need
+    for customer_need in customer_needs:   # falta doc
+        # Si no tiene relacion con ningun atributo
+        if sum(relation_matrix.loc[customer_need]) == 0:
+            # Elimino customer need
+            relation_matrix.drop([customer_need], axis=0)
+            print("Se elimino la customer need '{}' dado que no tiene relacion con ningun atributo del producto".format(customer_need))
 
     # EXPORTO MATRIZ DE RELACIONES
     relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index_label="customer_need")
@@ -317,7 +290,7 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
         df_attr_value_sent_2 = pd.concat([df_attr_value_sent_2, df_values_attr_sent], ignore_index=True)  # para ver cantidad de opiniones en que se basa el sent de cada valor
 
         # PONDERO SENITMENT POR CANTIDAD DE OPINIONES PARA EL ATRIBUTO
-        if sum_relaciones > 0:  #Pues sino agrego atributos sin relacion y por ende con sent None y rompe el clustering..
+        if sum_relaciones > 0:  #Pues sino agrego atributos sin relacion y por ende con sent None y rompe el clustering..  # CON LO QUE AGREGUE EN RELATION MATRIX PODRIA SACARLO
             df_values_attr_sent_pond = quantity_opinions_weighing(df_values_attr_sent)
             df_values_attrs_sent_pond = pd.concat([df_values_attrs_sent_pond, df_values_attr_sent_pond], ignore_index=True)
 
@@ -327,6 +300,227 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
 
     return df_values_attrs_sent_pond
 
+
+################################################ FUNCIONES SECUNDARIAS ################################################
+# UTILZADAS EN TO_CUSTOMER_NEEDS()
+def words_mentioned_in_text(text, words):
+    """
+    Determina si las palabras estan en el texto.
+    :param text: Texto string
+    :param words: Lista de palabras
+    :return: Diccionario cuyas keys son cada palabra y cuyos values son 1 o 0 segun si la palabra es mencionada en el
+    texto o no respectivamente.
+    """
+    # Inicializo el diccionario a retornar
+    d = {}
+    for word in words:
+        d[word] = 0
+
+    # POR WORD
+    for word in words:
+
+        # BUSCO PALABRAS RELACIONADAS A LA WORD (para identificar mejor customer need en frase)
+        palabras_a_buscar = related_words(word)
+
+        # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
+        for palabra_a_buscar in palabras_a_buscar:
+
+            # SI LA PALABRA ESTA EN LA FRASE (uso frase limpia)
+            if palabra_a_buscar in text:
+
+                # Asigno 1 a palabra pues es mencionada en texto
+                d[word] = 1
+
+                break  # Dejo de buscar palabras relacionadas pues ya asigne sentiment a la customer need
+
+    return d
+
+def find_related_words(palabra):  # diccionario que mantener actualizado
+    """
+    Obtiene palabras relacionadas a la palabra pasada como parametro
+    :param palabra: String
+    :return: Lista de palabras relacionadas (incluido el string)
+    """
+    # Defino funcion que busca palabras relacionadas a la palabra en diccionario de palabras relacionadas
+    search_rel_words_in_dict = lambda word, d_rel_words: [word] + d_rel_words[word] if palabra in d_rel_words.keys() else [word]
+
+    # Defino palabras relacionadas a algunas caracteristicas especificas   # deberia definirlos automaticamente segun valores unicos de atrib del producto?
+    marcas = ["xiaomi", "quantum", 'philco', 'motorola', 'samsung', 'kodak', 'alcatel', 'nokia', 'sansei', ' zte', 'energizer',
+              ' tcl', 'ipro', ' lg ', ' cat ', 'apple', 'blackview', 'p&s mobile', 'ulefone', 'hyundai', ' blu ', 'ruggear',
+              'excess', 'noblex', 'realme ', 'panacom', 't-36', ' asus ', ' sony', 'oneplus', 'microsoft', 'kanji', ' logic ',
+              'doogee', 'infinix', 'huawei', 'blackberry', 'cyrus', ' luo ']
+
+    sistemas_operativos = ['android', 'threadx', ' ios ', 's30 +', 'kaios', 'nokia', 'windows phone', 'kaistore', 'blackberry os']
+
+    # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs
+    d = {'aplicaciones': [' app '],
+         'camara': [' fotos', 'imagenes', 'resolucion'], # no incluiria: definicon, videos   # saco temporalmente 'selfie' y 'resolucion' # foto no pues si se refiere a la camara es "fotos". foto se confunde con la foto de la publicacion..
+         'bateria': ['duracion'],
+         'diseño': ['estetica'],
+         'memoria': ['almacenamiento', ' ram ', 'velocidad', 'espacio', ' ram,', ' fluid', 'capacidad', 'gb ', ' agil '],  # no incluiria: lag  # saco temporalmente ' rapid', ' lent'  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp"
+         'marca': marcas,
+         'pantalla': [' imagen ', ' imagen,'],  # no incluiria: definicion
+         "precio": ['costo', ' caro ', ' caro,', 'barato'],
+         'sistema': sistemas_operativos,
+         'tamaño': [' peso ', ' pesad', ' livian'],
+         "procesador": ["velocidad", "funcionamiento", 'software', ' rapid', ' lent', ' tilda', ' fluid', ' traba ', ' agil '],
+         'sonido': ['audio ', 'audio,' 'volumen']
+         }
+
+    palabras_a_buscar = search_rel_words_in_dict(palabra, d)
+    return palabras_a_buscar
+
+def sentiment(analyzer, sentence):
+
+    # Obtengo sentiment de sentence
+    pred = analyzer.predict(sentence)  # ejemplo de output: AnalyzerOutput(output=NEU, probas={NEU: 0.802, NEG: 0.188, POS: 0.010})
+
+    # Calculo score
+    sent_frase = pred.probas  # accedo a probas de AnalyzerOutput
+    score = sent_frase['POS'] - sent_frase['NEG']  # obtengo probabilidades de POS y NEG y calculo score
+    print("Sentiment: ", score)
+
+    return score
+
+def assign_sentiment(d_cust_needs_mentioned, sent):
+    """
+        # Segun si es mencionado o no en texto, asigno sentiment de frase o None
+
+    :param d_cust_needs_mentioned:
+    :param sent:
+    :return:
+    """
+
+    #
+    fila = []
+
+    # Por customer need
+    for cust_need in d_cust_needs_mentioned.keys():
+
+        # Si la customer need es mencionada
+        if d_cust_needs_mentioned[cust_need] == 1:
+            # Asigno sentiment de frase
+            fila.append(sent)
+
+        # Si la customer need no es mencionada
+        else:
+            # Asigno sentiment None
+            fila.append(None)
+
+    return fila
+
+def contains_adjective(text):
+    """
+    Identifica si la palabra es un sustantivo o no
+    :param word: Palabra
+    :return: True si la palabra es sustantivo, o bien, False
+    """
+    # Proceso palabra
+    doc = pos_tagger(text)
+
+    # Por sentence del texto
+    for i, sent in enumerate(doc.sentences):
+
+        # Por palabra
+        for word in sent.words:
+
+            # Si es adjetivo
+            if word.pos in ["ADJ"]:
+                return True
+
+    return False  # retorno False
+
+def conviene_separar_comas(text):
+    """
+
+    :param text:
+    :return:
+    """
+
+    # Determina si conviene o no seperar por coma la frase
+
+    l_frase_entre_comas = text.split(",")
+
+    # Por frase entre comas
+    for frase in l_frase_entre_comas:
+
+        # Defino variables
+        palabras_frase = frase.split()
+        cant_palabras = len(palabras_frase)
+
+        # Si tiene un largo menor de 3 palabras y no tiene adejetivos
+        # if cant_palabras < 3:
+        if cant_palabras <= 1:
+
+            if not contains_adjective(frase):
+                return False
+
+    return True
+
+def delete_accent(text):
+    """
+    Remueve acentos de textos de un texto
+    :param text: String (ya sea una palabra o una frase)
+    :return: String pasado como parametro sin acentos
+    """
+    # Defino variables
+    d = {'á': "a", 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}  # diccionario, letra con acento en key y sin en value
+    new_text = str()
+
+    # Recorro cada letra del texto
+    for i in range(len(text)):
+
+        # Si la letra tiene acento
+        if text[i] in d.keys():
+
+            # Reemplazo letra con acento por letra sin acento
+            new_text += d[text[i]]
+
+        # Si la letra no tiene acento
+        else:
+            # no reemplazo nada
+            new_text += text[i]
+    return new_text
+
+def delete_parentesis(text): #probarla
+    """
+    Elimina todos los parentesis de una cadena de texto
+    :param text: Text string
+    :return: Text string sin frases entre parentesis
+    """
+    # Defino variables
+    cant_parentesis_apertura = text.count("(")  # Numero de parentesis de apertura en text
+    cant_parentesis_cierre = text.count(")")  # Numero de parentesis de cierre en text
+    text_cleaned = str()  # Variable que guardara el texto sin parentesis
+    text_left = text  # Variable auxiliar para construir text_cleaned
+
+    # Si cada parentesis de apertura tiene su parentesis de cierre
+    if cant_parentesis_apertura == cant_parentesis_cierre:
+
+        # Por parentesis
+        for i in range(cant_parentesis_apertura):
+
+            # Defino indices de posicion de parentesis
+            idx_ini = text_left.find("(")  # posicion del primer "(" en texto
+            idx_fin = text_left.find(")")  # posicion del primer ")" en texto
+            is_ultimo_caracter = lambda idx, text: True if idx == len(text)-1 else False
+
+            # Guardo el texto antes del parentesis
+            text_cleaned += text_left[:idx_ini]
+
+            # Guardo el texto restante desde el cierre de parentesis
+            if is_ultimo_caracter(idx_fin, text_left):
+                pass  # no hay texto luego del ultimo parentesis
+            else:
+                text_left = text_left[idx_fin+1:]
+
+        # Guardo el texto luego del ultimo paretesis
+        text_cleaned += text_left
+
+    return text_cleaned
+
+
+# UTILZADAS EN TO_ATTR_VALUES()
 def quantity_opinions_weighing(df_attr):
     """
     Pondera sentiment de cada valor de un atributo del producto segun cantidad de opiniones en que se basa
@@ -378,57 +572,6 @@ def quantity_opinions_weighing(df_attr):
 
     return df
 
-def delete_accent(text):
-    """
-    Remueve acentos de textos de un texto
-    :param text: String (ya sea una palabra o una frase)
-    :return: String pasado como parametro sin acentos
-    """
-    # Defino variables
-    d = {'á': "a", 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}  # diccionario, letra con acento en key y sin en value
-    new_text = str()
-
-    # Recorro cada letra del texto
-    for i in range(len(text)):
-
-        # Si la letra tiene acento
-        if text[i] in d.keys():
-
-            # Reemplazo letra con acento por letra sin acento
-            new_text += d[text[i]]
-
-        # Si la letra no tiene acento
-        else:
-            # no reemplazo nada
-            new_text += text[i]
-    return new_text
-
-def palabras_relacionadas(palabra):  # diccionario que mantener actualizado
-    """
-    Obtiene palabras relacionadas a la palabra pasada como parametro
-    :param palabra: String
-    :return: Lista de palabras relacionadas (incluido el string)
-    """
-    # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs
-    d_pal_rel = {'aplicaciones': ['app'], 'bateria': ['duracion'], 'camara': [' foto', 'definicion', 'selfie'],
-                 'memoria': [' fluid', 'almacenamiento', ' ram', 'velocidad', 'rapido', ' lento', ' tilda'],
-                 'pantalla': ['pantall', 'resolucion', 'definicion', 'imagen'],
-                 "precio": ['costo', ' caro', 'barato', 'economico'],
-                 "procesador": ["velocidad", "funcionamiento", "software", 'rapido', ' lento', ' tilda']
-                }
-
-    # Si la palabra tiene palabras relacionadas
-    if palabra in d_pal_rel.keys():
-        # Agrego palabras relacionadas a lista a retornar
-        palabras_a_buscar = [palabra] + d_pal_rel[palabra]
-
-    # Si la palabra no tiene palabras relacionadas
-    else:
-        # Solo la palabra en lista a retornar
-        palabras_a_buscar = [palabra]
-
-    return palabras_a_buscar
-
 ''' # Probando to_customer_needs
 df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_menos_menos_cleaned.xlsx')
 customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 'resolucion']
@@ -446,7 +589,7 @@ relation_matrix = create_relation_matrix(atributos, customer_needs)
 print(relation_matrix)
 '''
 
-'''
+
 # Probando to_attr_values()
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_celulares_cleaned.xlsx')
 df_opinion_cust_need = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_opinion_cust_need_celulares.xlsx')
@@ -462,7 +605,7 @@ atributos = list(df_alt.columns[1:])
 
 df = to_attribute_value(df_alt, df_opinion_cust_need, create_relation_matrix(atributos, customer_needs_one_word))
 df.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_value_sent.xlsx')
-'''
+
 
 '''
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
@@ -583,5 +726,183 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
     print(df_opinion_cust_needs)
 
     return df_opinion_cust_needs
+
+'''
+
+
+''' ULTIMO INTENTO DE CUSTOMER NEEDS Y HASTA AHORA VIGENTE
+def to_customer_needs(df_opiniones, customer_needs_one_word):
+    """
+    Identifica, si hay, customer needs en opiniones y asigna el sentiment a cada una mediante la libreria pysentimiento
+    :param df_opiniones: Dataframe opiniones cuya unidad de analisis son opiniones que no tienen procesamiento
+    :param customer_needs_one_word: Lista de customer needs como frases de 1 sola palabra
+    :return: Dataframe cuya unidad de analisis es una opinion y cuyas columnas son cada customer need. La celda es el
+    sentiment de la customer need en la opinion, o bien si la opinion no habla de la customer need, None.
+    """
+    # DEFINO VARIABLES
+    # Defino indices utiles para tener flexibilidad en codigo (posibilidad de columnas en otra posicion)
+    idx_id, idx_opi = df_opiniones.columns.get_loc("id_alternativa"), df_opiniones.columns.get_loc("opinion")
+    # Defino dataframe a retornar
+    df_opinion_cust_needs = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)
+    # Uso funcion create_analyzer para realizar el sentiment de las frases
+    analyzer = create_analyzer(task="sentiment", lang="es")
+
+    # POR OPINION
+    for i in range(len(df_opiniones)):
+
+        # Defino variables
+        id, opinion = df_opiniones.iloc[i, idx_id], df_opiniones.iloc[i, idx_opi]  # Defino id y opinion
+        fila_df_opi_cn = [id]  # inicializo variable que guardara la fila del nuevo dataframe
+        df_frases_cust_needs = pd.DataFrame(columns=customer_needs_one_word)  #lo reinicio por opinion
+
+        print("NºFila: {}".center(120).format(i))
+        print("Opinion:", opinion)
+
+        # POR FRASE DE LA OPINION
+        for frase in split_text_into_sentences(text=opinion, sep='.'):
+            print("Frase: ", frase)
+
+            # Defino variables
+            fila_df_frase_cn = []  # Fila de sentiment de customer needs en la frase
+
+            # LIMPIO FRASE PARA PODER IDENTIFICAR CUSTOMER NEEDS EN ELLA (la hago miniscula y quito acentos)
+            frase_limpia = delete_accent(frase.lower())
+            # IDENTIFICO QUE CUSTOMER NEEDS MENCIONA
+            # funcion que me devuelva dict con key cada cn y cuo values es 0 o 1 segun si es menciona o no en la frase.
+            d_cust_needs_mentioned = words_mentioned_in_text(words=customer_needs_one_word, text=frase_limpia)
+            n_cust_need_ment = sum(d_cust_needs_mentioned.values())
+
+            sent_frase = sentiemnt_sentence(analyzer=analyzer, sentence=frase)  # es por prueba
+
+            if n_cust_need_ment >= 2 and sent_frase < 0.6 :
+                print("aqui aqui aqui")
+
+            # SI LA FRASE MENCIONA AL MENOS UNA CUSTOMER NEED
+            elif n_cust_need_ment >= 1:  # es if en realidad perro es por la prueb
+
+                # OBTENGO SENTIMENT
+                sent_frase = sentiemnt_sentence(analyzer=analyzer, sentence=frase)
+
+                # Por customer need
+                for cust_need in d_cust_needs_mentioned.keys():
+
+                    # Si la customer need es mencionada
+                    if d_cust_needs_mentioned[cust_need] == 1:
+                        # Asigno sentiment de frase
+                        fila_df_frase_cn.append(sent_frase)
+
+                    # Si la customer need no es mencionada
+                    else:
+                        # Asigno sentiment None
+                        fila_df_frase_cn.append(None)
+
+                # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA FRASE
+                df_frases_cust_needs.loc[len(df_frases_cust_needs)] = fila_df_frase_cn
+                print(df_frases_cust_needs)
+                print()
+
+            # SI LA FRASE NO MENCIONA CUSTOMER NEEDS
+            else:
+                pass
+
+        # OBTENGO SENTIMENT DE CUSTOMER NEEDS EN OPINION (pues puede aparecer en mas de una frase)
+        # Por customer need
+        for customer_need in customer_needs_one_word:
+
+            # Obtengo promedio de sentiment en frases en que es mencionada
+            sent_cn_opi = df_frases_cust_needs[customer_need].dropna().mean()
+            print("Customer need: {}, sentiment: {}".format(customer_need, sent_cn_opi))
+
+            # Guardo el sentiment de la customer need en la opinion
+            fila_df_opi_cn.append(sent_cn_opi)
+
+        # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA OPINION
+        df_opinion_cust_needs.loc[i] = fila_df_opi_cn
+        print("Fila:", fila_df_opi_cn)
+        # print(df_opinion_cust_needs)
+
+    # EXPORTO DATAFRAME
+    df_opinion_cust_needs.to_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx', 'Hoja de datos', index=False)
+    print(df_opinion_cust_needs)
+
+    return df_opinion_cust_needs
+'''
+
+'''
+def split_text_into_sentences(text, sep): #esta buenisima pero es lo mismo que hacer .split(".")
+    """
+    Separate a text string into sentences by element
+    :param text: Text string
+    :param sep: Separating element
+    :return: list whose elements are each setence
+    """
+    # Defino variables
+    sentences = []
+    pos_ini = 0
+
+    # Por caracter de la cadena
+    for pos, char in enumerate(text):
+
+        # Si el caracter es el separador
+        if (char == sep):
+
+            # Obtengo sentence
+            sentences.append(text[pos_ini:pos])
+            pos_ini = pos + 1
+
+    # Si el separador no es el ultimo caracter del texto
+    if pos_ini != len(text):
+
+        # Guardo ultima sentence
+        sentences.append(text[pos_ini:len(text)])
+
+    return sentences
+'''
+
+'''
+def is_adjetive(word):  # fue embebida en contains_adjective()
+    """
+    Identifica si la palabra es un sustantivo o no
+    :param word: Palabra
+    :return: True si la palabra es sustantivo, o bien, False
+    """
+    # Proceso palabra
+    doc = pos_tagger(word)
+
+    # Obtengo pos (noun, adj, adv, verb, etc) de la palabra
+    pos = doc.sentences[0].words[0].pos  # nlp esta preparada para procesar un documento en lugar de una palabra
+
+    # Si palabra es sustantivo
+    if pos == "ADJ":
+        return True  # retorno True
+
+    # si palabra no es sustantivo
+    else:
+        return False  # retorno False
+'''
+
+'''# PRUEBA EN CUSTOMER NEEDS - SEPARACION DE FRASES QUE MENCIONAN MAS DE DOS CUST NEEDS: tal vez estaria bueno separadores como "lo unico" o "pero"
+def split_in_word(text, word):
+
+    if word in text:
+        idx_ini = text.find(word)
+
+        text_ant = text[:idx_ini]
+        text_desp = text[idx_ini + len(word):]
+
+        return [text_ant, text_desp]
+
+dentro de to_customer_needs:
+pal_sep = ['pero', 'lo unico']
+if len(frases_entre_comas) == 1:
+
+    for word in pal_sep:
+
+        if word in frase:
+
+            frases_entre_comas = split_in_word(frase, word)
+            print("FUNCIONO!!!!!")
+            print(frases_entre_comas)
+
 
 '''

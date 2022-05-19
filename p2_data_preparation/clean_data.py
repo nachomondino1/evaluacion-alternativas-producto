@@ -119,6 +119,63 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
         # SI LA COLUMNA ES NUMERICA
         if (df_alt[columna].dtype == 'float64') or (df_alt[columna].dtype == 'int64'):
 
+            # POR VALOR UNICO DE LA COLUMNA
+            for valor in df_alt[columna].dropna().unique():
+
+                # Obtengo media y desvio para la columna sin considerar el valor
+                df_alt_sin_valor = df_alt[df_alt[columna] != valor]
+                media = st.mean(df_alt_sin_valor[columna].dropna())
+                desv = st.stdev(df_alt_sin_valor[columna].dropna())
+
+                # SI EL VALOR ES UN POSIBLE OUTLIER
+                if (valor > media + 2 * desv) or (valor < media - 2 * desv):
+
+                    # Defino variables
+                    frec_val = len(df_alt[df_alt[columna] == valor])
+                    frec_min = 0.01 * len(df_alt)
+                    print("Valor extremo: {}; Frecuencia: {}.".format(valor, frec_val), end=" ")
+                    print(media, desv,media + 2 * desv, media - 2 * desv)
+
+                    # SI SU FRECUENCIA ES BAJA
+                    if frec_val < frec_min:
+
+                        idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
+                        ids = [df_alt.loc[i, "id_alternativa"] for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
+
+                        # Por cada alternativa cuyo valor es un outlier
+                        for i in range(frec_val):
+
+                            idx = idxs[i]
+                            id = ids[i]
+                            print("Alternativa Nº{}: ".format(i + 1), end=" ")
+
+                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
+                            if id in list(df_opi['id_alternativa'].unique()):
+
+                                # REEMPLAZO OUTLIER POR NAN
+                                df_alt.loc[idx, columna] = None
+                                print(
+                                    "Se descubrio un outlier. Atributo: {}. Valor: {}. La media del atributo es {:.2f} y el desvio {:.2f}.".format(
+                                        columna, valor, media, desv), end=" ")
+                                print(
+                                    "Dado que la alternativa tiene opiniones asociadas, reemplazo el outlier por NaN")
+
+                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
+                            else:
+                                # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
+                                l_idx_alt_a_borrar.append(idx)
+                                print(
+                                    "Se descubrio un outlier. Atributo: {}. Valor: {}. La media del atributo es {:.2f} y el desvio {:.2f}.".format(
+                                        columna, valor, media, desv), end=" ")
+                                print(
+                                    "Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
+
+                    # SI SU FRECUENCIA ES ALTA
+                    else:
+                        print("El valor es muy frecuente para ser un outlier")
+
+
+            '''
             # OBTENGO VALORES EXTREMOS Y SU FRECUENCIA
             val_min, val_max = df_alt[columna].min(), df_alt[columna].max()
             frec_val_min, frec_val_max = len(df_alt[df_alt[columna] == val_min]), len(df_alt[df_alt[columna] == val_max])
@@ -176,6 +233,7 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
                 # SI SU FRECUENCIA ES ALTA
                 else:
                     print("El valor es muy frecuente para ser un outlier")
+    '''
 
     # BORRO ALTERNATIVAS QUE TIENEN VALORES MAL CARGADOS
     print("Cantidad de alternativas eliminadas: ", len(l_idx_alt_a_borrar))

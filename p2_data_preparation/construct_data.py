@@ -1,10 +1,10 @@
 # Importo librerias
 import operator
 import stanza
-# stanza.download('es')       # This downloads the English models for the neural pipeline
-nlp = stanza.Pipeline('es')  # This sets up a default neural pipeline in English
+from p3_modelling.sentiment_atribution import related_words
+pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')  # stanza.download('es') --> This downloads the English models for the neural pipeline
 
-
+################################################ FUNCIONES PRINCIPALES ################################################
 def most_frequent_words(df_tokenizado):
     """
     Obtiene lista de las palabras mas frecuentes utilizadas en las opiniones de un producto
@@ -14,9 +14,10 @@ def most_frequent_words(df_tokenizado):
     """
     print("BUSCO PALABRAS MAS FRECUENTES")
     # Defino variables
-    QUANT_WORDS = 50  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    QUANT_WORDS = 150  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     idx_token = df_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
+    freq_ngrams_filt = []
 
     # POR OPINION
     for i in range(len(df_tokenizado)):
@@ -45,19 +46,24 @@ def most_frequent_words(df_tokenizado):
     print("{} palabras mas frecuentes: {}".format(QUANT_WORDS, freq_ngrams))
 
     # FILTRO LAS PALABRAS MAS FRECUENTES
-    print("Selecciono unicamente palabras que sean sustantivos")
-    freq_ngrams = select_nouns(freq_ngrams)
-    print("{} palabras restantes: {}".format(len(freq_ngrams), freq_ngrams))
+    print("Filtro palabras mas frecuentes")
+    # Por palabra frecuente
+    for palabra in freq_ngrams:
 
-    print("Elimino palabras irrelevantes")
-    freq_ngrams = delete_irrelevant_words(freq_ngrams)
-    print("{} palabras restantes: {}".format(len(freq_ngrams), freq_ngrams))
+        # Si es sustantivo
+        if is_noun(palabra):
+
+            # Si no es una palabra irrelevante
+            if not is_irrelevant_word(palabra):
+
+                # La guardo
+                freq_ngrams_filt.append(palabra)
 
     print("Elimino palabras relacionadas para evitar repeticion de customer needs")
-    freq_ngrams = delete_related_words(freq_ngrams)
-    print("{} palabras restantes: {}".format(len(freq_ngrams), freq_ngrams))
+    freq_ngrams_filt = delete_related_words(freq_ngrams_filt)
+    print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
 
-    return freq_ngrams
+    return freq_ngrams_filt
 
 def most_frequent_phrases(df_tokenizado):
     """
@@ -68,7 +74,7 @@ def most_frequent_phrases(df_tokenizado):
     """
     print("BUSCO POSIBLES CUSTOMER NEEDS")
     # Defino variables
-    CANT_POSIBLES_CUSTOMER_NEEDS = 200  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    CANT_POSIBLES_CUSTOMER_NEEDS = 2000  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     idx_token = df_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 
@@ -112,6 +118,8 @@ def select_customer_needs(df_opi_tokenizado):
     possible_customer_needs = most_frequent_phrases(df_opi_tokenizado)
     copy_most_freq_words = most_freq_words.copy()
     i = 0
+    print("Selecciono customer needs")
+    print("{:^40s}\t{:^40}".format("Customer need", "Posicion en frecuencia "))
 
     # POR POSIBLE CUSTOMER NEED
     for possible_customer_need in possible_customer_needs:
@@ -133,13 +141,8 @@ def select_customer_needs(df_opi_tokenizado):
                     customer_needs_one_word.append(palabra)
                     customer_needs.append(possible_customer_need)
 
-                    print(possible_customer_need, i)
-                    break
-
-            # SI LA PALABRA NO ES DE LA MAS FRECUENTES
-            else:
-                # pasar
-                pass
+                    print("{:^40s}\t{:^40}".format(possible_customer_need, i))
+                break
 
     # podria filtro de frase con sentido...
     print("Customer needs:", customer_needs)
@@ -147,6 +150,9 @@ def select_customer_needs(df_opi_tokenizado):
 
     return customer_needs, customer_needs_one_word
 
+
+################################################ FUNCIONES SECUNDARIAS ################################################
+# UTILIZADA EN MOST_FREQUENT_WORDS() Y EN MOST_FREQUENT_PHRASES()
 def most_frequent_dict_key(dict, quantity_freq):
     """
     De un diccionario de frecuencias (value es numerico, en particular, la frecuencia de la key), selecciona las keys
@@ -183,26 +189,8 @@ def generate_n_grams(text, ngram):
     ans = [' '.join(ngram) for ngram in temp]
     return ans
 
-def select_nouns(words):
-    """
-    Selecciona sustantivos de lista de palabras
-    :param words: Lista de palabras
-    :return: Lista de sustantivos
-    """
-    # Defino variable
-    nouns = []
 
-    # Por palabra
-    for word in words:
-
-        # Si la palabra es sustantivo
-        if is_noun(word) is True:
-
-            # la guardo
-            nouns.append(word)
-
-    return nouns
-
+# UTILIZADA EN MOST_FREQUENT_WORDS()
 def is_noun(word):
     """
     Identifica si la palabra es un sustantivo o no
@@ -210,42 +198,47 @@ def is_noun(word):
     :return: True si la palabra es sustantivo, o bien, False
     """
     # Proceso palabra
-    doc = nlp(word)
+    doc = pos_tagger(word)
 
     # Obtengo pos (noun, adj, adv, verb, etc) de la palabra
     pos = doc.sentences[0].words[0].pos  # nlp esta preparada para procesar un documento en lugar de una palabra
 
     # Si palabra es sustantivo
     if pos == "NOUN":
-        # retorno True
-        return True
+        return True  # retorno True
 
     # si palabra no es sustantivo
     else:
-        # retorno False
-        return False
+        return False  # retorno False
 
-def delete_irrelevant_words(words):
+
+def is_irrelevant_word(word):
     """
     Elimina palabras irrelevantes de lista de palabras
     :param words: Lista de palabras
     :return: Lista de palabras sin palabras irrelevantes
     """
-    freq_words_filt = []
-    pal_irrel = ['android', 'auriculares', 'calidad', 'conforme', 'compra', 'equipo', 'gama', 'netflix', 'notebook',
-                 'producto', 'relacion', 'tele', 'telefono', 'televisor', 'tv', 'uso', 'verdad','samsung', 'super',
-                 'windows']
+    pal_irrel = ['android', 'años', 'auriculares',
+                 'calidad', 'conforme', 'compra', 'cosas', 'celulares',
+                 'equipo', 'expectativas', 'funciones',
+                 'gama', 'gusto', 'gracias',
+                 'iphone',
+                 'mano', 'momento', 'motorola',
+                 'netflix', 'notebook',
+                 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas',
+                 'redes', 'relacion', 'rendimiento', 'resto',
+                 'tele', 'telefono', 'televisor', 'tiempo', 'tv',
+                 'uso',
+                 'verdad',
+                 'samsung', 'super',
+                 'xiaomi',
+                 'whatsapp', 'windows']
 
-    # Por palabra frecuente
-    for word in words:
+    if word in pal_irrel:
+        return True
+    else:
+        return False
 
-        # Si la palabra es relevante
-        if word not in pal_irrel:
-
-            # la guardo
-            freq_words_filt.append(word)
-
-    return freq_words_filt
 
 def delete_related_words(l_palabras):
     """
@@ -253,66 +246,49 @@ def delete_related_words(l_palabras):
     :param l_palabras: Lista de palabras
     :return: Lista de palabras sin palabras que se refieran a una misma caracteristica
     """
-    # Defino lista de palabras relacionadas compuesta por grupos de estas
-    l = [['camara','camaras', 'foto', 'fotos'], ['memoria', 'fluidez', 'almacenamiento', 'ram', 'disco'], ["procesador",
-        "velocidad", "funcionamiento", "software"], ['bateria','duracion'], ['pantalla', 'imagen', 'definicion', 'resolucion'],
-         ['sonido','audio','volumen','musica']]
+    # Convierto lista de palabras a string
+    str_palabras = "  ".join(l_palabras)
 
     # Por palabra
     for palabra in l_palabras:
 
-        # Por grupo de palabras relacionadas
-        for palabras_rel in l:
+        # Si esta en lista de palabras
+        if palabra in l_palabras:
 
-            # Si palabra pertenece a grupo de palabras relacionadas
-            if palabra in palabras_rel:
+            # Defino variables
+            palabra_plural = palabra + "s"  # no necesariemnte es asi pero al menos es lo mas probable
+            l_related_words = related_words(palabra)  # Obtengo palabras relacionadas
 
-                # reemplazar palabra por la principal palabra del grupo
-                if palabra != palabras_rel[0]:
-                    idx = l_palabras.index(palabra)
-                    l_palabras[idx] = palabras_rel[0]
-                    print("Reemplazo palabra {} por palabra {}".format(palabra, palabras_rel[0]))
+            # Si esta la palabra en plural
+            if palabra_plural in str_palabras:
+                # La remuevo
+                str_palabras = delete_substring_in_string(str_palabras, palabra_plural)
+                print("Se removio palabra '{}' dado que ya esta '{}'".format(palabra_plural, palabra))
 
-                # Por palabra relacionada (sin incluir la principal)
-                for palabra_rel in palabras_rel[1:]:
+            # Por palabra relacionada
+            for word in l_related_words[1:]:  # sin incluir palabra propiamente
 
-                    # Si esta en lista de palabras
-                    if palabra_rel in l_palabras:
+                # Si esta en lista de palabras
+                if word in str_palabras:
+                    # La remuevo
+                    str_palabras = delete_substring_in_string(str_palabras, word)
+                    print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
 
-                        # Remover palabra adicional de lista
-                        l_palabras.remove(palabra_rel)
-                        print("Remuevo palabra {} dado que ya existe la palabra {}".format(palabra_rel, palabras_rel[0]))
+    return str_palabras.split()
 
-    '''
-    # d = {'camara': ['camaras', 'foto', 'fotos'], 'memoria': ['fluidez', 'almacenamiento', 'ram', 'disco'],"procesador":["velocidad", "funcionamiento", "software"], 'bateria': 'duracion', ''}
 
-    # Por palabra
-    for palabra in l_palabras:
+def delete_substring_in_string(string, substring):
+    if substring in string:
+        idx_ini = string.find(substring)
+        string_cleaned = string[:idx_ini] + string[idx_ini + len(substring) + 1:]
+    else:
+        string_cleaned = string
+        print("No se encontro el substring {} en el string {}".format(substring, string))
 
-        # SI TIENE PALABRAS ADICIONALES
-        if palabra in list(d.keys()):
+    return string_cleaned
 
-            # REMUEVO PALABRAS ADICIONALES
-            # Por valor
-            for valor in d[palabra]:
 
-                # Si esta en la lista
-                if valor in l_palabras:
-
-                    # Borro el valor
-                    l_palabras.remove(valor)
-
-        # SI ES UNA DE LAS PALABRAS ADICIONALES
-        # elif palabra in list(d.values()):
-        # REEMPLAZO PALABRA ADICIONAL POR LA CLAVE
-
-        # NO ESTA EN DICCIONARIO DE PALABRAS ADICIONALES
-        else:
-            pass
-    '''
-
-    return l_palabras
-
+# UTILIZADA EN SELECT_CUSTOMER_NEEDS()
 def is_possible_customer_need_wanted(possible_customer_need, most_freq_words):
     """
     Evita seleccionar una posible customer need que contenga un numero, una palabra irrelevante o dos o mas palabras
@@ -350,3 +326,92 @@ def is_possible_customer_need_wanted(possible_customer_need, most_freq_words):
     else:
         # Descarto la posible customer need
         return False
+
+
+''' EX DELETE_RELATED_WORDS PUES TENIA DOS LISTAS DE PALABRAS RELACIONADAS QUE ACTUALIZAR... (junto con la de sentiment)
+def delete_related_words(l_palabras):
+    """
+    Elimina palabras que se refieran a una misma caracterisitca del producto dejando una sola de ellas
+    :param l_palabras: Lista de palabras
+    :return: Lista de palabras sin palabras que se refieran a una misma caracteristica
+    """
+    # Defino lista de palabras relacionadas compuesta por grupos de estas
+    l = [['camara','camaras', 'foto', 'fotos'], ['memoria', 'fluidez', 'almacenamiento', 'ram', 'disco'], ["procesador",
+        "velocidad", "funcionamiento", "software"], ['bateria','duracion'], ['pantalla', 'imagen', 'definicion', 'resolucion'],
+         ['sonido','audio','volumen','musica']]
+
+    # Por palabra
+    for palabra in l_palabras:
+
+        # Por grupo de palabras relacionadas
+        for palabras_rel in l:
+
+            # Si palabra pertenece a grupo de palabras relacionadas
+            if palabra in palabras_rel:
+
+                # reemplazar palabra por la principal palabra del grupo
+                if palabra != palabras_rel[0]:
+                    idx = l_palabras.index(palabra)
+                    l_palabras[idx] = palabras_rel[0]
+                    print("Reemplazo palabra {} por palabra {}".format(palabra, palabras_rel[0]))
+
+                # Por palabra relacionada (sin incluir la principal)
+                for palabra_rel in palabras_rel[1:]:
+
+                    # Si esta en lista de palabras
+                    if palabra_rel in l_palabras:
+
+                        # Remover palabra adicional de lista
+                        l_palabras.remove(palabra_rel)
+                        print("Remuevo palabra {} dado que ya existe la palabra {}".format(palabra_rel, palabras_rel[0]))
+
+    return l_palabras
+'''
+
+
+''' FUNCIONES QUE FILTRABAN LISTA DE PALABRAS MAS FRECUENTES PERO LAS DESCARTE PUES ES MEJOR NO TENER QUE LIMPIAR LA LISTA SINO NO GENERARLA SUCIA
+def delete_irrelevant_words(words):
+    """
+    Elimina palabras irrelevantes de lista de palabras
+    :param words: Lista de palabras
+    :return: Lista de palabras sin palabras irrelevantes
+    """
+    freq_words_filt = []
+    pal_irrel = ['android', 'auriculares', 'calidad', 'conforme', 'compra', 'equipo', 'expectativas', 'funciones',
+                 'gama', 'iphone', 'momento', 'motorola', 'netflix', 'notebook', 'producto', 'problema', 'problemas',
+                 'relacion', 'rendimiento', 'tele', 'telefono', 'televisor', 'tiempo', 'tv', 'uso', 'verdad','samsung',
+                 'super', 'whatsapp', 'windows']
+
+    # Por palabra frecuente
+    for word in words:
+
+        # Si la palabra es relevante
+        if word not in pal_irrel:
+
+            # la guardo
+            freq_words_filt.append(word)
+
+    return freq_words_filt
+
+
+def select_nouns(words):
+    """
+    Selecciona sustantivos de lista de palabras
+    :param words: Lista de palabras
+    :return: Lista de sustantivos
+    """
+    # Defino variable
+    nouns = []
+
+    # Por palabra
+    for word in words:
+
+        # Si la palabra es sustantivo
+        if is_noun(word) is True:
+
+            # la guardo
+            nouns.append(word)
+
+    return nouns
+
+'''
