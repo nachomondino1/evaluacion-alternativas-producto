@@ -1,4 +1,39 @@
+# Importo librerias
 import pandas as pd
+
+
+def correct_price_column(col_precio):
+    """
+    Corrige columna precio dado que el punto es entendido como una coma (Por ejemplo, 20.000 los entiende como 20)
+    :param col_precio: Columna precio
+    :return: Columna precio corregida
+    """
+    # Defino variables
+    l_precios = []
+
+    # POR PRECIO
+    for precio in col_precio:
+
+        # DEFINO VARIABLE DE PRECIO EN FORMATO STRING Y CUENTO CANTIDAD DE PUNTOS
+        str_precio = str(precio)  # precio en formato string
+        cant_puntos = str_precio.count(".")  # Cantidad de puntos de precio
+
+        # SI EL PRECIO NO ES NAN
+        if str_precio != 'nan':
+
+            # CORRIJO PRECIO SEGUN CANTIDAD DE PUNTOS
+            correct_precio = int(precio * 1000 * cant_puntos)
+            l_precios.append(correct_precio) # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
+
+        # SI EL PRECIO ES NAN
+        else:  # cannot convert float NaN to integer  # si elimino precios = nan, sacaria el try-except
+            # NO CORRIJO NADA
+            l_precios.append(None)
+
+    # GUARDO COLUMNA PRECIO CORREGIDA
+    new_col_precio = pd.Series(l_precios)  #si o si sera dtype float64 pues el NaN es un float64
+    print("Se corrigio el precio correctamente ")
+    return new_col_precio
 
 def is_inherently_numerical(columna):
     """
@@ -199,62 +234,26 @@ def yes_no_column_to_one_zero_column(df):
 
     return df
 
-def correct_price_column(col_precio):  #tal vez no la aplique...
-    """
-    Corrige columna precio dado que el punto es entendido como una coma (Por ejemplo, 20.000 los entiende como 20)
-    :param col_precio: Columna precio
-    :return: Columna precio corregida
-    """
-    # Defino variables
-    l_precios = []
+def main(df_alt):
 
-    # POR VALOR DE COLUMNA "PRECIO"
-    for i in range(len(col_precio)):
+    df_alt_formated = df_alt
 
-         # SI EL VALOR NO ES NAN
-        try:
-            # ARREGLO EL VALOR
-            # Convierto valor a string
-            string_value = str(col_precio.iloc[i])  # numpy.float64 no tiene method replace()
+    print("3.1.1 Dataframe Alternativas: Corrigiendo columna precio...".center(120))
+    # df_alternativas['precio'].dropna()  # ESTOY PROBANDO
+    # df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
+    df_alt_formated['precio'] = correct_price_column(df_alt_formated['precio'])  # DOCUMENTAR QUE LO HAGO PRIMERO...
+    print()
 
-            # Saco el punto
-            correct_string_value = string_value.replace(".", "")  #siempre use espacio en blanco
+    df_alt_correct_price = df_alt_formated
 
-            # Lo convierto a numero entero y lo reemplazo en la columna
-            l_precios.append(int(correct_string_value)) # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
+    print("3.1.2 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
+    df_alt_formated = string_column_to_numeric_column(df_alt_formated)
+    print()
 
-        # SI EL VALOR ES NAN
-        except ValueError:  # cannot convert float NaN to integer  # si elimino precios = nan, sacaria el try-except
-            # NO CORRIJO NADA
-            l_precios.append(None)
+    print("3.1.3 Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
+    df_alt_formated = yes_no_column_to_one_zero_column(df_alt_formated)
+    print()
+    return df_alt_correct_price, df_alt_formated
 
-    # GUARDO COLUMNA PRECIO CORREGIDA
-    new_col_precio = pd.Series(l_precios)  #si o si sera dtype float64 pues el NaN es un float64
-    print("Se corrigio el precio correctamente ")
-    return new_col_precio
+# main()  # Para correr pruebas en archivo independientemente de main.py
 
-'''
-# def main para hacer pruebas en este archivo independientemente de main.py
-def main():
-    # Levanto el dataframe
-    df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_celulares.xlsx')
-
-    # 1) NUMERIC COLUMNS NOT IDENTIFIED
-    print("+++ (1) CONVERSION DE COLUMNAS STRING CON NUMEROS A COLUMNAS NUMERICAS +++")
-    df_modelos = string_column_to_numeric_column(df_modelos)
-    # df_modelos.to_excel('/Users/nachomondino/Desktop/df1.xlsx', 'Hoja de datos', index=False)
-
-    # 2) "YES" AND "NO" COLUMNS TO 1 AND 0 COLUMNS
-    print("+++ (2) COLUMNAS SI-NO A COLUMNA 1-0 +++")
-    df_modelos = yes_no_column_to_ones_ceros_column(df_modelos)
-    # df_modelos.to_excel('/Users/nachomondino/Desktop/df2.xlsx', 'Hoja de datos', index=False)
-
-    # 3) CORRECTION OF PRICE COLUMN
-    print("+++ (3) CORRECCION COLUMNA PRECIO +++")
-    df_modelos['precio'] = correct_price_column(df_modelos['precio'])
-    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
-    df_modelos.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_formateado.xlsx', 'Hoja de datos', index=False)
-
-
-main()
-'''

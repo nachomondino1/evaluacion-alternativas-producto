@@ -1,162 +1,140 @@
 # Importo Librerias
 import pandas as pd
-from p1_data_understanding.collect_data import main_collect_data, dataframe_creator, mercadolibre_crawler
+from p1_data_understanding.collect_data import collect_data
 from p1_data_understanding import describe_data, explore_data
 from p2_data_preparation import format_data, clean_data, construct_data
-from p2_data_preparation.utils import preparacion_texto
-from p3_modelling import sentiment_atribution
-import requests
+from p3_modelling import sentiment_atribution, clustering
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
 
-def main():
-    '''
-    print(" (1) DATA UNDERSTANDING ".center(120, '#'))
-    print(" (1.1) COLLECT INITIAL DATA ".center(120))
+def choose_product():
     # Pido producto a relevar al administrador
     producto = str(input("Ingrese producto a relevar: "))
 
-    # Creo objeto de clase Product()
-    product = mercadolibre_crawler.Product(producto)  # despues lo saco
-
-    print("A) Validando producto ingresado...".center(120))
+    print("Validando producto ingresado...".center(120))
     # Valido el producto buscado tal que no sea una busqueda tan amplia
-    product.search_validation()
+    producto, home_page_url = search_validation(producto)
 
-    # Obtengo atributos o caracteristicas mas relevantes del producto
-    print("B) Buscando atributos del producto...".center(120))
-    product.atributos = product.get_product_attributes()
+    return producto, home_page_url
 
-    # En base al producto a buscar, creo los dataframes
-    df_opiniones = dataframe_creator.create_dataframe_opiniones()
-    df_alternativas = dataframe_creator.create_dataframe_alternativas(product.atributos)
+def search_validation(producto):
+    """
+    Valida la busqueda, es decir, verifica que sea lo suficientemente acotada tal que se refiere a un solo producto
+    en particular (Mercado Libre le debe encontrar una subcategoria de producto). Si es invalido, pide productos
+    hasta el primer producto valido
+    :return: Funcion sin retorno
+    """
+    # Obtengo home page de producto
+    home_page_url = get_home_page_url(producto)
 
-    print("C) Extrayendo datos del producto...".center(120))
-    # Carga de datos a dataframes
-    df_opiniones, df_alternativas = main_collect_data.data_extractor(product, df_opiniones, df_alternativas)
+    # ACCEDO AL CODIGO HTML DE LA PAGINA PRINCIPAL DEL PRODUCTO
+    html = urlopen(home_page_url)
+    bs = BeautifulSoup(html, 'html.parser')
 
-    # Exporto datasets
-    df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opi_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
-    df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
+    # BUSCO TAG DONDE ESTA LA SUBCATEGORIA DEL PRODUCTO
+    tag_nombre_subcat = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {
+        "content": "2"})  # Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
+
+    # SI NO ENCONTRE EL TAG DE LA SUBCATEGORIA (PRODUCTO NO VALIDO)
+    if tag_nombre_subcat is None:
+        print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
+
+        # PIDO NUEVO PRODUCTO
+        producto = str(input("Ingrese producto a buscar: "))
+
+        # VALIDA NUEVO PRODUCTO (FUNCION RECURSIVA)
+        search_validation(producto)
+
+    # SI ENCONTRE EL TAG DE LA SUBCATEGORIA (PRODUCTO VALIDO)
+    else:
+        # DEFINO EL NOMBRE DE LA SUBCATEGORIA A LA QUE PERTENECE EL PRODUCTO
+        print("El producto ha sido validado con exito")
+        return producto, home_page_url
+
+def get_home_page_url(producto):
+    """
+    Busca URL de la Pagina principal de un producto en Mercado Libre
+    :return: String con URL de la pagina principal del producto en Mercado Libre
+    """
+    # DEFINO REGLAS QUE SIGUE LA URL DE LA PAGINA PRINCIPAL DE UN PRODUCTO EN MERCADO LIBRE
+    # si el producto tiene mas de una palabra, reemplazo espacios en blanco por guiones
+    reg1 = producto.replace(" ", "-")
+
+    # si el producto tiene mas de una palabra, reemplazo espacios en blanco por string "%20"
+    reg2 = producto.replace(" ", "%20")
+
+    # APLICO REGLAS A URL Y LA RETORNO
+    return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
+
+def main():
+    # Escogo producto
+    print(" (1) ELECCION DE PRODUCTO ".center(120, '#'))
+    producto, home_page_url = choose_product()
+    print("Pagina principal de mercado libre: ", home_page_url), print()
+
+    print(" (2) DATA UNDERSTANDING ".center(120, '#'))
+    print(" (2.1) COLLECT INITIAL DATA ".center(120))
+    df_alt, df_opi = collect_data.main(home_page_url)
+
+    # Exporto data
+    df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
+    df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
+
 
     '''
-    # Levanto el dataframe ES PRUEBA DE (2)
-    # df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')
-    # df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opi_celulares.xlsx')
-    df_alternativas = pd.read_excel('/Users/nachomondino/Desktop/df_alt_celulares_prueba.xlsx')
-    df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opi_celulares_prueba.xlsx')
+    print(" (2.2) DESCRIBE DATA ".center(120))
+    describe_data.main(df_alt, df_opi)
 
-    print(" (1.2) DESCRIBE DATA ".center(120))
-    print("Dataframe opiniones".center(120))
-    describe_data.getting_to_know_data(df_opiniones)
-    print("Dataframe alternativas".center(120))
-    describe_data.getting_to_know_data(df_alternativas)
-    print()
+    print(" (2.3) EXPLORE DATA ".center(120))
+    explore_data.main(df_alt, df_opi)
 
-    print(" (1.3) EXPLORE DATA ".center(120))
-    print(" a) Analisis de unicidad de ids ".center(120))
-    explore_data.id_uniqueness_check(df_alternativas, df_opiniones)
-    print()
+    # Exporto data
+    # df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
+    # df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
 
-    print(" b) Analisis de filas repetidas ".center(120))
-    print("Dataframe opiniones")
-    explore_data.check_repeated_rows(df_opiniones['opinion']) # filas repetidas sin tener en cuenta el id_pub
-    print("Dataframe alternativas")
-    explore_data.check_repeated_rows(df_alternativas.iloc[:, 2:])  # filas repetidas sin tener en cuenta el id_pub y precio
-    print()
+    """
+    # Levanto el dataframe ES PRUEBA DE (3)
+    # df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
+    # df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))   
+    """
 
-    print(" c) Analisis de cantidad de opiniones por valor de cada campo especifico ".center(120))
-    explore_data.n_opi_by_value(df_alternativas, df_opiniones)
-    print(), print()
+    print(" (3) DATA PREPARATION ".center(120, "#"))
+    print(" (3.1) FORMAT DATA ".center(120))
+    df_alt_correct_price, df_alt_formated = format_data.main(df_alt)
+    print("Exporto Dataframe alternativas con precio corregido pues sera utilizado para ser presentado al cliente")
+    df_alt_correct_price.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 
-    # Exporto data (podria ser por seguridad)
-    # df_opiniones.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opiniones_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
-    # df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alternativas_{}.xlsx'.format(product.nombre), 'Hoja de datos', index=False)
+    print("(3.2) CLEAN DATA ".center(120))
+    df_alt_cleaned, df_opi_tokenizado = clean_data.main(df_alt_formated, df_opi)
 
-    print(" (2) DATA PREPARATION ".center(120, "#"))
-    print(" (2.1) FORMAT DATA ".center(120))
-    print("2.1.1 Dataframe Alternativas: Corrigiendo columna precio...".center(120))
-    df_alternativas['precio'].dropna()  # ESTOY PROBANDO
-    df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    df_alternativas['precio'] = format_data.correct_price_column(df_alternativas['precio'])  # DOCUMENTAR QUE LO HAGO PRIMERO...
-    print()
+    print(" (3.3) CONSTRUCT DATA ".center(120))
+    df_alt_cleaned, df_cust_needs = construct_data.main(df_alt_cleaned, df_opi_tokenizado)
+    l_cust_needs_one_word = df_cust_needs['cust_needs_one_word']  # customer needs de una palabra
 
-    print("2.1.2 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
-    df_alternativas = format_data.string_column_to_numeric_column(df_alternativas)
-    print()
+    # EXPORTO DATAFRAMES
+    # Exporto dataframes alternativas cleaned y opiniones cleaned
+    df_alt_cleaned.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
+    df_opi_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto))
+    # Exporto dataframe de customer needs del producto
+    df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
 
-    print("2.1.3 Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
-    df_alternativas = format_data.yes_no_column_to_one_zero_column(df_alternativas)
-    print()
+    print(" (4) MODELLING ".center(120, "#"))
+    print(" (4.1) ATRIBUCION ".center(120))
+    df_cust_need_sent, df_relation_matrix, df_attr_values_sent = sentiment_atribution.main(df_alt_cleaned, df_opi, l_cust_needs_one_word)
 
-    print("(2.2) CLEAN DATA ".center(120))
-    print("2.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
-    df_opiniones = df_opiniones.drop_duplicates(subset='opinion', ignore_index=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
-    print()
+    # Exporto resultado de atribucion
+    df_cust_need_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_cust_need_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
+    df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
+    df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 
-    print("2.2.2 Dataframe Opiniones: Preparando opiniones...".center(120))
-    df_opiniones = clean_data.delete_date_of_issue_from_opinion(df_opiniones)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
-    df_opiniones_tokenizado = df_opiniones.copy()  # el df_opiniones recibia el mismo procesamiento que df_opiniones tokenizado, no se por que
-    df_opiniones_tokenizado = clean_data.clean_opinions(df_opiniones_tokenizado)  # Limpio las opiniones
-    print()
+    print(" (4.2) CLUSTERING ".center(120))
+    df_alt,df_alt_per_clust, df_alt_per_clust, df_brand_per_cluster =  clustering.main(df_alt, df_alt_cleaned, df_attr_values_sent)
 
-    print("BORRANDO ALT CON MUCHOS NAN".center(120))
-    df_alternativas = clean_data.drop_alternatives_with_most_na(df_alternativas, df_opiniones)
-    df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    print()
-
-    print("2.2.3 Dataframe Alternativas: Elimino datos erroneos...".center(120))
-    df_alternativas = clean_data.drop_alternatives_with_wrong_values(df_alternativas, df_opiniones)
-    df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    print()
-
-    print("2.2.4 Dataframe Alternativas: Discretizando campos numericos continuos...".center(120))
-    df_alternativas.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alternativas.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
-    print()
-
-    print("2.2.5 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
-    df_alternativas = clean_data.delete_attr_x_values(df_alternativas)
-    print()
-
-    print(" (2.3) CONSTRUCT DATA ".center(120))
-    print("Selecciono customer needs del producto...".center(120))
-    customer_needs, customer_needs_one_word = construct_data.select_customer_needs(df_opiniones_tokenizado)
-    print()
-
-    # Exporto dataframes
-    df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_{}_cleaned.xlsx'.format("celulares"), index=False) # cuando corra tod@ junto pongo product.nombre
-    df_opiniones_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_opiniones_{}_cleaned.xlsx'.format("celulares"))
-    customer_needs_series, customer_needs_one_word_series = pd.Series(customer_needs), pd.Series(customer_needs_one_word)  # Convierto lista a Series de pandas para exportarlo con mayor facilidad
-    customer_needs_series.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/customer_needs_{}.xlsx'.format("celulares"))  #cuando corra tod@ junto pongo product.nombre
-    customer_needs_one_word_series.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/customer_needs_one_word_{}.xlsx'.format("celulares"))  #cuando corra tod@ junto pongo product.nombre
-
-    print(" (3) MODELLING ".center(120, "#"))
-    print(" (3.1) ATRIBUCION ".center(120))
-    print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
-    df_opinion_cust_need = sentiment_atribution.to_customer_needs(df_opiniones, customer_needs_one_word)  # df_opi falta eliminar acentos...
-    df_opinion_cust_need.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_opinion_cust_need_{}.xlsx'.format("celulares"), index=False) # cuando corra tod@ junto pongo product.nombre
-
-    '''
-    print("3.1.2 Creo matriz de relaciones...".center(120))
-    # relation_matrix = atribucion.create_relation_matrix(producto.atributos, customer_needs_one_word) # ahorra es sin producto.atributos
-    # relation_matrix = sentiment_atribution.create_relation_matrix(df_alternativas.columns[1:], customer_needs_one_word)  # incluyo el precio
-    # relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index=False)
-    relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', index_col=0)
-    print(relation_matrix)
-    df_opinion_cust_need.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/relation_matrix_{}.xlsx'.format("celulares"), index=False) # cuando corra tod@ junto pongo product.nombre
-
-
-    print("3.1.3 Atribuyo sentiment a valores de los atributos del producto...".center(120))
-    df_sent_por_valor = sentiment_atribution.to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix)
-    df_sent_por_valor.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/df_valor_sent_{}.xlsx'.format("celulares"), index=False) # cuando corra tod@ junto pongo product.nombre
-    # df_sent_por_valor.to_excel('/Users/nachomondino/Desktop/df_final.xlsx', 'Hoja de datos', index=False)
-
-
-    print(" (3.2) CLUSTERING ".center(120))
-    print("3.2.1 Creo dataframe para clustering...".center(120))
-    df_clustering = clustering.create_clustering_dataframe(df_alternativas, df_sent_por_valor)
-    print(df_clustering)
-
-    print("3.2.2 Corro modelo clustering...".center(120))
-    clustering.k_means(df_clustering)
+    # Exporto resultados de clustering
+    df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format(producto))
+    df_alt_per_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(producto))
+    df_alt_per_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(producto))
+    df_brand_per_cluster.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(producto))
     '''
 
 if __name__ == '__main__':

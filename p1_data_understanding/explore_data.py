@@ -19,7 +19,6 @@ def check_repeated_rows(df):
     cant_filas = df.shape[0]
     print("Si eliminase filas duplicadas el dataframe quedaria de {} filas".format(cant_filas))
 
-
 def id_uniqueness_check(df_alt, df_opi):
     """
     Chequea unicidad de ids en cada dataframe e indica su cantidad
@@ -35,7 +34,6 @@ def id_uniqueness_check(df_alt, df_opi):
     print("Deberia haber {} ids unicos. Hay {} ids unicos en Dataframe alternativas".format(len(df_alt), cant_ids_alt))
     print("Hay {} ids unicos en Dataframe opiniones".format(cant_ids_opi))
     print()
-
 
 def n_opi_by_value(df_alt, df_opi):
     """
@@ -78,36 +76,26 @@ def n_opi_by_value(df_alt, df_opi):
     print("Se guarda el archivo en {}".format(path))
     return df.to_excel(path, 'Hoja de datos', index=False)
 
+def main(df_alt, df_opi):
 
-'''
-def main():
-    # READ DATA
-    df_mod = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alternativas_celulares.xlsx")
-    df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opiniones_celulares.xlsx")
-    # df_mod = pd.read_excel("/Users/nachomondino/Desktop/df_categorizado.xlsx")
-    # df_mod = pd.read_excel("/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx")
-
-    # 1) UNICIDAD DE VALORES
-    print(" ------------------------ 1) ANALISIS DE UNICIDAD DE IDS ------------------------ ")
-    id_uniqueness_check(df_mod, df_opi)
-
-    # 2) ANALISIS DE FILAS REPETIDAS
-    print(" ------------------------ 2) ANALISIS DE FILAS REPETIDAS ------------------------ ")
-    # filas repetidas sin tener en cuenta el id_pub
-    print("DATAFRAME OPINIONES")
-    # delete_repeated_rows(df_opi.iloc[:, 1:])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
-    check_repeated_rows(df_opi['opinion'])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
-
-    # filas repetidas sin tener en cuenta el id_pub y precio
-    print("DATAFRAME MODELOS")
-    check_repeated_rows(df_mod.iloc[:, 2:])  # ojo que luego de aqui sigo trabajando con df con filas repetidas...
+    print(" a) Analisis de unicidad de ids ".center(120))
+    id_uniqueness_check(df_alt, df_opi)
     print()
 
-    # 3) CANTIDAD DE OPINIONES POR VALOR DE CADA CAMPO ESPECIFICO
-    print(" ---------------- 3) ANALISIS DE CANTIDAD DE OPINIONES POR VALOR DE CADA CAMPO ESPECIFICO --------------- ")
-    # attributes_values(df_mod)
-    n_opi_by_value(df_mod, df_opi)
+    print(" b) Analisis de filas repetidas ".center(120))
+    print("Dataframe opiniones")
+    check_repeated_rows(df_opi['opinion'])  # filas repetidas sin tener en cuenta el id_pub
+    print("Dataframe alternativas")
+    check_repeated_rows(df_alt.iloc[:, 2:])  # filas repetidas sin tener en cuenta el id_pub y precio
+    print()
 
+    print(" c) Analisis de cantidad de opiniones por valor de cada campo especifico ".center(120))
+    n_opi_by_value(df_alt, df_opi)
+    print(), print()
 
+"""# Para correr pruebas en archivo independientemente de main.py
+df_alt = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx".format("celulares")))
+df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx".format("celulares"))
 main()
-'''
+"""
+

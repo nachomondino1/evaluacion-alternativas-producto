@@ -28,8 +28,8 @@ for pal in palabras:
 
 
 '''
-df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')
-df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opi_celulares.xlsx')
+df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt.xlsx')
+df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opi.xlsx')
 
 print(df_alternativas.head())
 print(df_opiniones.head())
@@ -40,44 +40,39 @@ for id_pub in df_opiniones['id_alternativa'].unique():
         print(j)
 '''
 
-'''
+''' Series
 l = [1, 2, 3, 4]
 l_series = pd.Series(l)
 print(l_series)
-print(list(l_series.values))
+a = list(l_series.values)
+print(a[2])
 '''
 
 
-
 ''' drop duplicates
-df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_celulares.xlsx')
+df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt.xlsx')
 print(df_alternativas)
 df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
 print(df_alternativas)
 df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_cleaned_{}.xlsx'.format('celulares'), 'Hoja de datos', index=False)
 '''
 
-'''
+''' Diccionario
 d = {'a': 1, 'b': 2, 'c': 3}
 
 if 'c' in d.keys():
     print(d['c'])
 
 print(list(d.values()))
+'''
 
 
+# Dataframe
 df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
 print(df)
 
-for a in df['col1']:
-    print (a)
-    #print(b)
-
-# df = df['col1'].unique()
-# df = df.drop_duplicates(subset='col2', ignore_index=True)
-#print(df)
-'''
-
+idx = df.index[df['col1'] == 4][0]
+print(idx)
 
 '''
 # 3. Data preparation - Preparacion texto
@@ -102,7 +97,7 @@ print(texto)
 # print(df_opiniones['opinion'])
 '''
 
-
+'''
 def delete_parentesis(text):
     cant_parentesis = text.count("(")
     text_cleaned = str()
@@ -127,6 +122,8 @@ text = "El celu trae algunos modos preformateados para grabar video que son inte
 text = "El celu trae algunos modos preformateados para grabar video que son interesantes (modo vlog, videos fragmentados de 15 segundos para redes sociales), pero solo permite en modo horizontal, no vertical (para reels en instagram) hola (ajs) sa"
 text = "Cosas buenas: tiene tecnología nfc (para cargar la sube), es dificil enfocar pero la calidad de las fotos si lo logras es buena, es genial tener los 64gb, la mayoría del tiempo tiene buena performance, el lector de huella digital funciona perfecto y se puede poner más de un dedo,"
 print(delete_parentesis(text))
+'''
+
 
 '''
 # 3. Data preparation - Construct data

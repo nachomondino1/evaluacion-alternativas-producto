@@ -1,7 +1,8 @@
 # Importo librerias
+import pandas as pd
 import operator
 import stanza
-from p3_modelling.sentiment_atribution import related_words
+from p3_modelling.sentiment_atribution import find_related_words
 pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')  # stanza.download('es') --> This downloads the English models for the neural pipeline
 
 ################################################ FUNCIONES PRINCIPALES ################################################
@@ -10,9 +11,8 @@ def most_frequent_words(df_tokenizado):
     Obtiene lista de las palabras mas frecuentes utilizadas en las opiniones de un producto
     :param df_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
     tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
-    :return: Lista de palabras mas frecuentes filtradas
+    :return: Lista de palabras mas frecuentes en opiniones y relevantes
     """
-    print("BUSCO PALABRAS MAS FRECUENTES")
     # Defino variables
     QUANT_WORDS = 150  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
@@ -101,54 +101,74 @@ def most_frequent_phrases(df_tokenizado):
 
     # OBTENGO LISTA DE LOS 3-GRAMS MAS FRECUENTES
     freq_ngrams = most_frequent_dict_key(d, CANT_POSIBLES_CUSTOMER_NEEDS)
-    print("Posibles {} Customer needs: {}".format(CANT_POSIBLES_CUSTOMER_NEEDS, freq_ngrams))
+    print("Primeras {} posibles customer needs: {}".format(100, freq_ngrams[:100]))
 
     return freq_ngrams
 
-def select_customer_needs(df_opi_tokenizado):
+def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
     """
     Selecciona las customer needs de un producto a partir de las frases mas frecuentes en las opiniones del producto
-    :param df_opi_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
-    tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
+    :param most_freq_words: Lista de palabras mas frecuentes en opiniones y relevantes
+    :param possible_customer_needs: Lista de frases de 3 palabras mas frecuentes en opiniones
     :return: Lista de customer needs como frases de 3 palabras, lista de customer needs como frase de 1 sola palabra
     """
     # Defino variables
-    customer_needs, customer_needs_one_word = [], []  # Listas donde guardare el output
-    most_freq_words = most_frequent_words(df_opi_tokenizado)
-    possible_customer_needs = most_frequent_phrases(df_opi_tokenizado)
-    copy_most_freq_words = most_freq_words.copy()
+    l_cust_needs, l_cust_needs_one_word = [], []  # Listas donde guardare el output
+    copy_most_freq_words = l_most_freq_words.copy()
     i = 0
-    print("Selecciono customer needs")
     print("{:^40s}\t{:^40}".format("Customer need", "Posicion en frecuencia "))
 
     # POR POSIBLE CUSTOMER NEED
-    for possible_customer_need in possible_customer_needs:
+    for possible_customer_need in l_possible_customer_needs:
         i += 1
 
         # POR CADA PALABRA DE ESTA
         for palabra in possible_customer_need.split():
 
             # SI LA PALABRA ES DE LA MAS FRECUENTES
-            if palabra in most_freq_words:
+            if palabra in l_most_freq_words:
 
                 # SI LA POSIBLE CUSTOMER NEED ES DESEADA
                 if is_possible_customer_need_wanted(possible_customer_need, copy_most_freq_words):
 
                     # Elimino palabra frecuente para no obtener una customer need parecida
-                    most_freq_words.remove(palabra)
+                    l_most_freq_words.remove(palabra)
 
                     # Guardo customer need
-                    customer_needs_one_word.append(palabra)
-                    customer_needs.append(possible_customer_need)
+                    l_cust_needs_one_word.append(palabra)
+                    l_cust_needs.append(possible_customer_need)
 
                     print("{:^40s}\t{:^40}".format(possible_customer_need, i))
                 break
 
     # podria filtro de frase con sentido...
-    print("Customer needs:", customer_needs)
-    print("Customer need en una palabra:", customer_needs_one_word)
+    print("Customer needs:", l_cust_needs)
+    print("Customer need en una palabra:", l_cust_needs_one_word)
 
-    return customer_needs, customer_needs_one_word
+    return l_cust_needs_one_word, l_cust_needs
+
+def filter_attr_and_cust_needs(l_atributos, l_cust_needs, l_cust_need_three_words): # FALTA DOC
+    """
+    Permite filtrar atributos y customer needs a traves de terminal.
+    :param l_atributos: Lista de atributos del producto
+    :param l_cust_needs: Lista de customer needs del producto de 1 palabra
+    :param l_cust_need_three_words: Lista de customer needs del producto de 3 palabras
+    :return: Listas pasadas por parametro filtradas
+    """
+    l_cust_needs_three_words_filt = []
+
+    print("Selecciona atributos que se relacionaran con customer needs:")
+    l_atributos_filt = drop_unwanted_elements(l_atributos)  # elimino atributos no deseados
+    print("Selecciona customer needs que se relacionaran con atributos:")
+    l_cust_needs_filt = drop_unwanted_elements(l_cust_needs)  # elimino atributos no deseados
+
+    # Por customer need de 1 palabra
+    for cust_need in l_cust_needs_filt:
+        # Selecciono su customer need de tres palabras
+        l_cust_needs_three_words_filt.append(customer_needs_translation(l_cust_need_three_words, cust_need))
+
+    return l_atributos_filt, l_cust_needs_filt, l_cust_needs_three_words_filt
+
 
 
 ################################################ FUNCIONES SECUNDARIAS ################################################
@@ -211,21 +231,20 @@ def is_noun(word):
     else:
         return False  # retorno False
 
-
 def is_irrelevant_word(word):
     """
     Elimina palabras irrelevantes de lista de palabras
     :param words: Lista de palabras
     :return: Lista de palabras sin palabras irrelevantes
     """
-    pal_irrel = ['android', 'años', 'auriculares',
+    pal_irrel = ['android', 'año', 'años', 'auriculares',
                  'calidad', 'conforme', 'compra', 'cosas', 'celulares',
-                 'equipo', 'expectativas', 'funciones',
+                 'equipo', 'expectativas', 'funcion', 'funciones',
                  'gama', 'gusto', 'gracias',
                  'iphone',
-                 'mano', 'momento', 'motorola',
+                 'mano', 'mes', 'meses', 'momento', 'motorola',
                  'netflix', 'notebook',
-                 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas',
+                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas',
                  'redes', 'relacion', 'rendimiento', 'resto',
                  'tele', 'telefono', 'televisor', 'tiempo', 'tv',
                  'uso',
@@ -238,7 +257,6 @@ def is_irrelevant_word(word):
         return True
     else:
         return False
-
 
 def delete_related_words(l_palabras):
     """
@@ -257,7 +275,7 @@ def delete_related_words(l_palabras):
 
             # Defino variables
             palabra_plural = palabra + "s"  # no necesariemnte es asi pero al menos es lo mas probable
-            l_related_words = related_words(palabra)  # Obtengo palabras relacionadas
+            l_related_words = find_related_words(palabra)  # Obtengo palabras relacionadas
 
             # Si esta la palabra en plural
             if palabra_plural in str_palabras:
@@ -275,7 +293,6 @@ def delete_related_words(l_palabras):
                     print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
 
     return str_palabras.split()
-
 
 def delete_substring_in_string(string, substring):
     if substring in string:
@@ -326,6 +343,82 @@ def is_possible_customer_need_wanted(possible_customer_need, most_freq_words):
     else:
         # Descarto la posible customer need
         return False
+
+
+# UTILIZADAS EN FILTER_ATTR_AND_CUST_NEEDS()
+def drop_unwanted_elements(l):
+    """
+    :param l:
+    :return:
+    """
+    l_wanted = []
+
+    # Por elemento
+    for element in l:
+
+        # Mientras la carga sea invalida
+        while True:
+            try:
+                # Solicito 0 o 1 para determinar si el atributo sera considerado o no
+                bool = int(input("Tendra en cuenta el elemento '{}' (0 o 1): ".format(element.upper())))
+
+                # si el atribuo sera considera
+                if bool == 0:
+                    break
+
+                elif bool == 1:
+                    l_wanted.append(element)
+                    break
+
+            except ValueError:  # si el input no es un numero entero
+                pass
+
+    return l_wanted
+
+def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre ponerle, busca relacion entre customer needs de 3 palabras y las de 1...
+    """
+    Traduce customer need de 1 palabra a customer need de 3 palabras
+    :param customer_needs: Lista de customer needs de 3 palabras
+    :param customer_needs_substring: String. Customer need de 1 palabra.
+    :return:
+    """
+    # POR CUSTOMER NEED DE 3 PALABRAS
+    for customer_need in l_cust_needs:
+
+        # SI CUSTOMER NEED DE 1 PALABRA ESTA EN CUSTOMER NEED DE 3 PALABRAS
+        if cust_need in customer_need:
+            return customer_need  # retorno customer need de 3 palabras
+
+def main(df_alt_cleaned, df_opi_tokenizado):
+
+    print("Obtengo palabras mas frecuentes en opiniones...".center(120))
+    l_most_freq_words = most_frequent_words(df_opi_tokenizado)
+    print()
+
+    print("Obtengo frases de 3 palabras mas frecuentes en opiniones...".center(120))
+    l_possible_customer_needs = most_frequent_phrases(df_opi_tokenizado)
+    print()
+
+    print("Selecciono customer needs del producto...".center(120))
+    l_cust_needs_one_word, l_cust_needs= select_customer_needs(l_most_freq_words, l_possible_customer_needs)  # podria devolver el df_cust_needs...
+    print()
+
+    print("Selecciono atributos y customer needs del producto que se relacionaran entre si...".center(120))
+    l_atributos, l_cust_needs_one_word, l_cust_needs = filter_attr_and_cust_needs(l_atributos=df_alt_cleaned.columns[1:], l_cust_needs=l_cust_needs_one_word,
+        l_cust_need_three_words=l_cust_needs)
+    df_cust_needs = pd.DataFrame(data={"cust_needs_one_word": l_cust_needs_one_word, "cust_needs_three_words": l_cust_needs}, columns=["cust_needs_one_word", "cust_needs_three_words"])
+
+    # Borrar atributos de dataframe alternativas cleaned que no esten en l_atributos
+    for atributo in df_alt_cleaned.columns[1:]:
+        if atributo not in l_atributos:
+            df_alt_cleaned = df_alt_cleaned.drop([atributo], axis=1)
+    print()
+
+    return df_alt_cleaned, df_cust_needs
+
+''' # para correr pruebas en archivo independientemente de main.py
+main()
+'''
 
 
 ''' EX DELETE_RELATED_WORDS PUES TENIA DOS LISTAS DE PALABRAS RELACIONADAS QUE ACTUALIZAR... (junto con la de sentiment)

@@ -16,7 +16,7 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
     """
     # DEFINO VARIABLES
     idx_id, idx_opi = df_opiniones.columns.get_loc("id_alternativa"), df_opiniones.columns.get_loc("opinion")  # indices utiles para tener flexibilidad en codigo (posibilidad de columnas en otra posicion)
-    df_opinion_cust_needs = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)  # dataframe a retornar
+    df_cust_needs_sent = pd.DataFrame(columns=["id_alternativa"] + customer_needs_one_word)  # dataframe a retornar
     analyzer = create_analyzer(task="sentiment", lang="es")  # para realizar el sentiment
     choose_sep = lambda text: "," if text.count(",") >= 1 else ';'
     split_frase_in_commas = lambda frase: frase.split(choose_sep(frase)) if conviene_separar_comas(frase) else [frase]
@@ -71,26 +71,30 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
                         if contains_adjective(sentence):
 
                             # PRUEBA: Si el sentiment de la frase no se corresponde con el de la opinion
-                            #if (sent_opi < -0.9 and sent_frase_entre_comas > 0) or (sent_opi > 0.9 and sent_frase_entre_comas < 0):
-                            #    print("Es probable que el sentiment de la frase sea incorrecto dado que el de la opinion es totalmente opuesto")
-                            #    pass
+                            # if (sent_opi < -0.8 and sent_frase > 0.6) or (sent_opi > 0.8 and sent_frase_entre_comas < -0.6):
+                            if (sent_opi < -0.9 and sent_frase_entre_comas > 0.1 and sent_frase_entre_comas < 0.3) or (sent_opi > 0.9 and sent_frase_entre_comas > -0.3 and sent_frase_entre_comas < -0.1):
+
+                                print("Es probable que el sentiment de la frase sea incorrecto dado que el de la opinion es totalmente opuesto")
+                                sent_frase_entre_comas_pond = 0.8 * sent_frase_entre_comas + 0.2 * sent_opi
+                                print("Sentiment = {}    ; Sentiment ponderado = {} ".format(sent_frase_entre_comas, sent_frase_entre_comas_pond))
+
+                                df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas_pond)
+                                print(df_frases_cust_needs)
+
 
                             # Si el sentiment de la frase se corresponde con el de la opinion
-                            #else:
+                            else:
                             # df_frases_cust_needs.loc[len(df_frases_cust_needs)] = lambda x, y: assign_sentiment(x,y) if sum(x.values()) > 1 else
-                            df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas)
-                            print(df_frases_cust_needs)
+                                df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas)
+                                print(df_frases_cust_needs)
 
                         # Si no hay adjetivos
                         else:
                             # pero el sentiment de la frase entre comas es categorico tal como el de la opinion
-                            if (sent_opi < -0.8 and sent_frase_entre_comas < -0.8) or (sent_opi > 0.8 and sent_frase_entre_comas > 0.8):
+                            if (sent_opi < -0.8 and sent_frase_entre_comas < -0.7) or (sent_opi > 0.8 and sent_frase_entre_comas > 0.7):
                                 print("La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
                                 df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas)
                                 print(df_frases_cust_needs)
-
-                            elif (sent_opi < -0.8 and sent_frase_entre_comas < -0.7) or (sent_opi > 0.8 and sent_frase_entre_comas > 0.7):
-                                print("Posible A")
 
                             else:
                                 print("La frase no contiene adjetivos")
@@ -105,26 +109,29 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
                 # SI CONTIENE AL MENOS UN ADJETIVO
                 if contains_adjective(frase):
 
-                    '''
                     # PRUEBA
-                    if (sent_opi < -0.9 and sent_frase > 0) or (sent_opi > 0.9 and sent_frase < -0):
+                    if (sent_opi < -0.9 and sent_frase > 0.1 and sent_frase < 0.3) or (sent_opi > 0.9 and sent_frase > -0.3 and sent_frase < -0.1):
+                    # if (sent_opi < -0.9 and sent_frase > 0.6) or (sent_opi > 0.9 and sent_frase < -0.6):
                         print("Es probable que el sentiment de la frase sea incorrecto dado que el de la opinion es totalmente opuesto")
-                        pass
+                        sent_frase_pond = 0.8 * sent_frase + 0.2 * sent_opi
+                        print("Sentiment = {}    ; Sentiment ponderado = {} ".format(sent_frase, sent_frase_pond))
+
+                        # ASIGNO SENTIMENT A CUSTOMER NEED MENCIONADA
+                        df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_pond)
+                        print(df_frases_cust_needs)
+
                     else:
-                    '''
-                    # ASIGNO SENTIMENT A CUSTOMER NEED MENCIONADA
-                    df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
-                    print(df_frases_cust_needs)
+                        # ASIGNO SENTIMENT A CUSTOMER NEED MENCIONADA
+                        df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
+                        print(df_frases_cust_needs)
+
 
                 # SI CONTIENE ADJETIVOS
                 else:
-                    if (sent_opi < -0.8 and sent_frase < -0.8) or (sent_opi > 0.8 and sent_frase > 0.8):
+                    if (sent_opi < -0.8 and sent_frase < -0.7) or (sent_opi > 0.8 and sent_frase > 0.7):
                         df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
                         print(df_frases_cust_needs)
                         print("La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
-
-                    elif (sent_opi < -0.8 and sent_frase < -0.7) or (sent_opi > 0.8 and sent_frase > 0.7):
-                        print("Posible AA")
 
                     else:
                         print("La frase no contiene adjetivos")
@@ -145,60 +152,49 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
             fila_df.append(sent_cn_opi)
 
         # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA OPINION
-        df_opinion_cust_needs.loc[i] = fila_df
+        df_cust_needs_sent.loc[i] = fila_df
         print("Fila:", fila_df)
         # print(df_opinion_cust_needs)
 
     # EXPORTO DATAFRAME
-    df_opinion_cust_needs.to_excel('/Users/nachomondino/Desktop/df_opinion_cust_needs.xlsx', 'Hoja de datos', index=False)
-    print(df_opinion_cust_needs)
+    df_cust_needs_sent.to_excel('/Users/nachomondino/Desktop/df_cust_needs_sent.xlsx', 'Hoja de datos', index=False)
+    print(df_cust_needs_sent)
 
-    return df_opinion_cust_needs
+    return df_cust_needs_sent
 
-def create_relation_matrix(atributos, customer_needs):
+def create_relation_matrix(l_atributos, l_cust_needs):
     """
     Crea matriz de relaciones entre customer needs y atributos del producto. Para ello, pide al usuario por terminal
     la relacion entre cada uno.
-    :param atributos: Lista de atributos o campos especificos de un producto
-    :param customer_needs: Lista de customer needs (de 1 sola palabra) de un producto
+    :param l_atributos: Lista de atributos o campos especificos de un producto
+    :param l_cust_needs: Lista de customer needs (de 1 sola palabra) de un producto
     :return: Dataframe con atributos como columnas y customer needs como filas. Celda indica relacion entre customer
     need  i y atributo j
     """
-    # REMUEVO ATRIBUTOS CUYOS VALORES NO DEBERIAN TENER SENTIMENT (tipicamente los que solo son extraidos para ser mostrado al cliente)
-    atributos_a_no_considerar = ["Modelo", "Línea"]  # Defino lista de atributos a no incluir en matriz de relaciones
-    # Por atributo a no considerar
-    for atributo in atributos_a_no_considerar:
-        # Si el atributo estan en atributos
-        try:
-            # quito el atributo a no considerar
-            atributos.remove(atributo)
-        # Si el atributo no esta en atributos
-        except ValueError:  # ValueError: list.remove(x): x not in list
-            # no hago nada
-            pass
-
     # DEFINO VARIABLES
-    relation_matrix = pd.DataFrame(columns=atributos, index=customer_needs)  # Dataframe a retornar
-    print("Los atributos son: ", atributos)
-    print("Las customer needs son: ", customer_needs)
+    print("Los atributos son: ", l_atributos)
+    print("Las customer needs son: ", l_cust_needs)
+    df_relation_matrix = pd.DataFrame(columns=l_atributos, index=l_cust_needs)  # Dataframe a retornar
 
     # POR ATRIBUTO O CAMPO ESPECIFICO DEL PRODUCTO
-    for atributo in atributos:
+    for atributo in l_atributos:
 
         # POR CUSTOMER NEED DEL PRODUCTO
-        for customer_need in customer_needs:
+        for customer_need in l_cust_needs:
 
             # SOLICITO RELACION ENTRE ATRIBUTO Y CUSTOMER NEED POR TERMINAL
             # Validacion de ingreso de datos, solicito relacion hasta que el input sea 0, 1, 3 o 9
             while True:
                 try:
-                    input_admin = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo.upper(),customer_need.upper())))
+                    input_admin = int(input("Ingrese relacion entre atributo '{}' y customer need '{}'(0, 1, 3 o 9 ptos): ".format(atributo.upper(), customer_need.upper())))
 
                     # Si el input del admin es 0, 1, 3 o 9
                     if input_admin in [0, 1, 3, 9]:
+
                         # Administrador cargo relacion correctamente
-                        relation_matrix.loc[customer_need, atributo] = input_admin
+                        df_relation_matrix.loc[customer_need, atributo] = input_admin
                         break
+
                     # Si el input del admin no es 0, 1, 3 o 9
                     else:
                         print("Ingreso no valido. El ingreso debe ser un numero, en particular, 0, 1, 3 o 9. ")
@@ -208,26 +204,7 @@ def create_relation_matrix(atributos, customer_needs):
                     # sigo en el ciclo while hasta que cargue la relacion correctamente
                     print("Ingreso no valido. El ingreso debe ser un numero, en particular, 0, 1, 3 o 9. ")
 
-        # ELIMINO ATRIBUTO QUE NO TIENE RELACION CON NINGUNA CUSTOMER NEED
-        # Si no tiene relacion con ninguna customer need
-        if sum(relation_matrix[atributo]) == 0:  # falta doc
-
-            # Borro el atributo
-            relation_matrix.drop([atributo], axis=1)
-            print("Se elimino el atributo '{}' dado que no tiene relacion con ninguna customer need del producto".format(atributo))
-
-    # ELIMINO CUSTOMER NEEDS QUE NO TIENE RELACION CON NINGUN ATRIBUTO
-    # Por customer need
-    for customer_need in customer_needs:   # falta doc
-        # Si no tiene relacion con ningun atributo
-        if sum(relation_matrix.loc[customer_need]) == 0:
-            # Elimino customer need
-            relation_matrix.drop([customer_need], axis=0)
-            print("Se elimino la customer need '{}' dado que no tiene relacion con ningun atributo del producto".format(customer_need))
-
-    # EXPORTO MATRIZ DE RELACIONES
-    relation_matrix.to_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx', 'Hoja de datos', index_label="customer_need")
-    return relation_matrix
+    return df_relation_matrix
 
 def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
     """
@@ -268,7 +245,7 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
             # print(df_opinion_cust_need_filt)
 
             # POR CUSTOMER NEED
-            for customer_need in df_opinion_cust_need_filt.columns[1:]:  # no incluyo id_alt --> por que no use index de matriz de relaciones? que no tiene el id...
+            for customer_need in relation_matrix.index: # df_opinion_cust_need_filt.columns[1:]:  # no incluyo id_alt --> por que no use index de matriz de relaciones? que no tiene el id...
 
                 # obtengo relacion entre customer need y relacion
                 relacion = relation_matrix.loc[customer_need, atributo]
@@ -296,7 +273,7 @@ def to_attribute_value(df_alternativas, df_opinion_cust_need, relation_matrix):
 
     # Exporto (solo en pruebas)
     df_attr_value_sent_2.to_excel("/Users/nachomondino/Desktop/df_value_sent_opis.xlsx")
-    df_values_attrs_sent_pond.to_excel("/Users/nachomondino/Desktop/df_value_sent.xlsx")
+    df_values_attrs_sent_pond.to_excel("/Users/nachomondino/Desktop/df_attr_values_sent.xlsx")
 
     return df_values_attrs_sent_pond
 
@@ -320,7 +297,7 @@ def words_mentioned_in_text(text, words):
     for word in words:
 
         # BUSCO PALABRAS RELACIONADAS A LA WORD (para identificar mejor customer need en frase)
-        palabras_a_buscar = related_words(word)
+        palabras_a_buscar = find_related_words(word)
 
         # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
         for palabra_a_buscar in palabras_a_buscar:
@@ -357,6 +334,7 @@ def find_related_words(palabra):  # diccionario que mantener actualizado
          'camara': [' fotos', 'imagenes', 'resolucion'], # no incluiria: definicon, videos   # saco temporalmente 'selfie' y 'resolucion' # foto no pues si se refiere a la camara es "fotos". foto se confunde con la foto de la publicacion..
          'bateria': ['duracion'],
          'diseño': ['estetica'],
+         'juegos': ['jueguito'],
          'memoria': ['almacenamiento', ' ram ', 'velocidad', 'espacio', ' ram,', ' fluid', 'capacidad', 'gb ', ' agil '],  # no incluiria: lag  # saco temporalmente ' rapid', ' lent'  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp"
          'marca': marcas,
          'pantalla': [' imagen ', ' imagen,'],  # no incluiria: definicion
@@ -364,7 +342,7 @@ def find_related_words(palabra):  # diccionario que mantener actualizado
          'sistema': sistemas_operativos,
          'tamaño': [' peso ', ' pesad', ' livian'],
          "procesador": ["velocidad", "funcionamiento", 'software', ' rapid', ' lent', ' tilda', ' fluid', ' traba ', ' agil '],
-         'sonido': ['audio ', 'audio,' 'volumen']
+         'sonido': ['audio ', 'audio,' 'volumen', 'musica']
          }
 
     palabras_a_buscar = search_rel_words_in_dict(palabra, d)
@@ -384,13 +362,12 @@ def sentiment(analyzer, sentence):
 
 def assign_sentiment(d_cust_needs_mentioned, sent):
     """
-        # Segun si es mencionado o no en texto, asigno sentiment de frase o None
+    # Segun si es mencionado o no en texto, asigno sentiment de frase o None
 
     :param d_cust_needs_mentioned:
     :param sent:
     :return:
     """
-
     #
     fila = []
 
@@ -482,7 +459,7 @@ def delete_accent(text):
             new_text += text[i]
     return new_text
 
-def delete_parentesis(text): #probarla
+def delete_parentesis(text):
     """
     Elimina todos los parentesis de una cadena de texto
     :param text: Text string
@@ -552,7 +529,7 @@ def quantity_opinions_weighing(df_attr):
             # Calculo factor 2
             porc_opt_cant_opi = cant_opi_valor / cant_opi_opt
             # Calculo factor final
-            factor_final = (0.5 * porc_max_cant_opi + 1.5 * porc_opt_cant_opi) / 2  # asigno mas peso a factor 2
+            factor_final = 0.1 * porc_max_cant_opi + 0.9 * porc_opt_cant_opi  # asigno mas peso a factor 2
             if factor_final > 1:  # si el factor final es mayor que 1
                 factor_final = 1  # lo seteo a 1
             print("Factor 1: {:.2f}; Factor 2: {:.2f}; Factor final: {:.2f}".format(porc_max_cant_opi, porc_opt_cant_opi, factor_final))
@@ -572,6 +549,19 @@ def quantity_opinions_weighing(df_attr):
 
     return df
 
+
+def main(df_alt_cleaned, df_opi, l_cust_needs_one_word):
+    print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
+    df_cust_need_sent = to_customer_needs(df_opi, l_cust_needs_one_word)  # df_opi falta eliminar acentos...
+
+    print("3.1.2 Creo matriz de relaciones...".center(120))
+    df_relation_matrix = create_relation_matrix(df_alt_cleaned.columns[1:], l_cust_needs_one_word)  # incluyo el precio
+
+    print("3.1.3 Atribuyo sentiment a valores de los atributos del producto...".center(120))
+    df_attr_values_sent = to_attribute_value(df_alt_cleaned, df_cust_need_sent, df_relation_matrix)
+    return df_cust_need_sent, df_relation_matrix, df_attr_values_sent
+
+# Para correr pruebas
 ''' # Probando to_customer_needs
 df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_menos_menos_cleaned.xlsx')
 customer_needs = ['pantalla', 'memoria','precio', 'tamaño','bateria','camara', 'resolucion']
@@ -589,23 +579,22 @@ relation_matrix = create_relation_matrix(atributos, customer_needs)
 print(relation_matrix)
 '''
 
-
+'''
 # Probando to_attr_values()
-df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_celulares_cleaned.xlsx')
-df_opinion_cust_need = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_opinion_cust_need_celulares.xlsx')
-customer_needs_one_word = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/customer_needs_one_word_celulares.xlsx', index_col=0)
-customer_needs_one_word = list(customer_needs_one_word[0])
-# print(df_alt)
-# print(df_opinion_cust_need)
-# print(customer_needs_one_word)
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_cleaned.xlsx')
+df_opinion_cust_need = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_cust_need_sent.xlsx')
+df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_cust_needs.xlsx', index_col=0)
+l_cust_needs_one_word, l_cust_needs_three_words = list(df_cust_needs['cust_needs_one_word']), list(df_cust_needs['cust_needs_three_words'])
+# customer_needs_one_word = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/customer_needs_one_word_celulares.xlsx', index_col=0)
+# customer_needs_one_word = list(customer_needs_one_word[0])
+print(df_alt), print(df_opinion_cust_need), print(df_cust_needs)
 
-# relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/relation_matrix.xlsx')
-atributos = list(df_alt.columns[1:])
-# customer_needs = ['precio', 'bateria', 'camara', 'pantalla', 'memoria', 'carga', 'cargador']
+# relation_matrix = pd.read_excel('/Users/nachomondino/Desktop/df_relation_matrix.xlsx')
+l_atributos = list(df_alt.columns[1:])
 
-df = to_attribute_value(df_alt, df_opinion_cust_need, create_relation_matrix(atributos, customer_needs_one_word))
-df.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_value_sent.xlsx')
-
+df = to_attribute_value(df_alt, df_opinion_cust_need, create_relation_matrix(l_atributos, l_cust_needs_one_word))
+df.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_attr_values_sent.xlsx')
+'''
 
 '''
 # Probando cant_opinines_ponderacion(df_attr_value_sent)
@@ -614,20 +603,6 @@ df = df.drop(['Unnamed: 0'],axis=1)
 print(df)
 cant_opinines_ponderacion(df)
 '''
-
-
-'''
-# Levanto el dataset --> en la vida real le paso df_cleanded
-df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_formateado.xlsx')
-df_opiniones = pd.read_excel('/Users/nachomondino/Desktop/df_opiniones_cleaned.xlsx')
-relevant_words = ['precio', 'bateria', 'camara', 'memoria', 'tamaño', 'pantalla', 'resolucion']
-df_sent = to_customer_needs(df_opiniones, relevant_words)
-atrib = ['precio', 'Marca']
-customer_needs = ['precio', 'bateria', 'camara']
-df_sent_x_modelo = to_attribute_value(df_modelos, df_sent, create_relation_matrix(atrib, customer_needs))
-'''
-
-
 
 
 '''

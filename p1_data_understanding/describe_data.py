@@ -24,16 +24,18 @@ def getting_to_know_data(df):
     # df.describe()  # basic descriptive statistics for all numeric columns  # Por que no funciona?
     # df.describe(include=object)  # basic descriptive statistics for all columns
 
-'''
-def main():
-    df_mod = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alternativas_celulares.xlsx")
-    df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opiniones_celulares.xlsx")
 
-    # Describe dataframe modelos
-    getting_to_know_data(df_mod)
+def main(df_alt, df_opi):
 
-    # Describe dataframe opiniones
+    print("Dataframe opiniones".center(120))
     getting_to_know_data(df_opi)
 
-main()
-'''
+    print("Dataframe alternativas".center(120))
+    getting_to_know_data(df_alt)
+    print()
+
+""" # Para correr pruebas en archivo independientemente de main.py
+df_alt = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx".format("celulares"))
+df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx".format("celulares"))
+main(df_alt, df_opi)
+"""

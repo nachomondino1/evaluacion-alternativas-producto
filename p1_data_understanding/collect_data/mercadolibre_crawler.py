@@ -3,19 +3,16 @@ from p1_data_understanding.utils.web_scraping.crawler import Crawler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 
 
 class MercadoLibreCrawler(Crawler):
     """ A tool to extract data from Mercado Libre using Web Scraping """
 
-    def __init__(self, driver, producto):
+    def __init__(self, driver):
         """Initialize attributes of the parent class."""
         super().__init__(driver)  # si dejase de ser hija de Crawler(), haria self.driver = driver
-        self.producto = producto  # Deberia ser un objeto de la clase producto...
 
     def get_publications_url(self):
         """
@@ -338,6 +335,13 @@ class MercadoLibreCrawler(Crawler):
         # SI LAS REGLAS NO ESTAN EN LA URL, NO ENCONTRE EL ID
         return None
 
+
+
+
+
+'''
+
+
 class Product:
     """ A simple model of a Mercado Libre's Product """
 
@@ -508,3 +512,4 @@ class Product:
         print('Los {} atributos mas frecuentes:'.format(len(atributos)), atributos)
 
         return atributos
+'''
