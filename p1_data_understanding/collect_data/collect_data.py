@@ -162,12 +162,14 @@ def data_extractor(df_alt, df_opi, home_page_url):
             d_data_alternativas = crawler.get_modelo_data(id_publicacion=id_alternativa, l_atributos=df_alt.columns[2:])  # excluyo id y precio
 
             # SI LA ALTERNATIVA ES NUEVA
+            print(is_alternative_new(df_alt, d_data_alternativas), is_alternative_new_orig(df_alt, d_data_alternativas))
             if is_alternative_new(df_alt, d_data_alternativas):
 
                 # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
                 df_alt = add_lines_to_dataframe(d_data_alternativas, df_alt)
                 print(df_alt)
 
+                '''
                 # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
                 url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
 
@@ -215,6 +217,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
                     # corto la extraccion de datos (parametro de corte 1)
                     ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
                     break
+                '''
 
             # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
             crawler.driver.back()
@@ -289,17 +292,39 @@ def select_relevant_attributes(d_attr_frec):
 
 
 # UTILIZADA EN DATA_EXTRACTOR()
-def is_alternative_new(df_alt, new_alt):
+def is_alternative_new(df_alt, d_new_alt):
     """
     Verifica si una nueva alternativa se repite o no con otra alternativa ya extraida
     :param df_alt: Dataframe alternativas
-    :param new_alt: Diccionario con las colummas del dataframe alternativas como keys y sus respectivos valores como
+    :param d_new_alt: Diccionario con las colummas del dataframe alternativas como keys y sus respectivos valores como
     values.
     :return: True si la nueva alternativa es nueva, de lo contrario, False.
     """
     # Defino variables
-    new_id = new_alt['id_alternativa']  # id de la nueva alternativa
-    new_atrib = list(new_alt.values())[2:]  # valores de atributos de la nueva alternativa (excluyo id y precio)
+    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
+    df_alt_with_new_alt = df_alt.copy()
+    df_alt_with_new_alt.loc[len(df_alt_with_new_alt)] = d_new_alt.values()
+    largo_new_df = len(df_alt_with_new_alt.drop_duplicates(subset=df_alt.columns[2:]))  # elimino duplicados
+    largo_df = len(df_alt)
+
+    # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
+    if id_alt_new in df_alt['id_alternativa']:
+        print("La alternativa tiene el mismo id que una alternativa ya extraida")
+        bool = False
+
+    # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
+    elif largo_df == largo_new_df:
+        print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
+        bool = False
+
+    else:
+        bool = True
+
+    return bool
+
+def is_alternative_new_orig(df_alt, d_new_alt):
+    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
+    new_atrib = list(d_new_alt.values())[2:]
 
     # Por alternativa
     for i in range(len(df_alt)):
@@ -309,9 +334,9 @@ def is_alternative_new(df_alt, new_alt):
         atrib_alt = list(df_alt.iloc[i, 2:])  # valores de atributos de la alternativa (excluyo id y precio)
 
         # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
-        if new_id == id_alt:
+        if id_alt_new == id_alt:
             print("La alternativa tiene el mismo id que una alternativa ya extraida")
-            print(new_id, id_alt)
+            print(id_alt_new, id_alt)
             return False
 
         # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
@@ -322,6 +347,7 @@ def is_alternative_new(df_alt, new_alt):
 
     # Si la alternativa nueva no se repite
     return True
+
 
 def add_lines_to_dataframe(d_data, df):
     """

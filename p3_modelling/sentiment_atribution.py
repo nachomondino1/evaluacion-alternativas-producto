@@ -93,8 +93,15 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
                         else:
                             # pero el sentiment de la frase entre comas es categorico tal como el de la opinion
                             if (sent_opi < -0.8 and sent_frase_entre_comas < -0.7) or (sent_opi > 0.8 and sent_frase_entre_comas > 0.7):
-                                print("La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
+                                print("c1) La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
                                 df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase_entre_comas)
+                                print(df_frases_cust_needs)
+
+                            # si el sentiment de la frase es categorico independientemente del de la opinion
+                            elif sent_frase_entre_comas > 0.9 or sent_frase_entre_comas < -0.9:  # nuevo
+                                print("c2) La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
+                                df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(
+                                    d_cust_needs_mentioned, sent_frase_entre_comas)
                                 print(df_frases_cust_needs)
 
                             else:
@@ -112,7 +119,6 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
 
                     # PRUEBA
                     if (sent_opi < -0.9 and sent_frase > 0.1 and sent_frase < 0.3) or (sent_opi > 0.9 and sent_frase > -0.3 and sent_frase < -0.1):
-                    # if (sent_opi < -0.9 and sent_frase > 0.6) or (sent_opi > 0.9 and sent_frase < -0.6):
                         print("Es probable que el sentiment de la frase sea incorrecto dado que el de la opinion es totalmente opuesto")
                         sent_frase_pond = 0.8 * sent_frase + 0.2 * sent_opi
                         print("Sentiment = {}    ; Sentiment ponderado = {} ".format(sent_frase, sent_frase_pond))
@@ -126,13 +132,18 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
                         df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
                         print(df_frases_cust_needs)
 
-
                 # SI CONTIENE ADJETIVOS
                 else:
                     if (sent_opi < -0.8 and sent_frase < -0.7) or (sent_opi > 0.8 and sent_frase > 0.7):
                         df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
                         print(df_frases_cust_needs)
-                        print("La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
+                        print("c1) La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
+
+                    # si el sentiment de la frase es categorico independientemente del de la opinion
+                    elif sent_frase > 0.9 or sent_frase < -0.9:  # nuevo
+                        df_frases_cust_needs.loc[len(df_frases_cust_needs)] = assign_sentiment(d_cust_needs_mentioned, sent_frase)
+                        print(df_frases_cust_needs)
+                        print("c2) La frase no contiene adjetivos pero se guardara el sentiment de todas maneras")
 
                     else:
                         print("La frase no contiene adjetivos")
@@ -147,15 +158,14 @@ def to_customer_needs(df_opiniones, customer_needs_one_word):
 
             # Obtengo promedio de sentiment en frases en que es mencionada
             sent_cn_opi = df_frases_cust_needs[customer_need].dropna().mean()
-            print("Customer need: {}, sentiment: {}".format(customer_need, sent_cn_opi))
+            # print("Customer need: {}, sentiment: {}".format(customer_need, sent_cn_opi))
 
             # Guardo el sentiment de la customer need en la opinion
             fila_df.append(sent_cn_opi)
 
         # GUARDO SENTIMENT DE LAS CUSTOMER NEEDS EN LA OPINION
         df_cust_needs_sent.loc[i] = fila_df
-        print("Fila:", fila_df)
-        # print(df_opinion_cust_needs)
+        # print("Fila:", fila_df)
 
     # EXPORTO DATAFRAME
     df_cust_needs_sent.to_excel('/Users/nachomondino/Desktop/df_cust_needs_sent.xlsx', 'Hoja de datos', index=False)

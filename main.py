@@ -68,7 +68,7 @@ def get_home_page_url(producto):
     return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
 
 def main():
-    '''
+
     # Escogo producto
     print(" (1) ELECCION DE PRODUCTO ".center(120, '#'))
     producto, home_page_url = choose_product()
@@ -139,7 +139,7 @@ def main():
     df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
     df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 
-    '''
+    
     print(" (4.2) CLUSTERING ".center(120))
     df_alt,df_alt_per_clust, df_alt_per_clust, df_brand_per_cluster =  clustering.main(df_alt, df_alt_cleaned, df_attr_values_sent)
 

@@ -31,22 +31,22 @@ def get_dict_related_words(df_alt):
     # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs
     d = {'aplicaciones': [' app '],
          'camara': [' fotos', 'imagenes', 'resolucion'],  # no incluiria: definicon, videos   # saco temporalmente 'selfie' y 'resolucion' # foto no pues si se refiere a la camara es "fotos". foto se confunde con la foto de la publicacion..
-         'bateria': ['duracion', ' carga ', ' autonomia '],
+         'bateria': ['duracion', ' carga ', ' autonomia'],
          'bluetooth': ['conexion ', ' empareja', ' sincroniz', ' vincula', ' desconect', ' conectar '],
-         'diseño': ['estetica'],
+         'diseño': ['estetica', 'tamaño'],
          'juegos': ['jueguito'],
-         'microfono': [' micro '],
+         'microfono': [' micro ', ' mic '],
          'material': ['construccion'],
          'memoria': ['almacenamiento', ' ram ', 'velocidad', 'espacio', ' ram,', ' fluid', 'capacidad', 'gb ', ' agil '],  # no incluiria: lag  # saco temporalmente ' rapid', ' lent'  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp"
          'marca': l_marcas,
-         'oreja': ['cabeza', 'comodo ', 'comodos', 'comodidad ', 'almohadillas', ' gomas ', ' oido'],
+         'oreja': ['cabeza', 'comodo', 'comodidad ', 'almohadillas', ' gomas ', ' oido'],
          'pantalla': [' imagen ', ' imagen,'],  # no incluiria: definicion
          'precio': ['costo', ' caro ', ' caro,', 'barato'],
-         'ruido': ['cancelacion', ' aisla'],
+         'ruido': ['cancelacion', ' aisla', 'noise cancelling'],
          'sistema': l_sistemas_operativos,
          'tamaño': [' peso ', ' pesad', ' livian'],
          "procesador": ["velocidad", "funcionamiento", 'software', ' rapid', ' lent', ' tilda', ' fluid', ' traba ', ' agil '],
-         'sonido': ['audio ', 'audio,' 'volumen', 'musica', 'escucha']
+         'sonido': ['audio ', 'audio,' 'volumen', 'musica', 'escucha', ' suena']
          }
     return d
 
