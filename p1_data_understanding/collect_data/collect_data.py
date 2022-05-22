@@ -15,7 +15,7 @@ def get_product_attributes(home_page_url):
     :return: Lista de atributos mas relevantes del producto
     """
     # DEFINO VARIABLES
-    PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
+    PAG_A_VISITAR = 20  # cantidad de publicaciones a visitar
     d_attr_frec = {}  # diccionario donde guardare los atributos y su frecuencia
 
     # INICIALIZO UN DRIVER
@@ -47,12 +47,10 @@ def get_product_attributes(home_page_url):
         if len(tags_attrs) == 0:  # un find_all() devuelve una lista vacia en lugar de None
             tags_attrs = bs.find_all('th', {'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'})  # Busco en seccion "Caracteristicas principales"
             tags_attrs2 = bs.find_all('span', {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})  # Busco en seccion "Otras caracteristicas"
-
             # Uno tags de ambas secciones
             for elemento in tags_attrs2:
                 tags_attrs.append(elemento)
-
-            print("Atributos en otras carac", tags_attrs)
+            # print("Atributos en otras carac: ", tags_attrs)
 
         # POR CADA TAG (que contiene un atributo)
         for tag in tags_attrs:
@@ -129,7 +127,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
     no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
 
     # Defino tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    SLEEP_MIN, SLEEP_MAX = 1, 2
+    SLEEP_MIN, SLEEP_MAX = 0.5, 2
 
     # Defino variables utiles
     l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
@@ -161,7 +159,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
             id_alternativa = crawler.get_publication_id(url_publicacion)
 
             # EXTRAIGO DATOS DE LA PUBLICACION
-            d_data_alternativas = crawler.get_modelo_data(id_alternativa, df_alt.columns[1:])
+            d_data_alternativas = crawler.get_modelo_data(id_publicacion=id_alternativa, l_atributos=df_alt.columns[2:])  # excluyo id y precio
 
             # SI LA ALTERNATIVA ES NUEVA
             if is_alternative_new(df_alt, d_data_alternativas):
@@ -230,7 +228,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
             # Hago click en la siguiente pagina
             crawler.driver.get(url_paginacion)
-            sleep(random.uniform(8, 10))  # Intentando humanizar mis acciones y tambien esperar a carga de nueva pagina
+            sleep(random.uniform(3, 5))  # Intentando humanizar mis acciones y tambien esperar a carga de nueva pagina
             pag_num += 1  # variable que si llega a <PAG_MAX>, hace cortar la extraccion de datos (parametro de corte 2)
 
         # Si no encontre la url de la siguiente pagina
@@ -262,7 +260,7 @@ def select_relevant_attributes(d_attr_frec):
     """
     # Defino variables
     frecuencias = list(d_attr_frec.values())
-    porc_frec_min = 0.3  # al menos en el 30% de las publicaciones
+    porc_frec_min = 0.2  # al menos en el 30% de las publicaciones
     l_atributos = []
     print("Los {} atributos y su frecuencia: {}".format(len(frecuencias), d_attr_frec))
 
@@ -425,266 +423,4 @@ def main(home_page_url):
 
 ''' # para correr pruebas en archivo independientemente de main.py
 main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
-'''
-
-"""
-def main():
-    # Pido producto a relevar al administrador
-    producto = str(input("Ingrese producto a relevar: "))
-
-    # Creo objeto de clase Product()
-    product = mercadolibre_crawler.Product(producto)  # despues lo saco
-
-    print("A) Validando producto ingresado...".center(120))
-    # Valido el producto buscado tal que no sea una busqueda tan amplia
-    product.search_validation()
-    
-    # Obtengo atributos o caracteristicas mas relevantes del producto
-    print("B) Buscando atributos del producto...".center(120))
-    product.atributos = product.get_product_attributes()
-    
-
-    # En base al producto a buscar, creo los dataframes
-    df_opiniones = dataframe_creator.create_dataframe_opiniones()
-    df_alternativas = dataframe_creator.create_dataframe_alternativas(product.atributos)
-
-    print("C) Extrayendo datos del producto...".center(120))
-    # Carga de datos a dataframes
-    df_opiniones, df_alternativas = data_extractor(product, df_opiniones, df_alternativas)
-    
-    return df_opiniones, df_alternativas
-
-"""
-
-
-'''
-def data_extractor(producto, df_opiniones, df_alternativas):
-    """
-    Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y los almacena en los
-    DataFrames pasados como parametro. Representa toda la logica de extraccion.
-    :param producto: String. Nombre de producto al cual extraer datos
-    :param df_opiniones: DataFrame vacio con columnas id_alternativa y opinion.
-    :param df_alternativas: DataFrame vacio con columnas id_alternativa, precio y una por cada campo especifico del
-    producto.
-    :return: Dataframes opiniones y alterenativas cargados con los datos extraidos del producto
-    """
-    # CREO OBJETO DE CLASE MercadoLibreCrawler(), TAL QUE TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
-    options = webdriver.ChromeOptions()
-    options.add_argument("start-maximized")
-    options.add_argument("enable-automation")
-    options.add_argument("--headless") # Hace que no se abra un web browser en tu compu
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-browser-side-navigation")
-    options.add_argument("--disable-gpu")
-    driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
-    crawler = MercadoLibreCrawler(driver, producto)
-
-    # DEFINO PARAMETROS DE CORTE, TIEMPOS DE ESPERA Y VARIABLES UTILES
-    # Defino parametros de corte de la extraccion
-    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.1, 30, 0  # param 1: De las ultimas <CANT_ULT_PUB> paginas, pido extraer  datos en al menos <porc_min_ult_pub> de ellas
-    pag_num, PAG_MAX = 0, 25  # param 2: Hasta pagina <PAG_MAX>, o bien, hasta la ultima
-    no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
-
-    # Defino tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    SLEEP_MIN, SLEEP_MAX = 1, 2
-
-    # Defino variables utiles
-    l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
-    historico_paginas = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
-    # a parametro de corte 2
-
-    # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO
-    crawler.driver.get(producto.home_page_url)  # hasta que no se carga toda la pagina, no sigue...
-
-    # POR PAGINA DE PAGINACION
-    while (ult_pub_sin_data == 0) and (pag_num < PAG_MAX) and (no_mas_paginas == 0):  # Hasta que los param de corte lo indiquen...
-
-        # EXTRAIGO URLS DE PUBLICACIONES DE LA PAGINA Y URL DE SIGUIENTE PAGINA
-        urls_publicaciones = crawler.get_publications_url()
-        url_paginacion = crawler.get_pagination_url()
-        print("Cantidad de pubs:", len(urls_publicaciones))
-
-        # POR CADA PUBLICACION DE LA PAGINA (tipicamente 1 pagina tiene 50 a 55 publicaciones)
-        for url_publicacion in urls_publicaciones:
-            print("Publicacion numero:", len(historico_paginas), ". URL:", url_publicacion)  # imprimo nro de pub y url
-
-            pagina_extraida = 0  # A priori, asumo que no pude extraer datos de la publicacion (param de corte 1)
-
-            # CLICKEO EN LA PUBLICACION
-            crawler.driver.get(url_publicacion)
-            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-            # OBTENGO SU IDENTIFICADOR DE PUBLICACION ("id_publicacion")
-            id_alternativa = crawler.get_publication_id(url_publicacion)
-
-            # EXTRAIGO DATOS DE LA PUBLICACION
-            d_data_alternativas = crawler.get_modelo_data(id_alternativa, crawler.producto.atributos)
-
-            # SI LA ALTERNATIVA ES NUEVA
-            if is_alternative_new(df_alternativas, d_data_alternativas):
-
-                # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
-                df_alternativas = dataframe_creator.add_lines_to_dataframe(d_data_alternativas, df_alternativas)
-                print(df_alternativas)
-
-                # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
-                url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
-
-                # SI EXISTE EL BOTON (en ese caso, la publicacion tiene opiniones)
-                if url_ver_todas_las_opiniones is not None:
-
-                    # CLICKEO EN BOTON "VER TODAS LAS OPINIONES"
-                    crawler.driver.get(url_ver_todas_las_opiniones)
-                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-                    # SI LAS OPINIONES SON NUEVAS (pues ≠ publicaciones pueden tener = opiniones)
-                    if crawler.are_opinions_new(l_prim_opiniones):
-
-                        pagina_extraida = 1  # Cambio su valor a 1 pues pude extraer datos de la pub (param de corte 1)
-
-                        # HAGO SCROLL DOWN PARA CARGAR TODAS LAS OPINIONES
-                        sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-                        crawler.ScrollDown()
-
-                        # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
-                        d_opiniones_alternativa = crawler.get_publication_opinions_data(id_alternativa)
-                        l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
-                        # publicacion para poder hacer la verificacion de opiniones nuevas
-                        df_opiniones = dataframe_creator.add_lines_to_dataframe(d_opiniones_alternativa, df_opiniones)
-                        print(df_opiniones)
-
-                    # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
-                    else:
-                        # ENTONCES NO EXTRAIGO OPINIONES
-                        print("OPINIONES REPETIDAS")
-
-                    # CLICKEO EN BOTON "VOLVER" PARA SALIR DE SECCION "VER TODAS LAS OPINIONES"
-                    crawler.driver.back()
-                    sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-                # SI NO EXISTE EL BOTON "VER TODAS LAS OPINIONES" (pub sin opiniones)
-                else:
-                    # ENTONCES NO EXTRAIGO OPINIONES
-                    print("PUBLICACION SIN OPINIONES")
-
-                # VERIFICO PARAMETRO DE CORTE
-                historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
-                # Si las ultimas publicaciones tienen muy pocos datos
-                if corte_extraccion_datos.ultimas_pub_sin_data(historico_paginas, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
-                    # corto la extraccion de datos (parametro de corte 1)
-                    ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
-                    break
-
-            # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
-            crawler.driver.back()
-            sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
-
-        # HAGO CLICK EN SIGUIENTE PAGINA DE PAGINACION
-        # Si encontre url de siguiente pagina
-        print("Proxima pagina a relevar: ", url_paginacion)
-        if url_paginacion is not None:
-
-            # Hago click en la siguiente pagina
-            crawler.driver.get(url_paginacion)
-            sleep(random.uniform(8, 10))  # Intentando humanizar mis acciones y tambien esperar a carga de nueva pagina
-            pag_num += 1  # variable que si llega a <PAG_MAX>, hace cortar la extraccion de datos (parametro de corte 2)
-
-        # Si no encontre la url de la siguiente pagina
-        else:
-            # Corto la extraccion de datos
-            no_mas_paginas = True  # parametro de corte 3
-
-        print(" CAMBIO DE PAGINA ".center(120, '#'))
-
-    # FINALIZADA LA EXTRACCION, CIERRO EL WEB BROWSER AUTOMATICO
-    crawler.driver.close()
-
-    # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
-    corte_extraccion_datos.explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
-
-    return df_opiniones, df_alternativas
-
-'''
-
-'''
-def get_product_attributes(home_page_url):
-    """
-    Obtiene los atributos mas relevantes de un producto a partir de los atributos mas frecuentes en las publicaciones
-    del producto en Mercado Libre.
-    :return: Lista de atributos mas relevantes del producto
-    """
-    # INICIALIZO PARAMETROS DE CORTE, DRIVER Y VARIABLES
-    PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
-
-    # Inicializo un nuevo driver que correra por detras (no abre Web Browser)
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-    driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
-
-    # Inicializo variables
-    d = {}  # diccionario donde guardare los atributos y su frecuencia
-    atributos = []  # lista donde guardare los atributos
-    l_url_publicaciones = []  # lista vacia en donde guardare los links de las publicaciones
-
-    # INGRESO A PAGINA PRINCIPAL DEL PRODUCTO A BUSCAR
-    driver.get(home_page_url)
-
-    # EXTRAIGO URLS DE PUBLICACIONES (recordar que 1 pag tiene entre 50 y 55 pubs)
-    # Busco todos los tags que contienen un link a una publicacion
-    tag_urls_publicaciones = driver.find_elements(By.XPATH,'//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
-
-    # Recorro cada tag (cada uno contiene un link)
-    for tag_url in tag_urls_publicaciones:
-        # Obtengo el atributo href (que es el url) del tag y lo guardo en la lista
-        l_url_publicaciones.append(tag_url.get_attribute("href"))
-
-    # POR CADA PUBLICACION
-    for publicacion in l_url_publicaciones[:PAG_A_VISITAR]:
-
-        # INGRESO A PUBLICACION
-        driver.get(publicacion)
-
-        # OBTENGO CODIGO HTML DE LA PUBLICACION USANDO LIBRERIA BEAUTIFULSOUP
-        pageSource = driver.page_source
-        bs = BeautifulSoup(pageSource, 'html.parser')
-
-        # BUSCO, EN EL CODIGO HTML, TAGS QUE CONTIENEN UN ATRIBUTO
-        # para publicaciones tipo 1 (atributos en seccion oculta "Ver mas caracteristicas")
-        tags_attrs = bs.find_all('th', {'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
-
-        # para publicaciones tipo 2 (atributos en secciones "Caracteristicas ppales" y "Otras caracteristicas"). Solo si la pub no es de tipo 1
-        if len(tags_attrs) == 0:  # un find_all() devuelve una lista vacia en lugar de None
-            tags_attrs = bs.find_all('th', {'class': 'andes-table__header andes-table__header--left ui-pdp-specs__table__column ui-pdp-specs__table__column-title'})  # Busco en seccion "Caracteristicas principales"
-            tags_attrs2 = bs.find_all('span',{'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"})  # Busco en seccion "Otras caracteristicas"
-
-            # Uno tags de ambas secciones
-            for elemento in tags_attrs2:
-                tags_attrs.append(elemento)
-
-            print("Atributos en otras carac", tags_attrs)
-
-        # POR CADA TAG (que contiene un atributo)
-        for tag in tags_attrs:
-
-            # OBTENGO EL ATRIBUTO (es el texto del tag)
-            attr = tag.text
-
-            # LE SUMO 1 A SU FRECUENCIA
-            if attr not in d.keys():  # si el atributo es nuevo
-                d[attr] = 1  # Lo agrego y le pongo frecuencia 1
-            else:  # Si el atributo no es nuevo
-                frec = d.get(attr)
-                d[attr] = frec + 1  # Obtengo su frecuencia y le sumo 1
-
-        # CLICKEO EN BOTON "VOLVER" PARA SALIR DE PUBLICACION
-        driver.back()
-
-    # FINALIZADA LA EXTRACCION, CIERRO EL WEB BROWSER AUTOMATICO
-    driver.close()
-    
-    l_atributos = select_relevant_attributes(d)
-
-    return atributos
 '''

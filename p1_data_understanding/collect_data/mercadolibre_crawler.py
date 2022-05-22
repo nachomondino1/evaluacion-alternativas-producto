@@ -174,13 +174,13 @@ class MercadoLibreCrawler(Crawler):
             print("Fallo la verificacion de opiniones nuevas. No se pudo extraer la primera opinion")
             return False
 
-    def get_modelo_data(self, id_publicacion, campos_especificos):
+    def get_modelo_data(self, id_publicacion, l_atributos):
         """
         Extrae valor del atributo precio y valores de los otros atributos (definidos segun de que producto se trata)
         de una publicacion de Mercado Libre
-        :param id_publicacion: Identificador de publicacion ("id_publicacion")
-        :param campos_especificos: Lista de campos especificos (o "atributos") del producto de Mercado Libre que deseo
-        extraer. Por ejemplo, "tamano de pantalla" para el producto "celulares". Su largo dependera de cada producto.
+        :param id_publicacion: Integer. Identificador de publicacion ("id_publicacion")
+        :param l_atributos: Lista de atributos del producto. Por ejemplo, "tamano de pantalla" para el producto
+        "celulares". Su largo dependera de cada producto.
         :return: Diccionario cuyas keys son cada campo a extraer de una publicacion (no solo son los atributos) y cuyos
         value son el valor que toma el respectivo campo para una publicacion en particular. Uso diccionario por la
         facilidad que representa transformarlo en fila/s de un DataFrame.
@@ -190,8 +190,7 @@ class MercadoLibreCrawler(Crawler):
 
         # ESPERO HASTA QUE APAREZCA LA SECCION "CARACTERISTICAS PRINCIPALES"
         try:
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
 
         # FINALMENTE
         finally:
@@ -213,14 +212,12 @@ class MercadoLibreCrawler(Crawler):
 
             # EXTRAIGO VALORES DE CAMPOS ESPECIFICOS PARA LA PUBLICACION CORRESPONDIENTE
             # Por campo especifico de los campos especificos (pasados como parametro)
-            for campo_especifico in campos_especificos:
+            for atributo in l_atributos:
 
                 # Obtengo el tag que lo contiene. Este podria estar en seccion "Caracteristicas pricipales" o en
                 # "Otras caracteristicas"
-                tag_attr = bs.find('th', text=campo_especifico)
-                tag_attr_otras_carac = bs.find('span',
-                                               {'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},
-                                               text=campo_especifico)
+                tag_attr = bs.find('th', text=atributo)
+                tag_attr_otras_carac = bs.find('span',{'class': "ui-pdp-color--BLACK ui-pdp-size--XSMALL ui-pdp-family--BOLD"},text=atributo)
 
                 # Si el tag esta en "Ver mas caracteristicas" o "Caracteristicas pricipales"
                 if tag_attr is not None:
@@ -241,7 +238,7 @@ class MercadoLibreCrawler(Crawler):
                 # Si no esta en ningun seccion
                 else:
                     # Guardo el atributo con valor None en el diccionario
-                    data[campo_especifico] = None
+                    data[atributo] = None
                     # print("Atributo:", campo_especifico,"Valor:", None)
 
             # print("Fila a cargar", d)

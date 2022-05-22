@@ -112,7 +112,7 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
     :return: Dataframe alternativas sin alternativas con valores mal cargados
     """
     # DEFINO VARIABLE
-    l_idx_alt_a_borrar = []  # lista de indices de alternativas a borrar
+    l_idx_alt_a_borrar = set()  # set de indices de alternativas a borrar (una alternativa puede tener mas de un outlier)
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df_alt.columns[2:]:  #excluyo id y precio
@@ -162,7 +162,7 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
                             # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
                             else:
                                 # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
-                                l_idx_alt_a_borrar.append(idx)
+                                l_idx_alt_a_borrar.add(idx)
                                 print("Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
 
                     # SI SU FRECUENCIA ES ALTA
@@ -276,7 +276,7 @@ def delete_attr_x_values(df):
 
         # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
         else:
-            print("Se especifico que la columna no debe ser revisada")
+            print("Se especifico que la columna no debe ser revisada.")
 
     print("COLUMNAS ELIMINADAS: ", col_eliminadas)
 
@@ -408,7 +408,7 @@ def main(df_alt, df_opi):
     print()
 
     print("3.2.2 Dataframe Opiniones: Preparando opiniones...".center(120))
-    df_opi = delete_date_of_issue_from_opinion(df_opiniones=df_opi)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
+    df_opi = delete_date_of_issue_from_opinion(df_opi)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
     df_opi_tokenizado = df_opi.copy()
     df_opi_tokenizado = clean_opinions(df_opi_tokenizado)  # Limpio las opiniones
     print()
@@ -431,49 +431,4 @@ def main(df_alt, df_opi):
     df_alt = delete_attr_x_values(df_alt)
     print()
 
-    return df_alt, df_opi_tokenizado
-
-
-'''
-def main para hacer pruebas en este archivo independientemente de main.py
-def main():  # esto lo implemento en main.py, dsp de terminar el archivo, la paso...
-    # Levanto el dataframe
-    df_modelos = pd.read_excel('/Users/nachomondino/Desktop/df_modelos_formateado.xlsx')
-    # df_modelos = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_modelos_celulares.xlsx')
-    df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opiniones_celulares.xlsx')
-
-    # 1) ELIMINO NONE VALUES
-    print("+++ (1) ELIMINO NONE VALUES +++")
-    # df_opiniones.dropna()  # borra las pocas filas que no tienen title
-
-    # 2) ELIMINO FILAS REPETIDAS --> ojo que tiene que ser sin id...
-    print("+++ (2) ELIMINO FILAS REPETIDAS +++")
-    # df_opiniones = df_opiniones.drop(delete_repeated_rows(df_opiniones['content']))  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
-    # print(df_opiniones.shape)
-
-    # 3) CATEGORIZO VARIABLES NUMERICAS
-    print("+++ (3) CATEGORIZO CAMPOS NUMERICOS CONTINUOS +++")
-    # df_modelos.iloc[:, 1:] = categorize_numeric_columns(df_modelos.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
-    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_categorizado.xlsx', 'Hoja de datos', index=False)
-
-    # 4) ELIMINO CAMPOS ESPECIFICOS SEGUN CANTIDAD DE VALORES Y CANTIDAD DE OPINIONES POR VALOR
-    print("+++ (4) ELIMINO CAMPOS CONSTANTES, O BIEN, CONTINUOS +++")
-    # ESTA NO df_modelos.iloc[:, 2:] = delete_attr_x_values(df_modelos.iloc[:, 2:])  # elimino columnas que toman 1 o muchos valores # IndexError: single positional indexer is out-of-bounds (creo que era porque el df que devolvia la funcion tenia un largo distinto?)
-    # df_modelos = delete_attr_x_values(df_modelos)  # elimino columnas que toman 1 o muchos valores # IndexError: single positional indexer is out-of-bounds
-    # df_modelos.to_excel('/Users/nachomondino/Desktop/df_modelos_cleaned.xlsx', 'Hoja de datos', index=False)
-
-    # 5) PREPARACION DE OPINIONES
-    print("+++ (5) PREPARACION DE OPINIONES +++")
-    # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
-    df_opiniones = correct_opinion_column(df_opiniones)
-
-    # Limpio las opiniones
-    df_opiniones_tokenizado, df_cleaned_opinions = text_preparation(df_opiniones['content'])  # Alternativa 2
-    print(df_cleaned_opinions)
-
-    # tal vez cleaned() que devuelva solo el df_cleaned y customeerr needs lo tokeniza y obtiene las customer needs... OJO que las funciones de prep_texto las hice con token...
-    # si el df_cleaned no lo uso para los modelos pues no mejoran el sentiment, entonces no lo uso...
-
-
-main()
-'''
+    return df_alt, df_opi, df_opi_tokenizado

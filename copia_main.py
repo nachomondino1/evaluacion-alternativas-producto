@@ -79,9 +79,14 @@ def main():
     # Exporto data
     df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
     df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
-
-
     '''
+    
+    # Levanto el dataframe ES PRUEBA DE (3)
+    producto = 'tv'
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
+    df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
+
+
     print(" (2.2) DESCRIBE DATA ".center(120))
     describe_data.main(df_alt, df_opi)
 
@@ -92,11 +97,6 @@ def main():
     # df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
     # df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
 
-    """
-    # Levanto el dataframe ES PRUEBA DE (3)
-    # df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
-    # df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))   
-    """
 
     print(" (3) DATA PREPARATION ".center(120, "#"))
     print(" (3.1) FORMAT DATA ".center(120))
@@ -104,7 +104,7 @@ def main():
     print("Exporto Dataframe alternativas con precio corregido pues sera utilizado para ser presentado al cliente")
     df_alt_correct_price.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 
-    print("(3.2) CLEAN DATA ".center(120))
+    print(" (3.2) CLEAN DATA ".center(120))
     df_alt_cleaned, df_opi_tokenizado = clean_data.main(df_alt_formated, df_opi)
 
     print(" (3.3) CONSTRUCT DATA ".center(120))
@@ -117,6 +117,7 @@ def main():
     df_opi_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto))
     # Exporto dataframe de customer needs del producto
     df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
+
 
     print(" (4) MODELLING ".center(120, "#"))
     print(" (4.1) ATRIBUCION ".center(120))

@@ -6,6 +6,7 @@ from p2_data_preparation import format_data, clean_data, construct_data
 from p3_modelling import sentiment_atribution, clustering
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+from p3_modelling.utils import diccionario_palabras_relacionadas
 
 def choose_product():
     # Pido producto a relevar al administrador
@@ -67,17 +68,25 @@ def get_home_page_url(producto):
     return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
 
 def main():
+    '''
     # Escogo producto
     print(" (1) ELECCION DE PRODUCTO ".center(120, '#'))
     producto, home_page_url = choose_product()
     print("Pagina principal de mercado libre: ", home_page_url), print()
 
 
-
     print(" (2) DATA UNDERSTANDING ".center(120, '#'))
     print(" (2.1) COLLECT INITIAL DATA ".center(120))
-    # df_alt, df_opi = collect_data.main(home_page_url)
+    df_alt, df_opi = collect_data.main(home_page_url)
+
+    # Exporto data
+    df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
+    df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
+
+
+    '''
     # Prueba
+    producto = "auriculares"
     df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
 
@@ -104,11 +113,14 @@ def main():
     df_alt_correct_price.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 
     print("(3.2) CLEAN DATA ".center(120))
-    df_alt_cleaned, df_opi_tokenizado = clean_data.main(df_alt_formated, df_opi)
+    df_alt_cleaned, df_opi, df_opi_tokenizado = clean_data.main(df_alt_formated, df_opi)  # retorna df_opi porque debo borrar dupl, nan y fecha de emision (pero no tokenizar, ni nada)
+
+    # Inicializo diccionario de palabras relacionadas
+    diccionario_palabras_relacionadas.main(df_alt_cleaned)
 
     print(" (3.3) CONSTRUCT DATA ".center(120))
     df_alt_cleaned, df_cust_needs = construct_data.main(df_alt_cleaned, df_opi_tokenizado)
-    l_cust_needs_one_word = df_cust_needs['cust_needs_one_word']  # customer needs de una palabra
+    l_cust_needs_one_word = list(df_cust_needs['cust_needs_one_word'])  # customer needs de una palabra
 
     # EXPORTO DATAFRAMES
     # Exporto dataframes alternativas cleaned y opiniones cleaned
@@ -117,7 +129,7 @@ def main():
     # Exporto dataframe de customer needs del producto
     df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
 
-    '''
+
     print(" (4) MODELLING ".center(120, "#"))
     print(" (4.1) ATRIBUCION ".center(120))
     df_cust_need_sent, df_relation_matrix, df_attr_values_sent = sentiment_atribution.main(df_alt_cleaned, df_opi, l_cust_needs_one_word)
@@ -127,6 +139,7 @@ def main():
     df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
     df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 
+    '''
     print(" (4.2) CLUSTERING ".center(120))
     df_alt,df_alt_per_clust, df_alt_per_clust, df_brand_per_cluster =  clustering.main(df_alt, df_alt_cleaned, df_attr_values_sent)
 

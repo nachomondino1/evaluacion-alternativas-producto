@@ -2,6 +2,7 @@
 import pandas as pd
 from pysentimiento import create_analyzer
 import stanza
+import pickle
 
 pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')
 
@@ -288,6 +289,12 @@ def words_mentioned_in_text(text, words):
     :return: Diccionario cuyas keys son cada palabra y cuyos values son 1 o 0 segun si la palabra es mencionada en el
     texto o no respectivamente.
     """
+    find_related_words = lambda word, d_rel_words: [word] + d_rel_words[word] if word in d_rel_words.keys() else [word]
+
+    # Importo diccionario de palabras relacionadas
+    with open("d_rel_words.pkl", "rb") as tf:
+        d_rel_words = pickle.load(tf)
+
     # Inicializo el diccionario a retornar
     d = {}
     for word in words:
@@ -297,7 +304,8 @@ def words_mentioned_in_text(text, words):
     for word in words:
 
         # BUSCO PALABRAS RELACIONADAS A LA WORD (para identificar mejor customer need en frase)
-        palabras_a_buscar = find_related_words(word)
+        # palabras_a_buscar = find_related_words(word)
+        palabras_a_buscar = find_related_words(word, d_rel_words)
 
         # POR PALABRA A BUSCAR (customer need y, si tiene, sus palabras relacionadas)
         for palabra_a_buscar in palabras_a_buscar:
@@ -312,44 +320,13 @@ def words_mentioned_in_text(text, words):
 
     return d
 
-def find_related_words(palabra):  # diccionario que mantener actualizado
+def sentiment(analyzer, sentence):  # sacar param analyuzer....
     """
-    Obtiene palabras relacionadas a la palabra pasada como parametro
-    :param palabra: String
-    :return: Lista de palabras relacionadas (incluido el string)
+    Calcula el score (sentiment) de una frase
+    :param analyzer:
+    :param sentence: String. Cadena de texto
+    :return: Score (sentiment) de frase
     """
-    # Defino funcion que busca palabras relacionadas a la palabra en diccionario de palabras relacionadas
-    search_rel_words_in_dict = lambda word, d_rel_words: [word] + d_rel_words[word] if palabra in d_rel_words.keys() else [word]
-
-    # Defino palabras relacionadas a algunas caracteristicas especificas   # deberia definirlos automaticamente segun valores unicos de atrib del producto?
-    marcas = ["xiaomi", "quantum", 'philco', 'motorola', 'samsung', 'kodak', 'alcatel', 'nokia', 'sansei', ' zte', 'energizer',
-              ' tcl', 'ipro', ' lg ', ' cat ', 'apple', 'blackview', 'p&s mobile', 'ulefone', 'hyundai', ' blu ', 'ruggear',
-              'excess', 'noblex', 'realme ', 'panacom', 't-36', ' asus ', ' sony', 'oneplus', 'microsoft', 'kanji', ' logic ',
-              'doogee', 'infinix', 'huawei', 'blackberry', 'cyrus', ' luo ']
-
-    sistemas_operativos = ['android', 'threadx', ' ios ', 's30 +', 'kaios', 'nokia', 'windows phone', 'kaistore', 'blackberry os']
-
-    # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs
-    d = {'aplicaciones': [' app '],
-         'camara': [' fotos', 'imagenes', 'resolucion'], # no incluiria: definicon, videos   # saco temporalmente 'selfie' y 'resolucion' # foto no pues si se refiere a la camara es "fotos". foto se confunde con la foto de la publicacion..
-         'bateria': ['duracion'],
-         'diseño': ['estetica'],
-         'juegos': ['jueguito'],
-         'memoria': ['almacenamiento', ' ram ', 'velocidad', 'espacio', ' ram,', ' fluid', 'capacidad', 'gb ', ' agil '],  # no incluiria: lag  # saco temporalmente ' rapid', ' lent'  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp"
-         'marca': marcas,
-         'pantalla': [' imagen ', ' imagen,'],  # no incluiria: definicion
-         "precio": ['costo', ' caro ', ' caro,', 'barato'],
-         'sistema': sistemas_operativos,
-         'tamaño': [' peso ', ' pesad', ' livian'],
-         "procesador": ["velocidad", "funcionamiento", 'software', ' rapid', ' lent', ' tilda', ' fluid', ' traba ', ' agil '],
-         'sonido': ['audio ', 'audio,' 'volumen', 'musica']
-         }
-
-    palabras_a_buscar = search_rel_words_in_dict(palabra, d)
-    return palabras_a_buscar
-
-def sentiment(analyzer, sentence):
-
     # Obtengo sentiment de sentence
     pred = analyzer.predict(sentence)  # ejemplo de output: AnalyzerOutput(output=NEU, probas={NEU: 0.802, NEG: 0.188, POS: 0.010})
 
@@ -363,7 +340,6 @@ def sentiment(analyzer, sentence):
 def assign_sentiment(d_cust_needs_mentioned, sent):
     """
     # Segun si es mencionado o no en texto, asigno sentiment de frase o None
-
     :param d_cust_needs_mentioned:
     :param sent:
     :return:
@@ -388,34 +364,35 @@ def assign_sentiment(d_cust_needs_mentioned, sent):
 
 def contains_adjective(text):
     """
-    Identifica si la palabra es un sustantivo o no
-    :param word: Palabra
-    :return: True si la palabra es sustantivo, o bien, False
+    Identifica si una cadena de texto tiene al menos un adjetivo
+    :param text: String. Cadena de texto
+    :return: True si el texto tiene al menos un adjetivo, de lo contrario, False
     """
     # Proceso palabra
     doc = pos_tagger(text)
 
-    # Por sentence del texto
+    # Por frase del texto
     for i, sent in enumerate(doc.sentences):
 
         # Por palabra
         for word in sent.words:
 
             # Si es adjetivo
-            if word.pos in ["ADJ"]:
+            if word.pos == "ADJ":
+
+                # La frase contiene al menos un adjetivo
                 return True
 
-    return False  # retorno False
+    # La frase no contiene adjetivos
+    return False
 
 def conviene_separar_comas(text):
     """
-
-    :param text:
-    :return:
+    Determina si es o no conveniente separar una frase segun las comas que tenga
+    :param text: String. Cadena de texto.
+    :return: True si conviene separar en comas, o bien, False
     """
-
-    # Determina si conviene o no seperar por coma la frase
-
+    # Separo frase segun comas
     l_frase_entre_comas = text.split(",")
 
     # Por frase entre comas
@@ -425,11 +402,13 @@ def conviene_separar_comas(text):
         palabras_frase = frase.split()
         cant_palabras = len(palabras_frase)
 
-        # Si tiene un largo menor de 3 palabras y no tiene adejetivos
-        # if cant_palabras < 3:
+        # Si la frase tiene una sola palabra
         if cant_palabras <= 1:
 
+            # y no es un adejetivo
             if not contains_adjective(frase):
+
+                # No conviene separar por comas
                 return False
 
     return True
@@ -549,17 +528,19 @@ def quantity_opinions_weighing(df_attr):
 
     return df
 
-
 def main(df_alt_cleaned, df_opi, l_cust_needs_one_word):
-    print("3.1.1 Atribuyo sentiment a customer needs...".center(120))
+
+    print("4.1.1 Atribuyo sentiment a customer needs...".center(120))
     df_cust_need_sent = to_customer_needs(df_opi, l_cust_needs_one_word)  # df_opi falta eliminar acentos...
 
-    print("3.1.2 Creo matriz de relaciones...".center(120))
+    print("4.1.2 Creo matriz de relaciones...".center(120))
     df_relation_matrix = create_relation_matrix(df_alt_cleaned.columns[1:], l_cust_needs_one_word)  # incluyo el precio
 
-    print("3.1.3 Atribuyo sentiment a valores de los atributos del producto...".center(120))
+    print("4.1.3 Atribuyo sentiment a valores de los atributos del producto...".center(120))
     df_attr_values_sent = to_attribute_value(df_alt_cleaned, df_cust_need_sent, df_relation_matrix)
     return df_cust_need_sent, df_relation_matrix, df_attr_values_sent
+
+
 
 # Para correr pruebas
 ''' # Probando to_customer_needs

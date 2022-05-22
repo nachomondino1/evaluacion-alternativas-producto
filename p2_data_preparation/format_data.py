@@ -105,11 +105,14 @@ def string_column_to_numeric_column(df):
     # densidad de imagen a ppi, unidades de carga ekectrica a mah, unidades de cant de pixeles a mpx
     d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA
          "g": 1/1000, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO
-         '"': 25.24, 'pulgadas': 25.24 , 'in': 25.24, 'mm': 1, 'cm': 100, 'm': 1000,  # UNIDADES DE LONGITUD
+         '"': 25.24, 'pulgadas': 25.24 , 'in': 25.24, 'mm': 1, 'cm': 100, 'ft': 304.8,'m': 1000,  # UNIDADES DE LONGITUD
          'm2': 1, 'ha': 10000,  # UNIDADES DE LONGITUD
          'ppi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN
          'mah': 1, 'ah': 1000, # UNIDADES DE CARGA ELECTRICA
          'px': 1/1000000, 'mpx': 1, # CANTIDAD DE PIXELES
+         'h': 1,  # UNIDAD DE TIEMPO
+         'ω': 1, 'mo': 1, 'o': 1,  # UNIDAD DE IMPEDANCIA
+         'db': 1  # UNIDAD DE RELACION ENTRE DOS VALORES DE PRESION SONORA, O TEENSION Y POTENCIA ELECTRICA
          }
 
     # POR COLUMNA DEL DATAFRAME
