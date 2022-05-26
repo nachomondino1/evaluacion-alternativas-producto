@@ -2,8 +2,8 @@
 import pandas as pd
 import random
 from time import sleep
-from selenium import webdriver
 from p1_data_understanding.collect_data.mercadolibre_crawler import MercadoLibreCrawler
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
@@ -15,13 +15,10 @@ def get_product_attributes(home_page_url):
     :return: Lista de atributos mas relevantes del producto
     """
     # DEFINO VARIABLES
-    PAG_A_VISITAR = 20  # cantidad de publicaciones a visitar
+    PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
     d_attr_frec = {}  # diccionario donde guardare los atributos y su frecuencia
-
-    # INICIALIZO UN DRIVER
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Hace que no se abra un web browser en tu compu
-    crawler = MercadoLibreCrawler(driver=webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options))  # Defino a Chrome como Web Browser)
+    SLEEP_MIN, SLEEP_MAX = 1, 2
+    crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DEL PRODUCTO A BUSCAR
     crawler.driver.get(home_page_url)
@@ -34,6 +31,7 @@ def get_product_attributes(home_page_url):
 
         # INGRESO A PUBLICACION
         crawler.driver.get(publicacion)
+        sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
         # OBTENGO CODIGO HTML DE LA PUBLICACION USANDO LIBRERIA BEAUTIFULSOUP
         pageSource = crawler.driver.page_source
@@ -42,6 +40,7 @@ def get_product_attributes(home_page_url):
         # BUSCO, EN EL CODIGO HTML, TAGS QUE CONTIENEN UN ATRIBUTO
         # para publicaciones tipo 1 (atributos en seccion oculta "Ver mas caracteristicas")
         tags_attrs = bs.find_all('th', {'class': "andes-table__header andes-table__header--left ui-vpp-striped-specs__row__column ui-vpp-striped-specs__row__column--id"})
+        sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
         # para publicaciones tipo 2 (atributos en secciones "Caracteristicas ppales" y "Otras caracteristicas"). Solo si la pub no es de tipo 1
         if len(tags_attrs) == 0:  # un find_all() devuelve una lista vacia en lugar de None
@@ -54,49 +53,42 @@ def get_product_attributes(home_page_url):
 
         # POR CADA TAG (que contiene un atributo)
         for tag in tags_attrs:
-
-            # OBTENGO EL ATRIBUTO (es el texto del tag)
+            # OBTENGO EL ATRIBUTO(es el texto del tag)
             attr = tag.text
-
-            # LE SUMO 1 A SU FRECUENCIA
+            # SUMO UNO A SU FRECUENCIA
             if attr not in d_attr_frec.keys():  # si el atributo es nuevo
                 d_attr_frec[attr] = 1  # Lo agrego y le pongo frecuencia 1
             else:  # Si el atributo no es nuevo
-                frec = d_attr_frec.get(attr)  # creo que con un d_attr_frec[attr] += 1 ya es suficiente, probar!!!
-                d_attr_frec[attr] = frec + 1  # Obtengo su frecuencia y le sumo 1
+                d_attr_frec[attr] += 1  # le sumo 1 a su frecuencia
 
         # CLICKEO EN BOTON "VOLVER" PARA SALIR DE PUBLICACION
         crawler.driver.back()
+        sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
     # FINALIZADA LA EXTRACCION, CIERRO EL WEB BROWSER AUTOMATICO
     crawler.driver.close()
 
     # SELECCIONO LOS ATRIBUTOS RELEVANTES
     l_atributos = select_relevant_attributes(d_attr_frec)
-
     return l_atributos
 
-def create_dataframe_alternativas(campos_especificos):
+def create_dataframe_alternativas(atributos):
     """
-    Crea DataFrame de alternativas con los nombres de las columnas correspondientes y sin filas (vacio).
-    Los nombres de las columnas dependeran de cada producto, por lo que, son pasados como parametro.
-    :param campos_especificos: Lista de campos especificos (o "atributos") del producto de Mercado Libre que deseo
-        extraer. Por ejemplo, "tamano de pantalla" para el producto "celulares". Su largo dependera de cada producto.
+    Inicializo Dataframe alternativas a partir de los atributos del producto.
+    :param campos_especificos: Lista atributos de un producto. Por ejemplo, "tamano de pantalla" para el producto
+    "celulares". El largo de la lista dependera de cada producto.
     :return: Dataframe "alternativas" con los nombres de las columnas correspondientes y sin filas (vacio)
     """
-    # DEFINO LISTA CON CAMPOS QUE SON INDEPENDIENTES DEL PRODUCTO
+    # INICIALIZO LISTA CON CAMPOS A EXTRAER CON CAMPOS "ID_ALTERNATIVA" Y "PRECIO" (INDEPENDIENTES DEL PRODUCTO)
     campos_a_extraer = ['id_alternativa', 'precio']
 
-    # POR CAMPO ESPECIFICO
-    for campos_especifico in campos_especificos:
+    # AGREGO COMPOS ESPECIFICOS DEL PRODUCTO A CAMPOS A EXTRAER
+    # Por campo especifico
+    for atributo in atributos:
+        # Lo agrego a lista de campos a extraer
+        campos_a_extraer.append(atributo)
 
-        # LO AGREGO A LA LISTA ANTERIOR
-        campos_a_extraer.append(campos_especifico)
-
-    # CREO DATAFRAME DONDE CADA ELEMENTO DE LA LISTA ES EL NOMBRE DE UNA DE SUS COLUMNAS
-    df = pd.DataFrame(columns=campos_a_extraer)
-
-    return df
+    return pd.DataFrame(columns=campos_a_extraer)
 
 def data_extractor(df_alt, df_opi, home_page_url):
     """
@@ -107,32 +99,17 @@ def data_extractor(df_alt, df_opi, home_page_url):
     :param df_opi: DataFrame vacio con columnas id_alternativa y opinion.
     :return: Dataframes opiniones y alterenativas cargados con los datos extraidos del producto
     """
-    # CREO OBJETO DE CLASE MercadoLibreCrawler(), TAL QUE TENGO DISPONIBLE METODOS PARA HACER WEB SCRAPING
-    options = webdriver.ChromeOptions()
-    options.add_argument("start-maximized")
-    options.add_argument("enable-automation")
-    options.add_argument("--headless") # Hace que no se abra un web browser en tu compu
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-browser-side-navigation")
-    options.add_argument("--disable-gpu")
-    driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
-    crawler = MercadoLibreCrawler(driver)
-
     # DEFINO PARAMETROS DE CORTE, TIEMPOS DE ESPERA Y VARIABLES UTILES
     # Defino parametros de corte de la extraccion
-    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.1, 30, 0  # param 1: De las ultimas <CANT_ULT_PUB> paginas, pido extraer  datos en al menos <porc_min_ult_pub> de ellas
+    PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB, ult_pub_sin_data = 0.1, 40, 0  # param 1: De las ultimas <CANT_ULT_PUB> paginas, pido extraer  datos en al menos <porc_min_ult_pub> de ellas
     pag_num, PAG_MAX = 0, 25  # param 2: Hasta pagina <PAG_MAX>, o bien, hasta la ultima
     no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
-
-    # Defino tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    SLEEP_MIN, SLEEP_MAX = 0.5, 2
-
-    # Defino variables utiles
+    # Defino otras variables
+    SLEEP_MIN, SLEEP_MAX = 1, 2  # tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
     l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
     historico_paginas = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
     # a parametro de corte 2
+    crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO
     crawler.driver.get(home_page_url)  # hasta que no se carga toda la pagina, no sigue...
@@ -162,14 +139,12 @@ def data_extractor(df_alt, df_opi, home_page_url):
             d_data_alternativas = crawler.get_modelo_data(id_publicacion=id_alternativa, l_atributos=df_alt.columns[2:])  # excluyo id y precio
 
             # SI LA ALTERNATIVA ES NUEVA
-            print(is_alternative_new(df_alt, d_data_alternativas), is_alternative_new_orig(df_alt, d_data_alternativas))
             if is_alternative_new(df_alt, d_data_alternativas):
 
                 # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
                 df_alt = add_lines_to_dataframe(d_data_alternativas, df_alt)
-                print(df_alt)
+                # print(df_alt)
 
-                '''
                 # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
                 url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
 
@@ -194,7 +169,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
                         l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
                         # publicacion para poder hacer la verificacion de opiniones nuevas
                         df_opi = add_lines_to_dataframe(d_opiniones_alternativa, df_opi)
-                        print(df_opi)
+                        # print(df_opi)
 
                     # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
                     else:
@@ -210,6 +185,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
                     # ENTONCES NO EXTRAIGO OPINIONES
                     print("PUBLICACION SIN OPINIONES")
 
+                '''
                 # VERIFICO PARAMETRO DE CORTE
                 historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
                 # Si las ultimas publicaciones tienen muy pocos datos
@@ -228,12 +204,10 @@ def data_extractor(df_alt, df_opi, home_page_url):
         # Si encontre url de siguiente pagina
         print("Proxima pagina a relevar: ", url_paginacion)
         if url_paginacion is not None:
-
             # Hago click en la siguiente pagina
             crawler.driver.get(url_paginacion)
             sleep(random.uniform(3, 5))  # Intentando humanizar mis acciones y tambien esperar a carga de nueva pagina
             pag_num += 1  # variable que si llega a <PAG_MAX>, hace cortar la extraccion de datos (parametro de corte 2)
-
         # Si no encontre la url de la siguiente pagina
         else:
             # Corto la extraccion de datos
@@ -252,6 +226,27 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
 
 ################################################ FUNCIONES SECUNDARIAS ################################################
+# UTILIZADA EN GET_PRODUCT_ATTRIBUTES() Y EN DATA_EXTRACTOR()
+def inicialize_driver():
+    """
+    Inicializa un chrome driver automatico
+    :return: Chrome driver automatico
+    """
+    # Defino opciones del webdriver
+    options = webdriver.ChromeOptions()
+    options.add_argument("start-maximized")
+    options.add_argument("enable-automation")
+    options.add_argument("--headless") # Hace que no se abra un web browser en tu compu
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-browser-side-navigation")
+    options.add_argument("--disable-gpu")
+
+    # Inicializo el webdriver
+    return webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
+
+
 # UTILIZADA EN GET_PRODUCT_ATTRIBUTES()
 def select_relevant_attributes(d_attr_frec):
     """
@@ -276,8 +271,13 @@ def select_relevant_attributes(d_attr_frec):
         # Si su porcentaje de frecuencia es mayor al minimo
         if porc_frec > porc_frec_min:
 
-            # Solicito al administrador si tendra en cuena o no el atributo
-            input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
+            while True:
+
+                # Solicito al administrador si tendra en cuena o no el atributo
+                input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
+
+                if input_admin == 0 or input_admin == 1:
+                    break
 
             # Si lo tiene en cuenta
             if input_admin == 1:
@@ -292,39 +292,11 @@ def select_relevant_attributes(d_attr_frec):
 
 
 # UTILIZADA EN DATA_EXTRACTOR()
-def is_alternative_new(df_alt, d_new_alt):
-    """
-    Verifica si una nueva alternativa se repite o no con otra alternativa ya extraida
-    :param df_alt: Dataframe alternativas
-    :param d_new_alt: Diccionario con las colummas del dataframe alternativas como keys y sus respectivos valores como
-    values.
-    :return: True si la nueva alternativa es nueva, de lo contrario, False.
-    """
+def is_alternative_new(df_alt, d_new_alt):  # creo que funciona mas lento que la nueva...
+
     # Defino variables
     id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
-    df_alt_with_new_alt = df_alt.copy()
-    df_alt_with_new_alt.loc[len(df_alt_with_new_alt)] = d_new_alt.values()
-    largo_new_df = len(df_alt_with_new_alt.drop_duplicates(subset=df_alt.columns[2:]))  # elimino duplicados
-    largo_df = len(df_alt)
-
-    # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
-    if id_alt_new in df_alt['id_alternativa']:
-        print("La alternativa tiene el mismo id que una alternativa ya extraida")
-        bool = False
-
-    # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
-    elif largo_df == largo_new_df:
-        print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
-        bool = False
-
-    else:
-        bool = True
-
-    return bool
-
-def is_alternative_new_orig(df_alt, d_new_alt):
-    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
-    new_atrib = list(d_new_alt.values())[2:]
+    l_atrib_new = list(d_new_alt.values())[2:]
 
     # Por alternativa
     for i in range(len(df_alt)):
@@ -334,20 +306,14 @@ def is_alternative_new_orig(df_alt, d_new_alt):
         atrib_alt = list(df_alt.iloc[i, 2:])  # valores de atributos de la alternativa (excluyo id y precio)
 
         # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
-        if id_alt_new == id_alt:
-            print("La alternativa tiene el mismo id que una alternativa ya extraida")
+        if (id_alt_new == id_alt) or (l_atrib_new == atrib_alt):
+            print("La alternativa se repite con una ya extraida")
             print(id_alt_new, id_alt)
-            return False
-
-        # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
-        if new_atrib == atrib_alt:
-            print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
-            print(new_atrib, atrib_alt)
+            print(l_atrib_new, atrib_alt)
             return False
 
     # Si la alternativa nueva no se repite
     return True
-
 
 def add_lines_to_dataframe(d_data, df):
     """
@@ -450,3 +416,84 @@ def main(home_page_url):
 ''' # para correr pruebas en archivo independientemente de main.py
 main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
 '''
+
+
+"""
+def is_alternative_new_orig(df_alt, d_new_alt):  # creo que funciona mas lento que la nueva...
+    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
+    new_atrib = list(d_new_alt.values())[2:]
+
+    # Por alternativa
+    for i in range(len(df_alt)):
+
+        # Defino variables
+        id_alt = df_alt.iloc[i, 0]  # id de alternativa
+        atrib_alt = list(df_alt.iloc[i, 2:])  # valores de atributos de la alternativa (excluyo id y precio)
+
+        # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
+        if id_alt_new == id_alt:
+            print("La alternativa tiene el mismo id que una alternativa ya extraida")
+            print(id_alt_new, id_alt)
+            return False
+
+        # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
+        if new_atrib == atrib_alt:
+            print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
+            print(new_atrib, atrib_alt)
+            return False
+
+    # Si la alternativa nueva no se repite
+    return True
+
+"""
+
+'''
+def is_alternative_new(df_alt, d_new_alt):
+    """
+    Verifica si una nueva alternativa se repite o no con otra alternativa ya extraida
+    :param df_alt: Dataframe alternativas
+    :param d_new_alt: Diccionario con las colummas del dataframe alternativas como keys y sus respectivos valores como
+    values.
+    :return: True si la nueva alternativa es nueva, de lo contrario, False.
+    """
+    # Defino variables
+    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
+    df_alt_with_new_alt = df_alt.copy()
+    df_alt_with_new_alt.loc[len(df_alt_with_new_alt)] = d_new_alt.values()
+    largo_new_df = len(df_alt_with_new_alt.drop_duplicates(subset=df_alt.columns[2:]))  # elimino duplicados (sin incluir ni id ni precio)
+    largo_df = len(df_alt)
+
+    # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
+    if id_alt_new in df_alt['id_alternativa']:
+        print("La alternativa tiene el mismo id que una alternativa ya extraida")
+        bool = False
+
+    # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
+    elif largo_df == largo_new_df:
+        print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
+        bool = False
+
+    else:
+        bool = True
+
+    return bool
+'''
+
+
+"""    # PARA PROBAR SI FUNCIONA LA FUNCION:
+largo_orig = len(df_alt)
+
+df_prueba = df_alt.iloc[:, 2:]
+df_prueba.loc[len(df_prueba)] = l_atrib_new  # agrego nueva alternativa
+print(df_prueba)
+df_prueba = df_prueba.drop_duplicates()
+print(df_prueba)
+largo_new = len(df_prueba)
+if (largo_orig + 1) != largo_new:
+    print("LA FUNCION IS_ALTERNATIVE_NEW NO FUNCIONA COMO DESEO :(")
+
+"""
+
+
+
+# DECIDI QUITAR EL PARAMETRO DE CORTE DE LAS ULTIMAS PAGINAS PORQUE PREFIERO VISITAR LAS 25 PAGINAS Y EXTRAER LO QUE SE PUEDA

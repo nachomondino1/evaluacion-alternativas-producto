@@ -266,15 +266,18 @@ def create_table_num_alt_per_cluster(df_alt_clust):
     :param df_alt_clust: Dataframe
     :return:
     """
+    # Defino variables
     df_alt_per_clust = pd.DataFrame(columns=['Cantidad de alternativas'], index=df_alt_clust['label'].unique())
     df_alt_per_clust.index.name = 'Nombre de cluster'
 
+    # OBTENGO Nº DE ALTERNATIVAS POR CLUSTER
     # Por cluster
     for cluster in df_alt_clust['label'].unique():
 
         # Selecciono alternativas de un cluster
         df_clust_filt_cluster = df_alt_clust[df_alt_clust['label'] == cluster]
 
+        # Cuento cantidad de alternativas
         df_alt_per_clust.loc[cluster] = len(df_clust_filt_cluster)
 
     return df_alt_per_clust

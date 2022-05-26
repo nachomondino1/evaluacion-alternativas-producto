@@ -1,9 +1,9 @@
 # Importo librerias
 from p1_data_understanding.utils.web_scraping.crawler import Crawler
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
 
@@ -24,16 +24,14 @@ class MercadoLibreCrawler(Crawler):
 
         # ESPERO HASTA ENCONTRAR LOS TAGS QUE CONTIENEN LAS URLs
         try:
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]/a')))
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]/a')))  # imagen de primera publicacion de la pagina
 
         # FINALMENTE
         finally:
             # OBTENGO LOS TAGS
-            tag_urls_publicaciones = self.driver.find_elements(By.XPATH,
-                                                               '//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
+            tag_urls_publicaciones = self.driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
 
-            # POR CADA TAG DE LOS TAGS
+            # POR CADA TAG
             for tag_url in tag_urls_publicaciones:
 
                 # OBTENGO URL
@@ -94,13 +92,16 @@ class MercadoLibreCrawler(Crawler):
         d = {}  # diccionario en donde guardare las listas con los datos extraidos
 
         # OBTENGO TAGS QUE CONTIENEN UNA OPINION
-        # tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@class="infinite-scroll-component "]//article')  # hay dos div cuya clase es la dicha...
-        tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@id="reviews-capability.desktop"]//div[@class="infinite-scroll-component "]//article') #no lo probe aun
+        try:
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@id="reviews-capability.desktop"]//div[@class="infinite-scroll-component "]//article')))
+        finally:
+            tags_opiniones = self.driver.find_elements(By.XPATH, '//div[@id="reviews-capability.desktop"]//div[@class="infinite-scroll-component "]//article')
 
-        # POR CADA TAG DE LOS TAGS
+        # EXTRAIGO OPINIONES DE CADA TAG
+        # Por cada tag
         for tag in tags_opiniones:
 
-            # SI TIENE VALOR PARA TODOS LOS CAMPOS A EXTRAER
+            # Si tiene valor para todos los campos a extraer
             try:
                 # EXTRAIGO TODOS LOS CAMPOS
                 # Extraigo Title
@@ -142,7 +143,6 @@ class MercadoLibreCrawler(Crawler):
         # Guardo los datos propiamente
         for i in range(len(campos_a_extraer)):
             d[campos_a_extraer[i]] = data[i]
-
         return d
 
     def are_opinions_new(self, l_prim_opiniones):
@@ -160,12 +160,10 @@ class MercadoLibreCrawler(Crawler):
 
             # Si la opinion es nueva
             if prim_opinion not in l_prim_opiniones:
-                # retorno true
                 return True
 
             # Si la opinion es repetida
             else:
-                # retorno False
                 return False
 
         # SI NO LOGRE EXTRAER PRIMERA OPINION (no deberia pero puede pasar)
@@ -249,8 +247,8 @@ class MercadoLibreCrawler(Crawler):
         Extrae el id de una publicacion dentro de la URL de esta. En caso que el id no este en la URL, es porque la URL
         no es de las comunes, y por ende, buscare la URL correcta dentro del codigo html de la publicacion. Solo en el
         eventual caso que no encuentra la nueva URL, entonces no encuentra el id.
-        :param url: String con URL de una publicacion de Mercado Libre
-        :return: String con id de la publicación, o bien, None si no lo encontro
+        :param url: String. URL de una publicacion de Mercado Libre
+        :return: String. Id de la publicación, o bien, None si no lo encontro
         """
         # Extriago id de url
         id_pub = self.extract_id_from_url(url)
@@ -259,17 +257,19 @@ class MercadoLibreCrawler(Crawler):
         if id_pub is None:
             print("No se encontro el id en la url de la publicacion por ser del tipo www.click1.mercado...")
 
-            # Obtengo url de codigo html de la publicacion
+            # Obtengo URL de codigo html de la publicacion
             new_url = self.get_new_url_publication()
 
-            # Extraigo id de nueva url
-            id_pub = self.extract_id_from_url(new_url)
+            # Si obtuve la URL (puede no encontrarla dentro de la publicacion)
+            if new_url is not None:
 
-            # Si no encontre id en nueva url
-            if id_pub is None:
-                # retorno none
-                print("Tampoco se encontro el id dentro de la publicacion")
-                return None
+                # Extraigo id de nueva url
+                id_pub = self.extract_id_from_url(new_url)
+
+                # Si no encontre id en nueva url
+                if id_pub is None:
+                    print("Tampoco se encontro el id dentro de la publicacion")
+                    return None
 
         # retorno id de publicacion
         return id_pub
@@ -297,8 +297,8 @@ class MercadoLibreCrawler(Crawler):
     def extract_id_from_url(self, url_publicacion):
         """
         Extrae el id de una publicacion dentro de la URL de esta.
-        :param url_publicacion: String con url de una publicacion de Mercado Libre
-        :return: String con id de la publicacion, o bien, None si no lo encontro
+        :param url_publicacion: String. URL de una publicacion de Mercado Libre
+        :return: String. Id de la publicacion, o bien, None si no lo encontro
         """
         # DEFINO VARIABLES
         reglas = ['p/MLA', 'MLA-']

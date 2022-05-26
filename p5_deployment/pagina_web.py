@@ -66,7 +66,7 @@ def get_alts_final_value(df_alt, df_value_sent, d_attrs_tech_imp):
 
     # POR ALTERNATIVA
     for i in range(len(df_alt)):
-        print("ALTERNATIVA Nº:", i)
+        print("ALTERNATIVA Nº: {}".format(i).center(120))
 
         # Defino variables
         sum_val_fin_alt = 0  # Reinicio suma de valoracion final por cada alternativa
@@ -75,46 +75,62 @@ def get_alts_final_value(df_alt, df_value_sent, d_attrs_tech_imp):
         # POR ATRIBUTO
         for atributo in atributos:  # ingreso solo a atributos que tienen al menos una relacion
 
+            imp_tecnica_attr = d_attrs_tech_imp[atributo]
+
             # NO DEBERIA HACER UN IF IMPORTANCIA TECNICA DEL ATTR > 0????? PUES AL TENER IMP TEC 0 AFRCTA VALORACION FINAL
+            if imp_tecnica_attr > 0: # prueba
 
-            # OBTENGO VALOR DEL ATRIBUTO
-            valor = df_alt.loc[i, atributo]
-            print("ATRIBUTO: {} y VALOR: {}".format(atributo, valor))
+                # OBTENGO VALOR DEL ATRIBUTO
+                valor = df_alt.loc[i, atributo]
 
-            # SI EL VALOR NO ES NAN (la alternativa puede no tener valor para el atributo)
-            if str(valor) != 'nan':
+                print("ATRIBUTO: {} , VALOR: {}".format(atributo, valor))
 
-                # OBTENGO SENTIMENT DEL VALOR
-                sent_valor = float(df_value_sent[(df_value_sent['atributo'] == atributo) & (df_value_sent['valor'] == valor)]['sent'])
+                # SI EL VALOR NO ES NAN (la alternativa puede no tener valor para el atributo)
+                if str(valor) != 'nan':
 
-                # SI EL SENTIMENT DEL VALOR NO ES NAN
-                if str(sent_valor) != 'nan':
+                    # OBTENGO SENTIMENT DEL VALOR
+                    sent_valor = float(df_value_sent[(df_value_sent['atributo'] == atributo) & (df_value_sent['valor'] == valor)]['sent'])
+
+                    # SI EL SENTIMENT DEL VALOR NO ES NAN
+                    if str(sent_valor) != 'nan':
+
+
+                        # CALCULO VALORACION FINAL DEL ATRIBUTO
+                        sum_val_fin_alt += sent_valor * d_attrs_tech_imp[atributo]
+                        # print(sent, importancia_tecnica[atributo], valor_final)
+
+                        print(sent_valor,d_attrs_tech_imp[atributo], sum_val_fin_alt)
+
+
+                    # SI EL SENTIMENT DEL VALOR ES NAN
+                    else:  # DEBO PENSAR SI DEJAR SENT NAN O ASIGNARLES SENT MIN PORQUE AL SER VALORACIONES NEGATIVAS FAVOREZCO LAS ALT QUE TIENE VALORES QUE TIENEN SENT NAN
+                        # SUMO 1 A CANTIDAD DE VALORES SIN SENTIMENT DE LA ALTERNATIVA
+                        n_val_sent_nan += 1
+
+                        # PRUEBA: QUE PASA SI ASIGNO SENTIMENT MIN A LOS VALORES CUYO SENT ES NAN
+                        worst_sent = df_value_sent[df_value_sent['atributo'] == atributo]["sent"].min()
+                        sum_val_fin_alt += worst_sent * d_attrs_tech_imp[atributo]
+
+                        print(worst_sent,d_attrs_tech_imp[atributo], sum_val_fin_alt)
+
+                        print("El atributo {} toma valor {} y este tiene sentiment NaN".format(atributo, valor))
+
+                # SI EL VALOR ES NAN
+                else:
+                    # OBTENGO EL PEOR SENTIMENT DEL ATRIBUTO
+                    worst_sent = df_value_sent[df_value_sent['atributo'] == atributo]["sent"].min()
+                    print("El modelo Nº{} tiene valor NaN en atributo {}, por lo cual, le asigno el peor sentiment {} de"
+                          "los valores de dicho atributo".format(i, atributo, worst_sent))
 
                     # CALCULO VALORACION FINAL DEL ATRIBUTO
-                    sum_val_fin_alt += sent_valor * d_attrs_tech_imp[atributo]
-                    # print(sent, importancia_tecnica[atributo], valor_final)
+                    sum_val_fin_alt += worst_sent * d_attrs_tech_imp[atributo]
 
-                # SI EL SENTIMENT DEL VALOR ES NAN
-                else:
-                    # SUMO 1 A CANTIDAD DE VALORES SIN SENTIMENT DE LA ALTERNATIVA
-                    n_val_sent_nan += 1
-                    print("El atributo {} toma valor {} y este tiene sentiment NaN".format(atributo, valor))
-
-            # SI EL VALOR ES NAN
-            else:
-                # OBTENGO EL PEOR SENTIMENT DEL ATRIBUTO
-                worst_sent = df_value_sent[df_value_sent['atributo'] == atributo]["sent"].min()
-                print("El modelo Nº{} tiene valor NaN en atributo {}, por lo cual, le asigno el peor sentiment {} de"
-                      "los valores de dicho atributo".format(i, atributo, worst_sent))
-
-                # CALCULO VALORACION FINAL DEL ATRIBUTO
-                sum_val_fin_alt += worst_sent * d_attrs_tech_imp[atributo]
+                    print(worst_sent, d_attrs_tech_imp[atributo], sum_val_fin_alt)
 
         # PONDERO VALORACION FINAL DE LA ALTERNATIVA SEGUN CANTIDAD DE VALORES NAN
-        val_fin_alt = sum_val_fin_alt / (len(atributos) - n_val_sent_nan)
+        val_fin_alt = sum_val_fin_alt #/ (len(atributos) - n_val_sent_nan)
 
-        print('Valor final =', val_fin_alt, ' Cantidad de valores =', len(atributos),'Cantidad de valores sin sent = ',
-              n_val_sent_nan, 'Valor final / (cant valores - cant val nan) = ', val_fin_alt) #_2
+        # print('Valor final =', val_fin_alt, ' Cantidad de valores =', len(atributos),'Cantidad de valores sin sent =', n_val_sent_nan, 'Valor final / (cant valores - cant val nan) = ', val_fin_alt) #_2
 
         # GUARDO ALTERNATIVA Y SU VALORACION FINAL
         val_fin_alts.append(val_fin_alt)
@@ -145,17 +161,25 @@ def recommend_table(df_alt, df_alt_val_final):  # FUNCIONA MAL, EL DF_ALT_VAL_FI
         idx_1 = df_alt.index[df_alt['id_alternativa'] == id_alt][0]
         idx_2 = df_alt_val_final.index[df_alt_val_final['id_alternativa'] == id_alt][0]
 
-        val_fin = df_alt_val_final.loc[idx_2, 'val_final']
+        val_alt = df_alt_val_final.loc[idx_2, 'val_final']
 
         # OBTENGO SU VALORACION FINAL
         # val_fin = df_alt_val_final.loc[i, 'val_final']
 
         # CALCULO PORCENTAJE DE RECOMENDACION
-        porc_recom = round(val_fin / val_max * 100, 1)
+        # Si la valoracion maxima es positiva
+        if val_max > 0:
+            # Calculo porcentaje de recomendacion de alternaitva con ecuacion
+            porc_recom = round(val_alt / val_max * 100, 1)  # 3 / 5 = 0.6
+        # Si la valoracion maxima es negativa
+        else:
+            # Calculo porcentaje de recomendacion de alternaitva con otra ecuacion
+            porc_recom = round(val_max / val_alt * 100, 1)  # -3 / -5 = -0.6 pero -5 no puede ser val_max sino que seria el -3, en ese caso, -5 / -3 = 1.66
+
         # l_porc_recom.append(porc_recom)
         # df_alt.loc[i, "porcentaje_recomendacion"] = porc_recom
         df_alt.loc[idx_1, "porcentaje_recomendacion"] = porc_recom
-        print(val_fin, val_max, porc_recom)
+        print(val_alt, val_max, porc_recom)
 
     # GUARDO PORCENTAJES DE RECOMENDACION DE LAS ALTERNITVAS
     # df_alt['porcentaje_recomendacion'] = l_porc_recom
@@ -171,19 +195,19 @@ def main():
 
     # IMPORTO ARCHIVOS
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_formated.xlsx')
-    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_alt_cleaned.xlsx')
-    df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/df_cust_needs.xlsx", index_col=0)
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_formated.xlsx')
+    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
+    df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_cust_needs.xlsx", index_col=0)
     l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
     # Archivos de (3) Modelling
-    df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_relation_matrix.xlsx", index_col=0)
-    df_alt_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_alt_clust_{}.xlsx'.format('celulares'), index_col=0)
-    df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_alt_per_clust_{}.xlsx'.format('celulares'), index_col=0)
-    df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_centroids_values_{}.xlsx'.format('celulares'), index_col=0)
-    df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/df_brand_per_cluster_{}.xlsx'.format('celulares'), index_col=0)
+    df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_relation_matrix.xlsx", index_col=0)
+    df_alt_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format('celulares'), index_col=0)
+    df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format('celulares'), index_col=0)
+    df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format('celulares'), index_col=0)
+    df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format('celulares'), index_col=0)
 
     # l_cust_needs = list(df_relation_matrix.index)
-    df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/df_attr_values_sent.xlsx')
+    df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/celulares/df_attr_values_sent.xlsx')
 
     print(df_alt.shape)
     # Selecciono ids de alternativas que no han sido borradas

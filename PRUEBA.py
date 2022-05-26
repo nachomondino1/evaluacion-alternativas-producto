@@ -66,13 +66,23 @@ if 'c' in d.keys():
 print(list(d.values()))
 '''
 
-
+'''
 # Dataframe
 df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
 print(df)
 
 idx = df.index[df['col1'] == 4][0]
 print(idx)
+'''
+
+
+# BARRA DE PROGRESO
+from time import sleep
+from tqdm import tqdm
+for i in tqdm(range(10)):
+    print(i)
+
+
 
 '''
 # 3. Data preparation - Preparacion texto

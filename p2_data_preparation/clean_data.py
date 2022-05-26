@@ -130,7 +130,7 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
                 desv = st.stdev(df_alt_sin_valor[columna].dropna())
 
                 # SI EL VALOR ES UN POSIBLE OUTLIER
-                if (valor > media + 2 * desv) or (valor < media - 2 * desv):
+                if (valor > media + 2.5 * desv) or (valor < media - 2.5 * desv):
 
                     # Defino variables
                     frec_val = len(df_alt[df_alt[columna] == valor])
@@ -226,59 +226,6 @@ def categorize_numeric_columns(df):
         else:
             # imprimo mensaje
             print("La columna '{}' no es numerica!".format(columna))
-
-    return df
-
-def delete_attr_x_values(df):
-    """
-    Elimino columnas del dataframe que toman un solo valor constante, o bien, toma muchos valores
-    :param df: Dataframe
-    :return: Dataframe sin columnas que tomen un solo valor o, por el contrario, muchos
-    """
-    # Defino variables
-    PORC_MUCHOS_VAL = 2  # al menos el doble de clases que lo optimo
-    col_excepciones = ["id_alternativa", "Marca", "Línea", "Modelo"]  # columnas que no eliminar a pesar de que toman muchos valores
-    col_eliminadas = []
-
-    # POR COLUMNA DEL DATAFRAME
-    for columna in df.columns:
-        print(columna.upper().center(120))
-
-        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
-        if columna not in col_excepciones:
-
-            # Obtengo lista de frecuencia de sus valores
-            unique_values = list(df[columna].dropna().unique())  # dropna para evitar que NaN sea una valor unico
-            n_unique_values = len(unique_values)
-            n_opt_unique_values = int(len(df[columna].dropna()) ** 0.5)
-            print("Nºvalores: {}; Nºopt de valores: {}; Nºmax de valores: {}".format(n_unique_values, n_opt_unique_values, PORC_MUCHOS_VAL*n_opt_unique_values))
-
-            # SI LA COLUMNA ES CONSTANTE (TOMA UN UNICO VALOR)
-            if n_unique_values == 1:  #cuando hay muchas alt al menos hay 1 con valor distinto..
-
-                # Elimino atributo
-                df = df.drop([columna], axis=1)
-                col_eliminadas.append(columna)
-                print("Elimino la columna por tomar 1 solo valor")
-
-            # SI LA COLUMNA ES CONTINUA (TOMA MUCHOS VALORES DISTINTOS)
-            elif n_unique_values > PORC_MUCHOS_VAL * n_opt_unique_values:
-
-                # Elimino el atributo
-                df = df.drop([columna], axis=1)
-                col_eliminadas.append(columna)
-                print("Elimino la columna por tomar muchos valores distintos")
-
-            # SI LA COLUMNA ES DISCRETA (no toma ni 1 valor ni muchos)
-            else:
-                # No hacer nada
-                print("No la elimino pues toma valores discretos.")
-
-        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
-        else:
-            print("Se especifico que la columna no debe ser revisada.")
-
-    print("COLUMNAS ELIMINADAS: ", col_eliminadas)
 
     return df
 
@@ -399,13 +346,53 @@ def values_distribution_in_classes(dict, valores_unicos):
     print("Distribucion de valores unicos en clases: ", list(d.values()))
     return list(d.values())
 
+def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque falla is_alt_new() de collect_initial_data
+    """
+    Borra las alternativas repetidas (las que se le escapan al collect_initial_data.py)
+    :param df_alt: Dataframe alternativas
+    :param df_opi: Dataframe opiniones
+    :return: Dataframe alternativas con alternativas unicas
+    """
+    # Defino variables
+    ids_con_opi = list(df_opi['id_alternativa'].unique())  # ids con opiniones
+    i = 0  # contador
+
+    # Elimino alternativas duplicadas
+    df_alt_dropped = df_alt.drop_duplicates(subset=list(df_alt.columns[2:]), ignore_index=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
+    df_alt_dropped = df_alt_dropped.reset_index(drop=True)  # reseteo index al eliminar filas
+
+    # Imprimo resultados
+    print(df_alt.shape)
+    print(df_alt_dropped.shape)
+
+    # VERIFICO QUE LAS ALTERNATIVAS BORRADAS NO TENGAN OPINIONES
+    # Obtengo ids borrados
+    ids_alt_before = list(df_alt['id_alternativa'])
+    ids_alt_after = list(df_alt_dropped['id_alternativa'])
+    ids_dropped = []
+    for ids in ids_alt_before:
+        if ids not in ids_alt_after:
+            ids_dropped.append(ids)
+
+    # Por id borrado
+    for ids in ids_dropped:
+        # Si no tiene opiniones
+        if ids in ids_con_opi:
+            # Sumo 1 al contador
+            i += 1
+
+    print("De las {} alternativas borradas, {} tenian al menos una opinion".format(len(ids_dropped), i))
+    return df_alt_dropped
+
+
 def main(df_alt, df_opi):
 
     print("3.2.1 Dataframe Opiniones: Eliminando filas repetidas...".center(120))
     df_opi = df_opi.drop_duplicates(subset='opinion', ignore_index=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
     df_opi = df_opi.dropna(subset='opinion')   # no documentado... creia que no habia opiniones nan
     df_opi = df_opi.reset_index(drop=True)  # reseteo index al eliminar filas
-    print()
+
+    df_alt = drop_alt_duplicates(df_alt, df_opi)
 
     print("3.2.2 Dataframe Opiniones: Preparando opiniones...".center(120))
     df_opi = delete_date_of_issue_from_opinion(df_opi)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
@@ -427,8 +414,60 @@ def main(df_alt, df_opi):
     df_alt.iloc[:, 1:] = categorize_numeric_columns(df_alt.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
     print()
 
-    print("3.2.6 Dataframe Alternativas: Eliminando campos constantes y campos continuos...".center(120))
-    df_alt = delete_attr_x_values(df_alt)
-    print()
-
     return df_alt, df_opi, df_opi_tokenizado
+
+
+'''
+def delete_attr_x_values(df):
+    """
+    Elimino columnas del dataframe que toman un solo valor constante, o bien, toma muchos valores
+    :param df: Dataframe
+    :return: Dataframe sin columnas que tomen un solo valor o, por el contrario, muchos
+    """
+    # Defino variables
+    PORC_MUCHOS_VAL = 2  # al menos el doble de clases que lo optimo
+    col_excepciones = ["id_alternativa", "Marca"]  # columnas que no eliminar a pesar de que toman muchos valores
+    col_eliminadas = []
+
+    # POR COLUMNA DEL DATAFRAME
+    for columna in df.columns:
+        print(columna.upper().center(120))
+
+        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
+        if columna not in col_excepciones:
+
+            # Obtengo lista de frecuencia de sus valores
+            unique_values = list(df[columna].dropna().unique())  # dropna para evitar que NaN sea una valor unico
+            n_unique_values = len(unique_values)
+            n_opt_unique_values = int(len(df[columna].dropna()) ** 0.5)
+            print("Nºvalores: {}; Nºopt de valores: {}; Nºmax de valores: {}".format(n_unique_values, n_opt_unique_values, PORC_MUCHOS_VAL*n_opt_unique_values))
+
+            # SI LA COLUMNA ES CONSTANTE (TOMA UN UNICO VALOR)
+            if n_unique_values == 1:  #cuando hay muchas alt al menos hay 1 con valor distinto..
+
+                # Elimino atributo
+                df = df.drop([columna], axis=1)
+                col_eliminadas.append(columna)
+                print("Elimino la columna por tomar 1 solo valor")
+
+            # SI LA COLUMNA ES CONTINUA (TOMA MUCHOS VALORES DISTINTOS)
+            elif n_unique_values > PORC_MUCHOS_VAL * n_opt_unique_values:
+
+                # Elimino el atributo
+                df = df.drop([columna], axis=1)
+                col_eliminadas.append(columna)
+                print("Elimino la columna por tomar muchos valores distintos")
+
+            # SI LA COLUMNA ES DISCRETA (no toma ni 1 valor ni muchos)
+            else:
+                # No hacer nada
+                print("No la elimino pues toma valores discretos.")
+
+        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
+        else:
+            print("Se especifico que la columna no debe ser revisada.")
+
+    print("COLUMNAS ELIMINADAS: ", col_eliminadas)
+
+    return df
+'''

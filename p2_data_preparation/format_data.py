@@ -17,12 +17,13 @@ def correct_price_column(col_precio):
         # DEFINO VARIABLE DE PRECIO EN FORMATO STRING Y CUENTO CANTIDAD DE PUNTOS
         str_precio = str(precio)  # precio en formato string
         cant_puntos = str_precio.count(".")  # Cantidad de puntos de precio
+        miles = int("1" + ("000" * cant_puntos))
 
         # SI EL PRECIO NO ES NAN
         if str_precio != 'nan':
 
             # CORRIJO PRECIO SEGUN CANTIDAD DE PUNTOS
-            correct_precio = int(precio * 1000 * cant_puntos)
+            correct_precio = int(precio * miles)
             l_precios.append(correct_precio) # el punto lo entiende como coma. SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame
 
         # SI EL PRECIO ES NAN
@@ -104,15 +105,17 @@ def string_column_to_numeric_column(df):
     # unidades de memoria a GB, unidades de superficie a m2, unidades de peso a kg, unidad de longitud a mm, unidad
     # densidad de imagen a ppi, unidades de carga ekectrica a mah, unidades de cant de pixeles a mpx
     d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA
-         "g": 1/1000, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO
-         '"': 25.24, 'pulgadas': 25.24 , 'in': 25.24, 'mm': 1, 'cm': 100, 'ft': 304.8,'m': 1000,  # UNIDADES DE LONGITUD
+         'lb': 0.453592, "g": 1/1000, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO
+         '"': 25.24, 'pulgadas': 25.24, 'in': 25.24, 'mm': 1, 'cm': 100, 'ft': 304.8, 'm': 1000,  # UNIDADES DE LONGITUD
          'm2': 1, 'ha': 10000,  # UNIDADES DE LONGITUD
-         'ppi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN
+         'ppi': 1, 'dpi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN
          'mah': 1, 'ah': 1000, # UNIDADES DE CARGA ELECTRICA
-         'px': 1/1000000, 'mpx': 1, # CANTIDAD DE PIXELES
-         'h': 1,  # UNIDAD DE TIEMPO
+         'px': 1/1000000, 'mpx': 1,  # CANTIDAD DE PIXELES
+         'h': 1, 'días': 24, 'semanas': 24*7,  # UNIDAD DE TIEMPO
          'ω': 1, 'mo': 1, 'o': 1,  # UNIDAD DE IMPEDANCIA
-         'db': 1  # UNIDAD DE RELACION ENTRE DOS VALORES DE PRESION SONORA, O TEENSION Y POTENCIA ELECTRICA
+         'db': 1,  # UNIDAD DE RELACION ENTRE DOS VALORES DE PRESION SONORA, O TEENSION Y POTENCIA ELECTRICA
+         'hz': 1/10**(9), 'mhz': 1/1000, 'ghz': 1,  # UNIDAD DE FRECUENCIA
+         'cd/m²': 1  # UNIDAD DE BRILLO
          }
 
     # POR COLUMNA DEL DATAFRAME
@@ -239,24 +242,23 @@ def yes_no_column_to_one_zero_column(df):
 
 def main(df_alt):
 
-    df_alt_formated = df_alt
-
     print("3.1.1 Dataframe Alternativas: Corrigiendo columna precio...".center(120))
     # df_alternativas['precio'].dropna()  # ESTOY PROBANDO
     # df_alternativas = df_alternativas.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    df_alt_formated['precio'] = correct_price_column(df_alt_formated['precio'])  # DOCUMENTAR QUE LO HAGO PRIMERO...
+    df_alt['precio'] = correct_price_column(df_alt['precio'])  # DOCUMENTAR QUE LO HAGO PRIMERO...
     print()
 
-    df_alt_correct_price = df_alt_formated
+    # Guardo Dataframe alternativas pues sera el que le mostrare al cliente
+    df_alt_correct_price = df_alt.copy()
 
     print("3.1.2 Dataframe Alternativas: Convirtiendo columnas de strings con numeros a columnas numericas...".center(120))
-    df_alt_formated = string_column_to_numeric_column(df_alt_formated)
+    df_alt = string_column_to_numeric_column(df_alt)
     print()
 
     print("3.1.3 Dataframe Alternativas: Convirtiendo columnas si-no a columnas 1-0... ".center(120))
-    df_alt_formated = yes_no_column_to_one_zero_column(df_alt_formated)
+    df_alt = yes_no_column_to_one_zero_column(df_alt)
     print()
-    return df_alt_correct_price, df_alt_formated
+    return df_alt_correct_price, df_alt
 
 # main()  # Para correr pruebas en archivo independientemente de main.py
 

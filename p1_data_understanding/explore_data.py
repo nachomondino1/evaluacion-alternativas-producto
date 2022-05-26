@@ -2,6 +2,26 @@
 import pandas as pd
 
 
+def check_ids(df_alt, df_opi):
+
+    # Obtengo cantidad de ids unicos en cada dataframe
+    ids = list(df_alt['id_alternativa'])  # ids en dataframe altenativas
+    ids_con_opi = df_opi['id_alternativa'].unique()  # ids en dataframe opiniones
+    cant_ids = len(ids)
+    cant_ids_opi = len(ids_con_opi)
+
+    # Verifico que ids con opinion tengan id en Dataframe alternativas
+    print("Verifico que ids con opinion tengan id en Dataframe alternativas:")
+    i = 0
+    for id_con_opi in ids_con_opi:
+        if id_con_opi not in ids:
+            i += 1
+    print("Hay {} ids que estan en Dataframe opiniones y no en Dataframe Alternativas!".format(i)), print()
+
+    print("Verifico unicidad de ids:")
+    print("Dataframe alternativas --> \t IDs: {}\t IDs unicos: {}".format(cant_ids, len(df_alt['id_alternativa'].unique())))
+    print("Dataframe opiniones    --> \t IDs: {}\t IDs unicos: {}".format(cant_ids_opi, len(df_opi['id_alternativa'].unique())))
+
 def check_repeated_rows(df):
     """
     Revisa si un Dataframe tiene filas repetidas e imprime los resultados por pantalla
@@ -18,22 +38,6 @@ def check_repeated_rows(df):
     # Defino nueva cantidad de filas
     cant_filas = df.shape[0]
     print("Si eliminase filas duplicadas el dataframe quedaria de {} filas".format(cant_filas))
-
-def id_uniqueness_check(df_alt, df_opi):
-    """
-    Chequea unicidad de ids en cada dataframe e indica su cantidad
-    :param df_alt: Dataframe alternativas
-    :param df_opi: Dataframe opiniones
-    :return: funcion sin retorno
-    """
-    # Obtengo cantidad de ids unicos en cada dataframe
-    cant_ids_opi = len(df_opi['id_alternativa'].unique())
-    cant_ids_alt = len(df_alt['id_alternativa'].unique())
-
-    # Imprimo resultados por pantalla
-    print("Deberia haber {} ids unicos. Hay {} ids unicos en Dataframe alternativas".format(len(df_alt), cant_ids_alt))
-    print("Hay {} ids unicos en Dataframe opiniones".format(cant_ids_opi))
-    print()
 
 def n_opi_by_value(df_alt, df_opi):
     """
@@ -79,13 +83,14 @@ def n_opi_by_value(df_alt, df_opi):
 def main(df_alt, df_opi):
 
     print(" a) Analisis de unicidad de ids ".center(120))
-    id_uniqueness_check(df_alt, df_opi)
+    check_ids(df_alt, df_opi)
+    # id_uniqueness_check(df_alt, df_opi)
     print()
 
     print(" b) Analisis de filas repetidas ".center(120))
-    print("Dataframe opiniones")
+    print("Dataframe opiniones (considerando unicamente opiniones)")
     check_repeated_rows(df_opi['opinion'])  # filas repetidas sin tener en cuenta el id_pub
-    print("Dataframe alternativas")
+    print("Dataframe alternativas (sin considerar id_alternativa ni precio)")
     check_repeated_rows(df_alt.iloc[:, 2:])  # filas repetidas sin tener en cuenta el id_pub y precio
     print()
 
@@ -99,3 +104,21 @@ df_opi = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-a
 main()
 """
 
+
+''' # REEMPLAZADA POR CHECK_ID QUE LE AGREGA NUEVA VERIF
+def id_uniqueness_check(df_alt, df_opi):
+    """
+    Chequea unicidad de ids en cada dataframe e indica su cantidad
+    :param df_alt: Dataframe alternativas
+    :param df_opi: Dataframe opiniones
+    :return: funcion sin retorno
+    """
+    # Obtengo cantidad de ids unicos en cada dataframe
+    cant_ids_opi = len(df_opi['id_alternativa'].unique())
+    cant_ids_alt = len(df_alt['id_alternativa'].unique())
+
+    # Imprimo resultados por pantalla
+    print("Deberia haber {} ids unicos. Hay {} ids unicos en Dataframe alternativas".format(len(df_alt), cant_ids_alt))
+    print("Hay {} ids unicos en Dataframe opiniones".format(cant_ids_opi))
+    print()
+'''
