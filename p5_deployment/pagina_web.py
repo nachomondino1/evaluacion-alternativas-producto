@@ -5,16 +5,15 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 
 
-def get_attrs_technical_importance(d_cust_needs_weights, df_relation_matrix):
+def get_attrs_technical_importance(df_cust_needs, df_relation_matrix):
     """
     Obtiene la importancia tecnica de cada atributo del producto
-    :param customer_needs_weights: Diccionario
+    :param df_cust_needs: Dataframe con peso
     :param relation_matrix: Dataframe
     :return: Diccionario
     """
     # Es para cada propiedad del producto. Para cada propiedad del producto j: Suma por cada req del cliente i de (Valoracion del cliente de requisito i * relacion entre req i y prop j)
     # return Diccionario con atributo
-
     # Defino variables
     atributos = df_relation_matrix.columns  # Atributos del producto
     customer_needs = list(df_relation_matrix.index)  # Customer needs de 1 palabra del producto
@@ -28,25 +27,15 @@ def get_attrs_technical_importance(d_cust_needs_weights, df_relation_matrix):
 
         # POR CUSTOMER NEED
         for customer_need in customer_needs:
-            # print(customer_need, atributo)
 
             # defino relacion entre atributo y customer need
-            # idx_customer_need = customer_needs.index(customer_need)
-            # idx_attr = relation_matrix.columns.get_loc(atributo) # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
-            # print(idx_customer_need, idx_attr)
-            # relacion = relation_matrix.iloc[idx_customer_need, idx_attr]
             relacion = df_relation_matrix.loc[customer_need, atributo]
 
             # CALCULO IMPORTANCIA TECNICA
-            customer_need_three_words = customer_needs_translation(d_cust_needs_weights.keys(), customer_need)
-            # print(customer_need_three_words)
-            # print(customer_needs_weights[customer_need_three_words])
-            # print("relacion:", relacion)
-            imp_tecnica += d_cust_needs_weights[customer_need_three_words] * relacion  # deeberia ser contains(customer_need) pues una es de 1 palabra y la otra de 3.
+            imp_tecnica += df_cust_needs.loc[customer_need, 'Peso'] * relacion
 
         # GUARDO IMPORTANCIA TECNICA
         d[atributo] = imp_tecnica
-
     return d
 
 def get_alts_final_value(df_alt, df_value_sent, d_attrs_tech_imp):
@@ -188,26 +177,47 @@ def recommend_table(df_alt, df_alt_val_final):  # FUNCIONA MAL, EL DF_ALT_VAL_FI
 
     return df_alt
 
+def aggrid_interactive_table(df: pd.DataFrame):
+    """
+    Creates an st-aggrid interactive table based on a dataframe.
+    :param df: Source dataframe
+    :return:         # dict: The selected row
+    """
+    # https://share.streamlit.io/streamlit/example-app-interactive-table/main
+    options = GridOptionsBuilder.from_dataframe(df, enableRowGroup=True, enableValue=True, enablePivot=True)
+
+    options.configure_side_bar()
+
+    options.configure_selection("single")
+    selection = AgGrid(df, enable_enterprise_modules=True, gridOptions=options.build(), theme="light",
+                       update_mode=GridUpdateMode.MODEL_CHANGED, allow_unsafe_jscode=True)
+    return selection
+
 def main():
+    # (1) SOLICITO INGRESO DE DATOS EN SIDEBAR (tipo de cliente y producto a relevar)
+    st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo
+    st.sidebar.write('# Ingrese los siguientes datos')  # titulo 1 de sidebar
+    client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
+    product_options = ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
+    client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)  #  client = st.sidebar.radio('1) ¿Que tipo de cliente eres?', client_options)
+    product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)  # product = st.sidebar.radio('2) ¿Que producto desea evaluar?', product_options)
+    product = product.lower()
 
-    # DEFINO VARIABLES
-    d_cust_needs_weights = {}  # iniacializo diccionario de pesos de customer needs
-
-    # IMPORTO ARCHIVOS
+    # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_formated.xlsx')
-    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
-    df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_cust_needs.xlsx", index_col=0)
-    l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_correct_price.xlsx'.format(product))
+    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+    df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+    # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
     # Archivos de (3) Modelling
-    df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_relation_matrix.xlsx", index_col=0)
-    df_alt_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format('celulares'), index_col=0)
-    df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format('celulares'), index_col=0)
-    df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format('celulares'), index_col=0)
-    df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format('celulares'), index_col=0)
+    df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+    df_alt_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
+    df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
+    df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
+    df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
 
     # l_cust_needs = list(df_relation_matrix.index)
-    df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/celulares/df_attr_values_sent.xlsx')
+    df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
 
     print(df_alt.shape)
     # Selecciono ids de alternativas que no han sido borradas
@@ -217,30 +227,28 @@ def main():
     df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
     print(df_alt.shape)
 
-    # (1) SOLICITO INGRESO DE DATOS EN SIDEBAR (tipo de cliente y producto a relevar)
-    st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo
-    st.sidebar.write('# Ingrese los siguientes datos')  # titulo 1 de sidebar
-    client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
-    product_options = ['Celulares', 'TV', 'Smartband']  # Lista de productos
-    client = st.sidebar.radio('1) ¿Que tipo de cliente eres?', client_options)  # client = st.sidebar.selectbox('¿Que tipo de cliente eres?', client_options)
-    product = st.sidebar.radio('2) ¿Que producto desea evaluar?', product_options)  # product = st.sidebar.selectbox('¿Que producto desea evaluar?', product_options)
 
     # SI EL CLIENTE ES UN USUARIO FINAL
     if client == 'Usuario final':
 
         # (2) SOLICITO PESOS DE LAS CUSTOMER NEEDS
         # Imprimo titulo
-        st.sidebar.write('## Ingrese la importancia que usted le da a cada necesidad del cliente tipica de {}'.format(product.lower()))
+        st.sidebar.write('## Ingrese la importancia que usted le da a cada necesidad del cliente tipica de {}'.format(product))
 
         # Por customer need
+        l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # hace falta hacerles una variable? En caso de que si, las dejo aca?
+        l_cust_needs_one_word = list(df_cust_needs.index)
+        df_cust_needs['Peso'] = None  # inicializo columna peso de customer needs
         for i in range(len(l_cust_needs_three_words)):
             # pido peso y lo guardo
             peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=0, max_value=10, value=0, step=1)
-            d_cust_needs_weights[l_cust_needs_three_words[i]] = peso  # df = pd.DataFrame(d_cust_needs_weights, index=[0])  # por algun motivo no se hace bien... aunque el dic si
-        st.write("Verifico (2): ",d_cust_needs_weights)
+            df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = peso
+            # d_cust_needs_weights[l_cust_needs_three_words[i]] = peso  # df = pd.DataFrame(d_cust_needs_weights, index=[0])  # por algun motivo no se hace bien... aunque el dic si
+        # st.write("Verifico (2): ",d_cust_needs_weights)
+        st.write("Verifico (2): ", df_cust_needs)
 
         # (3) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
-        d_attrs_tech_imp = get_attrs_technical_importance(d_cust_needs_weights, df_relation_matrix)
+        d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs, df_relation_matrix)
         print(d_attrs_tech_imp)
         st.write("Verifico (3): ",d_attrs_tech_imp)
 
@@ -262,7 +270,7 @@ def main():
         # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
         # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
         idxs_top_ten = df_alts_recommend.index[:10]
-        aggrid_interactive_table(df=df_alts_recommend.loc[idxs_top_ten, ['Marca', "Modelo", "precio",'porcentaje_recomendacion']])
+        aggrid_interactive_table(df=df_alts_recommend.loc[idxs_top_ten]) #['Marca', "Modelo", "precio", 'porcentaje_recomendacion']]) --> falla para fundas de celular
 
         # 5.2) Muestro tabla completa de alternartivas
         st.write('#### Todas las alternativas')
@@ -284,9 +292,57 @@ def main():
         st.write(df_alt_clust)
 
 
+if __name__ == '__main__':
+    main()
 
 
 
+''' Ex funcion cuado retornaba diccionario y usaba customer_needs_translation...
+def get_attrs_technical_importance(d_cust_needs_weights, df_relation_matrix):
+    """
+    Obtiene la importancia tecnica de cada atributo del producto
+    :param customer_needs_weights: Diccionario
+    :param relation_matrix: Dataframe
+    :return: Diccionario
+    """
+    # Es para cada propiedad del producto. Para cada propiedad del producto j: Suma por cada req del cliente i de (Valoracion del cliente de requisito i * relacion entre req i y prop j)
+    # return Diccionario con atributo
+
+    # Defino variables
+    atributos = df_relation_matrix.columns  # Atributos del producto
+    customer_needs = list(df_relation_matrix.index)  # Customer needs de 1 palabra del producto
+    d = {}  # inicializo diccionario a retornar
+
+    # POR ATRIBUTO
+    for atributo in atributos:
+
+        # Reinicio variable de importancia tecnica
+        imp_tecnica = 0
+
+        # POR CUSTOMER NEED
+        for customer_need in customer_needs:
+            # print(customer_need, atributo)
+
+            # defino relacion entre atributo y customer need
+            # idx_customer_need = customer_needs.index(customer_need)
+            # idx_attr = relation_matrix.columns.get_loc(atributo) # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
+            # print(idx_customer_need, idx_attr)
+            # relacion = relation_matrix.iloc[idx_customer_need, idx_attr]
+            relacion = df_relation_matrix.loc[customer_need, atributo]
+
+            # CALCULO IMPORTANCIA TECNICA
+            customer_need_three_words = customer_needs_translation(d_cust_needs_weights.keys(), customer_need)
+            # print(customer_need_three_words)
+            # print(customer_needs_weights[customer_need_three_words])
+            # print("relacion:", relacion)
+            imp_tecnica += d_cust_needs_weights[customer_need_three_words] * relacion  # deeberia ser contains(customer_need) pues una es de 1 palabra y la otra de 3.
+
+        # GUARDO IMPORTANCIA TECNICA
+        d[atributo] = imp_tecnica
+
+    return d
+    
+    
 def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre ponerle, busca relacion entre customer needs de 3 palabras y las de 1...
     """
     Traduce customer need de 1 palabra a customer need de 3 palabras
@@ -300,26 +356,4 @@ def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre po
         # SI CUSTOMER NEED DE 1 PALABRA ESTA EN CUSTOMER NEED DE 3 PALABRAS
         if cust_need in customer_need:
             return customer_need  # retorno customer need de 3 palabras
-
-
-def aggrid_interactive_table(df: pd.DataFrame):
-    """
-    Creates an st-aggrid interactive table based on a dataframe.
-    :param df: Source dataframe
-    :return:         # dict: The selected row
-    """
-    # https://share.streamlit.io/streamlit/example-app-interactive-table/main
-    options = GridOptionsBuilder.from_dataframe(df, enableRowGroup=True, enableValue=True, enablePivot=True)
-
-    options.configure_side_bar()
-
-    options.configure_selection("single")
-    selection = AgGrid(df, enable_enterprise_modules=True, gridOptions=options.build(), theme="light",
-                       update_mode=GridUpdateMode.MODEL_CHANGED, allow_unsafe_jscode=True)
-
-    return selection
-
-
-
-if __name__ == '__main__':
-    main()
+'''

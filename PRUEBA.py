@@ -1,6 +1,35 @@
 import pandas as pd
+import numpy as np
 # from data_preparation.utils import preparacion_texto
+from p2_data_preparation.format_data import correct_price_column
 
+
+
+from p2_data_preparation.clean_data import disaggregate_columns_with_lists
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/tv/df_alt.xlsx')
+df_alt = disaggregate_columns_with_lists(df_alt)
+
+
+'''
+# CONVERTIDOR DE UNIDADES
+h = 1
+ms = h * 3.6*10**6
+print(ms)
+'''
+
+''' MALA INTERPRETACION DE COLUMNA PRECIO
+df_alt = pd.read_excel(io='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/tv/df_alt.xlsx',dtype={'precio': 'float64'})
+# df_alt = pd.read_excel('/Users/nachomondino/Desktop/TV_df_alt.xlsx')
+print(df_alt[df_alt['precio'] > 1000000])
+'''
+
+'''
+# Probando dropna
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/fundas de celular/df_alt.xlsx')
+df_alt = df_alt.dropna(subset=['precio'])
+print(df_alt)
+print(correct_price_column(df_alt['precio']))
+'''
 
 """ LAMBDA FUNCTION
 text = 'Excelente producto relación precio equipo. Es fluido tiene un buen sonido. Las cámaras están muy bien aún en ambientes con sombras. El autofoco no es de los más rápidos pero funciona bien. El procesador tiene un buen rendimiento. Aún no puedo opinar de la autonomía. Viene con android 10 de raíz. La caja viene completa. Cargador usb auriculares funda templado. Mas no se puede pedir. Y la calidad del cartón es muy buena ,un cartón duro y sobrio llega en una caja negra con rígida con las letras de quantum frontal y de costado. No existen descripción alguna del equipo en la caja ,eso la hace muy sobria. Un equipo ideal para uso cotidiano. Yo habitualmente pruebo equipos y este equipo lo recomiendo. El up 32. El color bordo es hermoso. Tengan en cuenta que el quantum yolo es apenas más económico pero es 3g y tiene un procesador de 4 nucleos ( el up de 8) y una pantalla de 5 pulgadas (el up 5. 5 pulgadas ) y la batería del up es de 2700 mah '
@@ -75,13 +104,13 @@ idx = df.index[df['col1'] == 4][0]
 print(idx)
 '''
 
-
+'''
 # BARRA DE PROGRESO
 from time import sleep
 from tqdm import tqdm
 for i in tqdm(range(10)):
     print(i)
-
+'''
 
 
 '''

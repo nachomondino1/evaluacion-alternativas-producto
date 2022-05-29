@@ -6,6 +6,8 @@ def getting_to_know_data(df):
     :param df: Dataframe
     :return: funcion sin retorno
     """
+    print("DESCRIPCION DE DATAFRAME:".center(120))
+
     # Data frame's dimensionality
     print("Dataframe shape: ", df.shape)
 
@@ -23,6 +25,7 @@ def getting_to_know_data(df):
     # print("Dataframe basic statistics:")
     # df.describe()  # basic descriptive statistics for all numeric columns  # Por que no funciona?
     # df.describe(include=object)  # basic descriptive statistics for all columns
+    print()
 
 
 def main(df_alt, df_opi):

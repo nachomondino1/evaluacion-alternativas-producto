@@ -2,8 +2,13 @@
 import pandas as pd
 
 
-def check_ids(df_alt, df_opi):
+def check_ids(df_alt, df_opi): # notas
+    """
 
+    :param df_alt:
+    :param df_opi:
+    :return:
+    """
     # Obtengo cantidad de ids unicos en cada dataframe
     ids = list(df_alt['id_alternativa'])  # ids en dataframe altenativas
     ids_con_opi = df_opi['id_alternativa'].unique()  # ids en dataframe opiniones
@@ -11,7 +16,7 @@ def check_ids(df_alt, df_opi):
     cant_ids_opi = len(ids_con_opi)
 
     # Verifico que ids con opinion tengan id en Dataframe alternativas
-    print("Verifico que ids con opinion tengan id en Dataframe alternativas:")
+    print("Verifico que toda opinion tenga un id asociado en Dataframe alternativas")
     i = 0
     for id_con_opi in ids_con_opi:
         if id_con_opi not in ids:
@@ -19,8 +24,8 @@ def check_ids(df_alt, df_opi):
     print("Hay {} ids que estan en Dataframe opiniones y no en Dataframe Alternativas!".format(i)), print()
 
     print("Verifico unicidad de ids:")
-    print("Dataframe alternativas --> \t IDs: {}\t IDs unicos: {}".format(cant_ids, len(df_alt['id_alternativa'].unique())))
-    print("Dataframe opiniones    --> \t IDs: {}\t IDs unicos: {}".format(cant_ids_opi, len(df_opi['id_alternativa'].unique())))
+    print("Dataframe alternativas --> Hay {} id de los cuales {} son unicos".format(cant_ids, len(df_alt['id_alternativa'].unique())))
+    print("Dataframe opiniones    --> Hay {} id de los cuales {} son unicos".format(cant_ids_opi, len(df_opi['id_alternativa'].unique())))
 
 def check_repeated_rows(df):
     """

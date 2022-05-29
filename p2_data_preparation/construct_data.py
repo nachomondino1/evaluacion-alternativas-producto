@@ -1,12 +1,8 @@
 # Importo librerias
 import pandas as pd
 import operator
-import stanza
 import pickle
 from p3_modelling.sentiment_atribution import contains_word_type
-
-pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')  # stanza.download('es') --> This downloads the English models for the neural pipeline
-
 
 ################################################ FUNCIONES PRINCIPALES ################################################
 def most_frequent_words(df_opi_tokenizado):
@@ -17,7 +13,7 @@ def most_frequent_words(df_opi_tokenizado):
     :return: Lista de palabras mas frecuentes en opiniones y relevantes
     """
     # Defino variables
-    QUANT_WORDS = 150  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    QUANT_WORDS = 200  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     idx_token = df_opi_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
     freq_ngrams_filt = []
@@ -45,7 +41,7 @@ def most_frequent_words(df_opi_tokenizado):
     for palabra in freq_ngrams:
 
         # Si es sustantivo
-        if is_noun(palabra):
+        if contains_word_type(text=palabra, word_type=['NOUN']):  # if is_noun(palabra):
 
             # Si no es una palabra irrelevante
             if not is_irrelevant_word(palabra):
@@ -67,7 +63,7 @@ def most_frequent_phrases(df_tokenizado):
     """
     print("BUSCO POSIBLES CUSTOMER NEEDS")
     # Defino variables
-    CANT_POSIBLES_CUSTOMER_NEEDS = 10000  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    CANT_POSIBLES_CUSTOMER_NEEDS = 4000  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     idx_token = df_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 
@@ -94,22 +90,9 @@ def most_frequent_phrases(df_tokenizado):
 
     # OBTENGO LISTA DE LOS 3-GRAMS MAS FRECUENTES
     freq_ngrams = most_frequent_dict_key(d, CANT_POSIBLES_CUSTOMER_NEEDS)
-    print("Primeras {} posibles customer needs: {}".format(100, freq_ngrams[:100]))
+    print("Posibles customer needs: {}".format(freq_ngrams))      # print("Primeras {} posibles customer needs: {}".format(100, freq_ngrams[:100]))
 
     return freq_ngrams
-
-
-def freq_word_in_cust_need(possible_customer_need, l_most_freq_words):
-    l_freq_words_in_cust_need = []
-
-    # POR CADA PALABRA DE ESTA
-    for palabra in possible_customer_need.split():
-
-        # SI LA PALABRA ES DE LA MAS FRECUENTES
-        if palabra in l_most_freq_words:
-            l_freq_words_in_cust_need.append(palabra)
-
-    return l_freq_words_in_cust_need
 
 def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
     """
@@ -140,13 +123,28 @@ def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
             if freq_word not in df_cust_needs.index:
 
                 # y si ademas contiene al menos un adjetivo o adverbio:
-                if contains_word_type(text=possible_customer_need, word_type=['ADJ', 'ADV']) or possible_customer_need == 'relacion precio calidad':
+                # if contains_word_type(text=possible_customer_need, word_type=['ADJ', 'ADV']) or possible_customer_need == 'relacion precio calidad':
 
-                    df_cust_needs.loc[freq_word] = possible_customer_need
-                    print("{:^40s}\t{:^40}".format(possible_customer_need, i))
+                # Pregunto a administrador
+                # Mientras la carga sea invalida
+                try:
+                    # Solicito 0 o 1 para determinar si customer need sera considerada o no
+                    bool = input("Ingrese 'y' si tendra en cuenta la customer need '{} de posicion {}': ".format(possible_customer_need.upper(), i))
 
-                else:
-                    print("La customer need '{}' fue descartada por no contener ADJ ni ADV".format(possible_customer_need))
+                    if bool == "y":
+                        # Guardo customer need
+                        df_cust_needs.loc[freq_word] = possible_customer_need
+                        print("{:^40s}\t{:^40}".format(possible_customer_need, i))
+
+                except ValueError:  # si el input no es un numero entero
+                    pass
+
+                # df_cust_needs.loc[freq_word] = possible_customer_need
+
+                # print("{:^40s}\t{:^40}".format(possible_customer_need, i))
+
+                #else:
+                #    print("La customer need '{}' fue descartada por no contener ADJ ni ADV".format(possible_customer_need))
 
     # ELIMINO CUSTOMER NEEDS NO DESEADAS
     print("Seleccionar customer needs:")  # Evito repeticion como "calidad fotos videos" y "tiene buena camara", customer needs quee no tienen atributos para relacionar como "tiene buen sonido"
@@ -156,56 +154,6 @@ def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
     print("Customer needs seleccionadas:")
     print(df_cust_needs)
     return df_cust_needs
-
-def select_attributes(df_alt):  # DOC
-    """
-    Selecciono los atributos
-    :param df_alt:
-    :return:
-    """
-    # SELECCIONO ATRIBUTOS
-    # Defino variable
-    l_attr_remove = []
-
-    # Por elemento
-    for atributo in df_alt.columns:
-        print(atributo.center(120))
-
-        # Obtengo lista de frecuencia de sus valores
-        unique_values = list(df_alt[atributo].dropna().unique())  # dropna para evitar que NaN sea una valor unico
-        n_possible_unique_values = len(df_alt[atributo].dropna())
-        n_unique_values = len(unique_values)
-        n_opt_unique_values = int(len(df_alt[atributo].dropna()) ** 0.5)
-        n_nan_values = (len(df_alt) - n_possible_unique_values) / len(df_alt)
-
-        # Si toma muchos valores distintos
-        if n_unique_values > n_opt_unique_values:
-            print("CUIDADO! Tiene mas valores unicos que lo recomendado que es {}".format(n_opt_unique_values))
-            print("Nºvalores: {} ; Nºvalores unicos: {}".format(n_possible_unique_values, n_unique_values))
-
-        # Si tiene muchos valores NaN
-        if n_nan_values > 0.5:
-            print("CUIDADO! Toma muchos valores NaN, un {:1f}%".format(n_nan_values*100))
-
-        # Mientras la carga sea invalida
-        while True:
-            try:
-                # Solicito 0 o 1 para determinar si el atributo sera considerado o no
-                bool = int(input("Tendra en cuenta el elemento '{}' (0 o 1): ".format(atributo.upper())))
-
-                if bool == 0 or bool == 1:
-
-                    # si el atribuo sera considerado
-                    if bool == 0:
-                        l_attr_remove.append(atributo)
-                    break
-
-            except ValueError:  # si el input no es un numero entero
-                pass
-
-    # ELIMINO ATRIBUTOS NO RELEVANTES DE DATAFRAME ALTERNATIVAS
-    df_alt = df_alt.drop(l_attr_remove, axis=1)
-    return df_alt
 
 def create_relation_matrix(l_atributos, l_cust_needs):
     """
@@ -290,23 +238,6 @@ def most_frequent_dict_key(dict, quantity_freq):
 
 
 # UTILIZADA EN MOST_FREQUENT_WORDS()
-def is_noun(word): # reemplazadad por contains?
-    """
-    Identifica si la palabra es un sustantivo o no
-    :param word: Palabra
-    :return: True si la palabra es sustantivo, o bien, False
-    """
-    # Proceso palabra
-    doc = pos_tagger(word)  # esta preparada para procesar un documento en lugar de una palabra
-    pos = doc.sentences[0].words[0].pos  # Obtengo pos (noun, adj, adv, verb, etc) de la palabra
-
-    # Si palabra es sustantivo
-    if pos == "NOUN":
-        return True  # retorno True
-    # si palabra no es sustantivo
-    else:
-        return False  # retorno False
-
 def is_irrelevant_word(word):
     """
     Determina si una palabra es relevante o no para la seleccion de customer needs.
@@ -314,23 +245,31 @@ def is_irrelevant_word(word):
     :return: True si la palabra es irrelevante para la seleccion de customer needs, de lo contrario, False
     """
     # Defino lista de palabras irrelevantes
-    pal_irrel = ['android', 'año', 'años', 'auriculares', 'auris',
-                 'band',
-                 'calidad', 'conforme', 'compra', 'cosas', 'celulares', 'color', 'compu', 'computadora', 'cosa', 'caso', 'cuidado',
-                 'equipo', 'expectativas', 'encanto', 'estrellas',
+    pal_irrel = ['android', 'año', 'años',
+                 'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado',
+                 'descripcion',
+                 'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
                  'funcion', 'funciones',
                  'gama', 'gusto', 'gracias', 'general',
                  'hora', 'horas', 'hs',
-                 'iphone',
                  'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
-                 'netflix', 'notebook',
-                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'pulsera', 'pc', 'punto', 'puntos'
-                 'redes', 'relacion', 'rendimiento', 'resto', 'reloj', 'regalo', 'respecto',
-                 'tele', 'telefono', 'televisor', 'tiempo', 'tv', 'tablet', 'tablets', 'tipo',
+                 'netflix', 'nota',
+                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder',
+                 'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto',
+                 'tiempo', 'tipo',
                  'uso',
                  'verdad',
-                 'semana', 'super', 'smartwatch',
+                 'semana', 'super',
                  'whatsapp', 'windows']
+
+    pal_irrel_cel = ['celulares', 'iphone','telefono']
+    pal_irrel_tablets = ['tablet', 'tablets']
+    pal_irrel_note = ['computadora','notebook', 'pc']
+    pal_irrel_auris = ['auriculares', 'auris']
+    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'marcas', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
+    pal_irrel_smartband = ['smartwatch', 'band', 'pulsera', 'reloj', 'malla', 'gps', 'muñeca', 'datos', 'medicion', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
+
+    pal_irrel += pal_irrel_smartband
 
     # Si la palabra no es relvante
     if word in pal_irrel:
@@ -358,6 +297,7 @@ def delete_related_words(l_palabras):
     # Por palabra
     for palabra in l_palabras:
 
+        '''
         # ELIMINO PALABRA EN PLURAL DE LISTA
         # Por palabra en plural
         for palabra_plural in palabras_plural(palabra):
@@ -366,6 +306,7 @@ def delete_related_words(l_palabras):
                 # La remuevo
                 str_palabras = delete_substring_in_string(str_palabras, palabra_plural)
                 print("Se removio palabra '{}' dado que ya esta '{}'".format(palabra_plural, palabra))
+        '''
 
         # ELIMINO PALABRAS RELACIONADAS DE LISTA
         # Obtengo sus palabras relacionadas
@@ -422,6 +363,18 @@ def generate_n_grams(text, ngram):
 
 
 # UTILIZADA EN SELECT_CUSTOMER_NEEDS()
+def freq_word_in_cust_need(possible_customer_need, l_most_freq_words):
+    l_freq_words_in_cust_need = []
+
+    # POR CADA PALABRA DE ESTA
+    for palabra in possible_customer_need.split():
+
+        # SI LA PALABRA ES DE LA MAS FRECUENTES
+        if palabra in l_most_freq_words:
+            l_freq_words_in_cust_need.append(palabra)
+
+    return l_freq_words_in_cust_need
+
 def is_possible_customer_need_wanted(possible_customer_need, most_freq_words):  # en desuso temporalmente
     """
     Evita seleccionar una posible customer need que contenga un numero, una palabra irrelevante o dos o mas palabras
@@ -691,4 +644,46 @@ def is_possible_customer_need_wanted(possible_customer_need, most_freq_words):
     else:
         # Descarto la posible customer need
         return False
+'''
+
+
+''' En desuso por contains_word_type
+def is_noun(word): 
+    """
+    Identifica si la palabra es un sustantivo o no
+    :param word: Palabra
+    :return: True si la palabra es sustantivo, o bien, False
+    """
+    # Proceso palabra
+    doc = pos_tagger(word)  # esta preparada para procesar un documento en lugar de una palabra
+    pos = doc.sentences[0].words[0].pos  # Obtengo pos (noun, adj, adv, verb, etc) de la palabra
+
+    # Si palabra es sustantivo
+    if pos == "NOUN":
+        return True  # retorno True
+    # si palabra no es sustantivo
+    else:
+        return False  # retorno False
+'''
+
+
+'''
+    pal_irrel = ['android', 'año', 'años', 'auriculares', 'auris',
+                 'band',
+                 'calidad', 'conforme', 'compra', 'cosas', 'celulares', 'color', 'compu', 'computadora', 'cosa', 'caso', 'cuidado',
+                 'equipo', 'expectativas', 'encanto', 'estrellas',
+                 'funcion', 'funciones',
+                 'gama', 'gusto', 'gracias', 'general',
+                 'hora', 'horas', 'hs',
+                 'iphone',
+                 'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
+                 'netflix', 'notebook', 'nota',
+                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'pulsera', 'pc', 'punto', 'puntos', 'publicacion',
+                 'redes', 'relacion', 'rendimiento', 'resto', 'reloj', 'regalo', 'respecto',
+                 'tele', 'telefono', 'televisor', 'tiempo', 'tv', 'tablet', 'tablets', 'tipo',
+                 'uso',
+                 'verdad',
+                 'semana', 'super',
+                 'whatsapp', 'windows']
+
 '''

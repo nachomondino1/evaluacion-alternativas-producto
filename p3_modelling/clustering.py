@@ -19,16 +19,17 @@ def create_clustering_dataframe(df_alt, df_attr_values):
     atributo
     """
     # Creo dataframe a retornar vacio con los nombres de las columnas correspondientes
-    df = pd.DataFrame(columns=['id_alternativa'] + list(df_attr_values['atributo'].unique()))
+    df_input_clust = pd.DataFrame(columns=['id_alternativa'] + list(df_attr_values['atributo'].unique()))  # el id_alt no sera utilizado pero igual lo necesito
 
     # POR ALTERNATIVA
     for i in range(len(df_alt)):
         # print("++++ Nº MODELO: {} ++++ ".format(i))
 
-        fila_alternativa = [df_alt.iloc[i, 0]]  # la reinicio para cada modelo, aunque la inicializo con el id_alt
+        # fila_alternativa = [df_alt.iloc[i, 0]]  # la reinicio para cada modelo, aunque la inicializo con el id_alt
+        df_input_clust.loc[i, "id_alternativa"] = df_alt.iloc[i, 0]
 
         # POR ATRIBUTO
-        for atributo in df.columns[1:]:  # tengo que evitar id_alt, linea y modelo
+        for atributo in df_input_clust.columns[1:]:
             # print("ATRIBUTO: ", atributo)
 
             # Obtengo valor del atributo para el modelo
@@ -48,17 +49,20 @@ def create_clustering_dataframe(df_alt, df_attr_values):
                 prom_sent = df_attr_values[df_attr_values['atributo'] == atributo]['sent'].min()
                 # print("Valor {} es NaN. Busco peor sentiment, en este caso, {}".format(valor, prom_sent))
 
+            df_input_clust.loc[i, atributo] = prom_sent
             # GUARDO SENTIMENT
-            fila_alternativa.append(prom_sent)
+            # fila_alternativa.append(prom_sent)
 
         # Guardo fila de modelo
         # print("Fila de sentiment de la alternativa: ", fila_alternativa)
-        df.loc[len(df)] = fila_alternativa
+        # df.loc[len(df)] = fila_alternativa
 
+    print(df_input_clust)
     # Reemplazo valores Nan por valores medios de cada columna
-    df.iloc[:, 1:] = replace_nan(df.iloc[:, 1:])
+    df_input_clust.iloc[:, 1:] = replace_nan(df_input_clust.iloc[:, 1:])  # no incluyo id_alt? al pedo total no lo va a reemplazar...
+    print(df_input_clust)
 
-    return df
+    return df_input_clust
 
 def replace_nan(df):
     """
@@ -76,7 +80,6 @@ def replace_nan(df):
 
         # Obtengo promedio de valores de columna
         valor_promedio = df[column].mean()
-        print("Atributo:", column, "valor promedio:", valor_promedio)
 
         # Por valor
         for i in range(len(df[column])):
@@ -98,7 +101,7 @@ def k_means(df_clustering):
     son los atributos del producto y la columna "label" con el cluster al que pertenece y las celdas son los sentiment
     que toma el valor del atributo
     """
-    print("Columnas a clusterizar:", df_clustering.columns, len(df_clustering.columns))
+    print("Las {} columnas a clusterizar: {}".format(len(df_clustering.columns), list(df_clustering.columns)))
     # Defino datos
     X = np.array(df_clustering[df_clustering.columns])  #por ahi teenga que sacar algunas columnas..
 
@@ -127,7 +130,6 @@ def chooseBestKforKMeans(scaled_data, k_range):
     :return: best k
     """
     ans = []
-
     # Por k
     for k in k_range:
 
@@ -138,11 +140,11 @@ def chooseBestKforKMeans(scaled_data, k_range):
         ans.append((k, scaled_inertia))
 
     # Creo dataframe para mostrar los resultados
-    results = pd.DataFrame(ans, columns=['k', 'Scaled Inertia']).set_index('k')
-    print(results)
+    df = pd.DataFrame(ans, columns=['k', 'Scaled Inertia']).set_index('k')
+    print(df)
 
     # Elijo el mejor k (minimiza scaled inertia)
-    best_k = results.idxmin()[0]
+    best_k = df.idxmin()[0]
 
     return best_k
 
@@ -189,9 +191,6 @@ def create_table_cluster_centroids_sent(df_alt_clust):
     # POR CLUSTER
     for cluster in labels:
 
-        # Defino variable
-        # fila = []  # donde guardare scores para un cluster
-
         # Selecciono alternativas de un solo cluster
         df_alt_one_cluster = df_alt_clust[df_alt_clust['label'] == cluster]
 
@@ -203,14 +202,8 @@ def create_table_cluster_centroids_sent(df_alt_clust):
 
             df_centroids_sent.loc[cluster, atributo] = score_prom
 
-            # GUARDO SCORE
-            # fila.append(score_prom)
-
-        # GUARDO FILA DEL CLUSTER
-        # df_centroids_sent.loc[len(df_centroids_sent)] = fila
-
-    # ORDENO LA TABLA POR Nº DE CLUSTER
-    # df_centroids_sent = df_centroids_sent.sort_values(by=['label'])
+    print("Se exporto Dataframe con los centroides de cada cluster para poder darle nombre a clusters")
+    df_centroids_sent.to_excel('/Users/nachomondino/Desktop/df_centroids_sent.xlsx')
     return df_centroids_sent
 
 def cluster_names(df_clust):
@@ -282,150 +275,155 @@ def create_table_num_alt_per_cluster(df_alt_clust):
 
     return df_alt_per_clust
 
-def create_table_cluster_centroids_values(df_alt, df_alt_clust):
+def create_table_cluster_centroids_values(df_alt, df_alt_cleaned_clust):
     """
     Obtiene centroides de clusters. Cada cluster toma el valor mas frecuente para cada atributo del producto
     :param df_alt:
-    :param df_alt_clust: Dataframe cuya unidad de analisis son las alternativas. Las columnas son los atributos del
+    :param df_alt_cleaned_clust: Dataframe cuya unidad de analisis son las alternativas. Las columnas son los atributos del
     producto, quienes toman un sentiment en particular, y una columna adicional "label" con el cluster al que corresponde
     cada alternativa
     :return:
     """
     # Defino variable
     # seguro necesite df_modelos_formateado pues las numericas las promedio.. y las string pongo el mas freecueente......!
-    labels = df_alt_clust['label'].unique()  # podria haber obtenido los nombres de la primera tabla (?)
-    df_centroids_values = pd.DataFrame(columns=df_alt.columns[1:len(df_alt.columns)-1], index=labels)
+    labels = df_alt_cleaned_clust['label'].unique()  # podria haber obtenido los nombres de la primera tabla (?)
+    df_centroids_values = pd.DataFrame(columns=df_alt.columns[1:len(df_alt.columns)-1], index=labels)  # excluyo id_alt y label
+
+    print("Labels (deberian ser 5):", labels)
 
     # POR CLUSTER
     for cluster in labels:
-        # print("CLUSTER LABEL: ", cluster)
-
-        # Defino variable
-        fila = []  # donde guardare scores para un cluster
+        print("CLUSTER LABEL: ", cluster)
 
         # SELECCIONO ALTERNATIVAS DE CLUSTER EN DATAFRAME ALTERNATIVAS
-        # Selecciono ids de alternativas de un cluster
-        ids_cluster = df_alt_clust[df_alt_clust['label'] == cluster]['id_alternativa']
-        # Selecciono alternativas en dataframe alternativas segun ids
-        df_alt_filt_cluster = df_alt[df_alt.id_alternativa.isin(ids_cluster)]
+        ids_cluster = df_alt_cleaned_clust[df_alt_cleaned_clust['label'] == cluster]['id_alternativa']  # ids de un cluster
+        print("IDS de cluster (deberian ser la cant que dice la tabla 4.2.5):", len(ids_cluster))
+        df_alt_one_clust = df_alt[df_alt.id_alternativa.isin(ids_cluster)]  # alternativas de un cluster
+        print("Dataframe de alternartivas de un cluster:")
+        print(df_alt_one_clust)
 
         # POR ATRIBUTO
         for atributo in df_alt.columns[1:len(df_alt.columns)-1]:  #excluyo id y label
-            # print("Atributo: ", atributo, df_alt_filt_cluster[atributo].dtype)
+            print("Atributo: ", atributo)
             # print(df_alt_cluster[atributo])
 
-            # Si es numerica
-            if df_alt_filt_cluster[atributo].dtype == 'int64' or df_alt_filt_cluster[atributo].dtype == 'float64':
+            # Si es una variable numerica y continua
+            if df_alt_one_clust[atributo].dtype in ['int64', 'float64'] and len(df_alt_one_clust[atributo].dropna().unique()) > len(df_alt_one_clust) ** 0.5:
                 # Obtengo promedio de la columna
-                valor = df_alt_filt_cluster[atributo].mean()
+                valor = round(df_alt_one_clust[atributo].mean(), 0)
 
-            # Si no es numerica
+            # Si es numerica y discreta, o bien, no es numerica
             else:
                 # Obtengo valor mas frecuente de la columna
-                # print(df_alt_filt_cluster[atributo].value_counts())
-                valor = df_alt_filt_cluster[atributo].value_counts().index[0]
+                try:
+                    print(df_alt_one_clust[atributo].value_counts())
+                    valor = df_alt_one_clust[atributo].value_counts().index[0]
 
-            # print("Valor atributo: ", valor)
-            fila.append(valor)
+                except IndexError:  # si no hay valores para ese atributo en ese cluster
+                    valor = None
 
-        # Guardo fila por grupo
-        # print("Fila: ", fila)
-        df_centroids_values.loc[cluster] = fila
-        # table2.loc[len(table2)] = fila
+            print("Valor mas frecuente del atributo:", valor)
+            df_centroids_values.loc[cluster, atributo] = valor
 
     return df_centroids_values
 
-def create_table_brand_per_cluster(df_alt, df_clust):
+def create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster):
     """
     :param df_alt:
-    :param df_clust:
+    :param df_alt_cleaned_cluster:
     :return:
     """
+    # Si el atributo se llama "Marca"
+    if 'Marca' in list(df_alt.columns):
+        atrib_marca = 'Marca'
+    else:
+        for atributo in list(df_alt.columns):
+            if 'marca' in atributo.lower():
+                atrib_marca = atributo
+                break
+
     # Defino variable
-    df_brand_per_cluster = pd.DataFrame(index=df_clust['label'].unique(), columns=df_alt['Marca'].dropna().unique())
+    l_marcas = list(df_alt[atrib_marca].dropna().unique())
+    df_brand_per_cluster = pd.DataFrame(index=df_alt_cleaned_cluster['label'].unique(), columns=l_marcas)
+    print(l_marcas)
 
     # POR CLUSTER
-    for cluster in df_clust['label'].unique():
+    for cluster in df_alt_cleaned_cluster['label'].unique():
         # print("CLUSTER LABEL: ", cluster)
 
         # SELECCIONO ALTERNATIVAS DE CLUSTER EN DATAFRAME ALTERNATIVAS
-        # Selecciono ids de alternativas de un cluster
-        ids_cluster = df_clust[df_clust['label'] == cluster]['id_alternativa']
-        # Selecciono alternativas en dataframe alternativas segun ids
-        df_alt_filt_cluster = df_alt[df_alt.id_alternativa.isin(ids_cluster)]
-
-        # OBTENGO FRECUENCIA DE MARCAS EN CLUSTER
-        marcas = df_alt_filt_cluster['Marca'].value_counts()
-        # print(marcas)
-        # print(marcas.index)
-        # print(marcas.values)
+        ids_cluster = df_alt_cleaned_cluster[df_alt_cleaned_cluster['label'] == cluster]['id_alternativa']  # ids de alternativa en un cluster
+        df_alt_cleaned_one_cluster = df_alt[df_alt.id_alternativa.isin(ids_cluster)]  # alternativas de un cluster
 
         # GUARDO MARCAS Y SUS FRECUENCIAS
-        for i in range(len(marcas)):
-
-            marca, frec = marcas.index[i], marcas.values[i]
+        for marca in l_marcas:
+            frec = len(df_alt_cleaned_one_cluster[df_alt_cleaned_one_cluster[atrib_marca] == marca])
             df_brand_per_cluster.loc[cluster, marca] = frec
 
     return df_brand_per_cluster
 
-def show_results(df_alt, df_alt_clust):  #despues veo si la pongo en pagina_web.py o si la dejo
-
-    # CREO TABLA DE NUMERO DE ALTERNATIVAS POR CLUSTER
-    df_alt_per_clust = create_table_num_alt_per_cluster(df_alt_clust)
-
-    # CREO TABLA DE CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
-    df_centroids_values = create_table_cluster_centroids_values(df_alt, df_alt_clust)
-
-    # CREO TABLA DE NUMNERO DE MARCAS POR CLUSTER
-    df_brand_per_cluster = create_table_brand_per_cluster(df_alt, df_alt_clust)
-
-    return df_alt_per_clust, df_centroids_values, df_brand_per_cluster
-
-def drop_alternatives_unwanted(df_alt, df_alt_cluster):
+def drop_alternatives_unwanted(df_alt, df_alt_cleaned_clust):
     """
     Selecciono alternativas que no han sido eliminadas durante data preparation y agrego columna label
     :param df_alt:
-    :param df_alt_cluster:
+    :param df_alt_cleaned_clust:
     :return:
     """
     # Selecciono ids de alternativas que no han sido borradas
-    ids_cleaned = df_alt_cluster["id_alternativa"]
+    ids_alt_cleaned = df_alt_cleaned_clust["id_alternativa"]
 
     # Filtro dataframe alternativas por ids
-    df_alt = df_alt[df_alt.id_alternativa.isin(ids_cleaned)]
+    df_alt = df_alt[df_alt.id_alternativa.isin(ids_alt_cleaned)]
 
     # Agrego columna de label
     df_alt_with_label = df_alt.copy()
-    df_alt_with_label['label'] = list(df_alt_cluster['label'])
+    df_alt_with_label['label'] = list(df_alt_cleaned_clust['label'])
 
     return df_alt_with_label
 
 def main(df_alt, df_alt_cleaned, df_attr_values_sent):
 
     # (1) CREO EL DATAFRAME PARA CLUSTERING
+    print(" 4.2.1 Creando el dataframe para clustering...")
     df_input_clustering = create_clustering_dataframe(df_alt_cleaned, df_attr_values_sent)
     print(df_input_clustering)
 
     # (2) APLICO CLUSTERING
-    df_alt_cluster = pd.concat([df_input_clustering['id_alternativa'], k_means(df_input_clustering.iloc[:, 1:])], axis=1)
-    print("FINAL: ", df_alt_cluster)
+    print(" 4.2.2 Aplicando clustering...")
+    df_alt_cleaned_cluster = pd.concat([df_input_clustering['id_alternativa'], k_means(df_input_clustering.iloc[:, 1:])], axis=1)
 
     # (3) DEFINO NOMBRES DE CLUSTERS
+    print(" 4.2.3 Definiendo nombre de clusters...")
     # Creo tabla de centroides de clusters de alternativas segun sentiment
-    df_centroids_sent = create_table_cluster_centroids_sent(df_alt_cluster)  # tabla 0 pues el cliente no la ve, es solo para mi y asi poder definir nombres de clusters
+    df_centroids_sent = create_table_cluster_centroids_sent(df_alt_cleaned_cluster)  # tabla 0 pues el cliente no la ve, es solo para mi y asi poder definir nombres de clusters
     df_centroids_sent.to_excel('/Users/nachomondino/Desktop/df_centroids_sent.xlsx')
     print("Se exporto Dataframe con los centroides de cada cluster para poder darle nombre a clusters")
     # Obtengo nombre de clusters
-    d_labels_names = cluster_names(df_alt_cluster)
+    d_labels_names = cluster_names(df_alt_cleaned_cluster)
     # Reemplazo labels por nombre de labels
-    df_alt_cluster = replace_labels_with_names(df_alt_cluster, d_labels_names)
+    df_alt_cleaned_cluster = replace_labels_with_names(df_alt_cleaned_cluster, d_labels_names)
 
     # (4) OBTENGO DATAFRAME ALTERNATIVAS CON CLUSTER
+    print(" 4.2.4 Obteniendo dataframe alternativas para mostrar al cliente con los nombres de clusters correspondientes...")
     # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
-    df_alt = drop_alternatives_unwanted(df_alt, df_alt_cluster)
+    print(df_alt)
+    df_alt = drop_alternatives_unwanted(df_alt, df_alt_cleaned_cluster)
+    print(df_alt)
 
-    # (5) SHOW RESULTS
-    df_alt_per_clust, df_centroids_values, df_brand_per_cluster = show_results(df_alt, df_alt_cluster)
+    # (5) CREO TABLA DE NUMERO DE ALTERNATIVAS POR CLUSTER
+    print(" 4.2.5 Obteniendo tabla de numero de alternativas por cluster...")
+    df_alt_per_clust = create_table_num_alt_per_cluster(df_alt_cleaned_cluster)
+    print(df_alt_per_clust)
+
+    # (6) CREO TABLA DE CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
+    print(" 4.2.6 Obteniendo tabla de centroides segun valores de atributos...")
+    df_centroids_values = create_table_cluster_centroids_values(df_alt, df_alt_cleaned_cluster)
+    print(df_centroids_values)
+
+    # (7) CREO TABLA DE NUMERO DE MARCAS POR CLUSTER
+    print(" 4.2.7 Obteniendo tabla de numero de marcas por cluster...")
+    df_brand_per_cluster = create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster)
+    print(df_brand_per_cluster)
 
     return df_alt, df_alt_per_clust, df_centroids_values, df_brand_per_cluster
 

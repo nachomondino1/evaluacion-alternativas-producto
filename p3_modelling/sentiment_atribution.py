@@ -6,7 +6,7 @@ import pickle
 import statistics as st
 
 analyzer = create_analyzer(task="sentiment", lang="es")  # para realizar el sentiment
-pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')
+pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos,mwt')
 
 ################################################ FUNCIONES PRINCIPALES ################################################
 def to_customer_needs(df_opi, l_customer_needs_one_word):
@@ -491,20 +491,24 @@ def standardize_sentiment(df):
     """
     # Defino variable
     l_sent = df['sent'].dropna()
+    try:
+        # Obtengo media y desvio de sentiments
+        media = st.mean(l_sent)  # media de sentiment de los valores del atributo
+        desv = st.stdev(l_sent)  # desvio de sentiment de los valores del atributo
+        # Los atributos que toman un solo valor y por ende tienen un solo sent, fallan en el calculo del desvio porque se necesitan al menos dos data points (es decir, al menos dos valores cada uno con su sentiment)
 
-    # Obtengo media y desvio de sentiments
-    media = st.mean(l_sent)  # media de sentiment de los valores del atributo
-    desv = st.stdev(l_sent)  # desvio de sentiment de los valores del atributo
+        # NORMALIZO EL SENTIMENT DE CADA VALOR
+        # Por valor
+        for i in range(len(df)):
+            # Obtengo el sentiment del valor
+            sent_valor = df.loc[i, 'sent']
 
-    # NORMALIZO EL SENTIMENT DE CADA VALOR
-    # Por valor
-    for i in range(len(df)):
-        # Obtengo el sentiment del valor
-        sent_valor = df.loc[i, 'sent']
-
-        # Normalizo dicho sentiment y lo guardo
-        new_sent_valor = (sent_valor - media) / desv
-        df.loc[i, 'sent'] = new_sent_valor
+            # Normalizo dicho sentiment y lo guardo
+            new_sent_valor = (sent_valor - media) / desv
+            df.loc[i, 'sent'] = new_sent_valor
+    except:
+        print("Columna que fallo: ", df['atributo'].unique())
+        pass
 
     return df
 
@@ -522,13 +526,16 @@ def main(df_alt_cleaned, df_opi, df_relation_matrix):
     print("4.1.2 Atribuyo sentiment a valores de los atributos del producto...".center(120))
     df_attr_values_sent = to_attribute_value(df_alt_cleaned, df_cust_need_sent, df_relation_matrix)
 
+    # df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/auriculares/df_attr_values_sent.xlsx', index=False)  # cuando corra tod@ junto pongo product.nombre
+
     return df_cust_need_sent, df_attr_values_sent
 
 '''
 # Para correr pruebas
-df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/auriculares/df_alt_cleaned.xlsx')
-df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/auriculares/df_opi.xlsx')
-df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/auriculares/df_relation_matrix.xlsx', index_col=0)
+producto = "auriculares"
+df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
+df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
+df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
 print(df_alt_cleaned), print(df_opi), print(df_relation_matrix)
 main(df_alt_cleaned, df_opi, df_relation_matrix)
 '''

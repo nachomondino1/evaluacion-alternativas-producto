@@ -273,17 +273,19 @@ def select_relevant_attributes(d_attr_frec):
 
             while True:
 
-                # Solicito al administrador si tendra en cuena o no el atributo
-                input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
+                try:
+                    # Solicito al administrador si tendra en cuena o no el atributo
+                    input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
 
-                if input_admin == 0 or input_admin == 1:
-                    break
+                    if input_admin == 1:
+                        # Guardo atributo
+                        l_atributos.append(atributo)
+                        break
+                    else:
+                        break
 
-            # Si lo tiene en cuenta
-            if input_admin == 1:
-
-                # Guardo atributo
-                l_atributos.append(atributo)
+                except: # si no cargo un numero
+                    pass
 
     # Resumo los resultados de la extraccion de atributos
     print('Los {} atributos mas relevantes: {}'.format(len(l_atributos), l_atributos))
