@@ -208,7 +208,7 @@ def main():
 
     # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('//data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
+    df_alt = pd.read_excel('.//data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
     df_alt = pd.read_excel('//data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
     df_alt_cleaned = pd.read_excel('//data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
     df_cust_needs = pd.read_excel("//data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
