@@ -41,7 +41,7 @@ def most_frequent_words(df_opi_tokenizado):
     for palabra in freq_ngrams:
 
         # Si es sustantivo
-        if contains_word_type(text=palabra, word_type=['NOUN']):  # if is_noun(palabra):
+        if contains_word_type(text=palabra, word_type=['NOUN']) or palabra=='usar':  # 'usar' por atributo 'sistema operativo'. Facil de usar, intuitivo, etc...
 
             # Si no es una palabra irrelevante
             if not is_irrelevant_word(palabra):
@@ -238,19 +238,19 @@ def most_frequent_dict_key(dict, quantity_freq):
 
 
 # UTILIZADA EN MOST_FREQUENT_WORDS()
-def is_irrelevant_word(word):
+def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod...
     """
     Determina si una palabra es relevante o no para la seleccion de customer needs.
     :param word: String. Una sola palabra
     :return: True si la palabra es irrelevante para la seleccion de customer needs, de lo contrario, False
     """
     # Defino lista de palabras irrelevantes
-    pal_irrel = ['android', 'año', 'años',
+    pal_irrel = ['android', 'año', 'años', 'amazon',
                  'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado',
-                 'descripcion',
+                 'descripcion', 'disney',
                  'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
-                 'funcion', 'funciones',
-                 'gama', 'gusto', 'gracias', 'general',
+                 'funcion', 'flow', # 'funciones'
+                 'gama', 'gusto', 'gracias', 'general', 'google'
                  'hora', 'horas', 'hs',
                  'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
                  'netflix', 'nota',
@@ -260,16 +260,17 @@ def is_irrelevant_word(word):
                  'uso',
                  'verdad',
                  'semana', 'super',
+                 'youtube',
                  'whatsapp', 'windows']
 
-    pal_irrel_cel = ['celulares', 'iphone','telefono']
+    pal_irrel_cel = ['celulares', 'iphone', 'telefono']
     pal_irrel_tablets = ['tablet', 'tablets']
     pal_irrel_note = ['computadora','notebook', 'pc']
     pal_irrel_auris = ['auriculares', 'auris']
-    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'marcas', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
-    pal_irrel_smartband = ['smartwatch', 'band', 'pulsera', 'reloj', 'malla', 'gps', 'muñeca', 'datos', 'medicion', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
+    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'marcas', 'pc', 'cable', 'hdmi', 'sistema', 'google', 'parlantes', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
+    pal_irrel_smartband = ['smartwatch', 'smart', 'band', 'oxigeno', 'presion', 'pulsera', 'reloj', 'malla', 'gps', 'muñeca', 'datos', 'medicion', 'mediciones', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
 
-    pal_irrel += pal_irrel_smartband
+    pal_irrel += pal_irrel_tv
 
     # Si la palabra no es relvante
     if word in pal_irrel:
@@ -291,22 +292,8 @@ def delete_related_words(l_palabras):
     with open("d_rel_words.pkl", "rb") as tf:
         d_rel_words = pickle.load(tf)
 
-    # Convierto lista de palabras a string
-    str_palabras = "   ".join(l_palabras)  # agrego espacios porque eliminare strings que tienen espacios para evitar identificiarlo mal en opiniones
-
     # Por palabra
     for palabra in l_palabras:
-
-        '''
-        # ELIMINO PALABRA EN PLURAL DE LISTA
-        # Por palabra en plural
-        for palabra_plural in palabras_plural(palabra):
-            # Si esta la palabra en plural
-            if palabra_plural in str_palabras:
-                # La remuevo
-                str_palabras = delete_substring_in_string(str_palabras, palabra_plural)
-                print("Se removio palabra '{}' dado que ya esta '{}'".format(palabra_plural, palabra))
-        '''
 
         # ELIMINO PALABRAS RELACIONADAS DE LISTA
         # Obtengo sus palabras relacionadas
@@ -314,14 +301,16 @@ def delete_related_words(l_palabras):
 
         # Por palabra relacionada
         for word in l_related_words:  # sin incluir palabra propiamente
+            word = word.replace(" ", "")  # Elimino espacios agregados para identificar cust needs en opiniones y evitar confusion
 
             # Si esta en lista de palabras
-            if word in str_palabras:
+            if word in l_palabras:
                 # La remuevo
-                str_palabras = delete_substring_in_string(str_palabras, word)
+                l_palabras.remove(word)
+                # str_palabras = delete_substring_in_string(str_palabras, word)
                 print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
 
-    return str_palabras.split()
+    return l_palabras
 
 def palabras_plural(palabra): # falta doc y ver si la dejo
     """
@@ -335,16 +324,6 @@ def palabras_plural(palabra): # falta doc y ver si la dejo
     for i in range(len(plurales)):
         palabra_en_plural.append(palabra+plurales[i])
     return palabra_en_plural
-
-def delete_substring_in_string(string, substring):  # falta doc
-    if substring in string:
-        idx_ini = string.find(substring)
-        string_cleaned = string[:idx_ini] + string[idx_ini + len(substring) + 1:]
-    else:
-        string_cleaned = string
-        print("No se encontro el substring {} en el string {}".format(substring, string))
-
-    return string_cleaned
 
 
 # UTILIZADA EN MOST_FREQUENT_PHRASES()
@@ -686,4 +665,65 @@ def is_noun(word):
                  'semana', 'super',
                  'whatsapp', 'windows']
 
+'''
+
+
+'''
+
+# EX FUNCION delete_related_words (HORRIBLE, BORRABA PALABRAS RELACIONADAS DE UN STRING EN VEZ DE LSITA POR CULPA DE LOS ESPACIOS QUE TENIAN LAS PALABRAS REELACIONADAS..)
+def delete_related_words(l_palabras):
+    """
+    Elimina palabras que se refieran a una misma caracterisitca del producto dejando una sola de ellas
+    :param l_palabras: Lista de palabras
+    :return: Lista de palabras sin palabras que se refieran a una misma caracteristica
+    """
+    # Defino funcion
+    find_related_words = lambda word, d_rel_words: d_rel_words[word] if word in d_rel_words.keys() else [word]
+
+    # Importo diccionario de palabras relacionadas
+    with open("d_rel_words.pkl", "rb") as tf:
+        d_rel_words = pickle.load(tf)
+
+    # Convierto lista de palabras a string
+    str_palabras = "   ".join(l_palabras)  # agrego espacios porque eliminare strings que tienen espacios para evitar identificiarlo mal en opiniones
+    
+    # Por palabra
+    for palabra in l_palabras:
+
+        ''
+        # ELIMINO PALABRA EN PLURAL DE LISTA
+        # Por palabra en plural
+        for palabra_plural in palabras_plural(palabra):
+            # Si esta la palabra en plural
+            if palabra_plural in str_palabras:
+                # La remuevo
+                str_palabras = delete_substring_in_string(str_palabras, palabra_plural)
+                print("Se removio palabra '{}' dado que ya esta '{}'".format(palabra_plural, palabra))
+        ''
+
+        # ELIMINO PALABRAS RELACIONADAS DE LISTA
+        # Obtengo sus palabras relacionadas
+        l_related_words = find_related_words(palabra, d_rel_words)[1:]
+
+        # Por palabra relacionada
+        for word in l_related_words:  # sin incluir palabra propiamente
+
+            # Si esta en lista de palabras
+            if word in str_palabras:
+                # La remuevo
+                str_palabras = delete_substring_in_string(str_palabras, word)
+                print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
+    return str_palabras.split()
+
+
+# funcion secundaria de ex delete_related_words()
+def delete_substring_in_string(string, substring):  # falta doc
+    if substring in string:
+        idx_ini = string.find(substring)
+        string_cleaned = string[:idx_ini] + string[idx_ini + len(substring) + 1:]
+    else:
+        string_cleaned = string
+        print("No se encontro el substring {} en el string {}".format(substring, string))
+
+    return string_cleaned
 '''

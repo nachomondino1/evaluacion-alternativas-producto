@@ -39,51 +39,56 @@ def get_marcas(df_alt):
 def get_dict_related_words(df_alt):
 
     # Defino palabras relacionadas a algunas caracteristicas especificas   # deberia definirlos automaticamente segun valores unicos de atrib del producto?
-    l_marcas = get_marcas(df_alt)
+    # l_marcas = get_marcas(df_alt)  # falla en smartband dado que no queda el atrib marca en df_alt_cleaned.
 
     l_sistemas_operativos = ['android',
-                           'blackberry os',
-                           ' ios ',
-                           'kaios', 'kaistore',
-                           'nokia',
-                           'threadx',
-                           's30 +',
-                           'windows phone',
-                           ]
+                             'blackberry os',
+                             ' ios ',
+                             'ginga ',
+                             'kaios', 'kaistore',
+                             #'nokia',
+                             'threadx', 'tizen',
+                             'linux'
+                             's30 +', 'saphi',
+                             'vidaa'
+                             'xmart ui',
+                             'windows phone', ' webos '
+                             ]
 
+    # ojo con incluir ADJ o VERB dado que asi como se pueden usar para un sustantivo se pueden usar para otros. Por ej, 'grande' puede ser para 'tamaño' asi como puede ser 'el inconveniente mas grande es...'
     # Defino diccionario de palabras relacionadas para mejorar identificacion de customer needs
-    d = {'aplicaciones': ['aplicaciones', ' app ', 'aplicacion ', 'youtube', 'amazon', ' flow ', 'disney', 'prime ', 'netflix', 'sistema', 'operativo', 'spotify', 'google', ' hbo ', 'navegador', 'android', ' so ', 'software'],  # 'internet'? # no usaria: ' smart'  3 le meto espacio a aplicacion para que no me borre aplicaciones
-         'agua': [' agua '],
-         'actividad': ['actividad fisica'],
+    d = {'aplicaciones': ['aplicaciones', ' app', 'aplicacion', 'sistema smart'],  # Las apps propiamente se mencionan sin referirse a la cantidad de estas... -->'youtube', 'amazon', ' flow ', 'disney', 'prime ', 'netflix', 'spotify', 'google', ' hbo ', 'navegador'],  # 'sistema', 'operativo', 'android', ' so ', 'software'],  # 'internet'? # no usaria: ' smart'  3
+         'agua': [' agua ', 'agua,', 'sumergible'],  #  bañe?
          'bateria': ['bateria', 'duracion', ' carga ', ' autonomia'],
          'bluetooth': ['bluetooth'],  #  en auris podria usar (pero no en tv pues se mezcla con conexion a internet): ['conexion ', ' empareja', ' sincroniz', ' vincula', ' desconect', ' conectar '],
          'camara': [' camara', ' fotos', 'imagenes', 'resolucion', 'zoom'],  # no incluiria: definicon, videos   # saco temporalmente 'selfie' y 'resolucion' # foto no pues si se refiere a la camara es "fotos". foto se confunde con la foto de la publicacion..
-         'cable': ['antena', ' aire ', 'videocable', 'canales de cable', ' tda '], # cable no porque e utilizado para muchos otros significados
-         'diseño': ['diseño', 'estetica', 'terminacion', 'aspecto', ' peso ', ' pesad', ' livian'],  #' tamaño ', ' peso ', ' pesad', ' livian'],  # en tv agreguee desde tamanño (chequear si esta bieen)
+         'diseño': ['diseño', 'estetica', 'terminacion', 'aspecto ', ' peso ', ' pesad', ' livian', 'material', 'construccion'],  # comodo?
+         'funciones': ['funcion ', 'funciones','actividad', 'deporte', 'deportiv', 'entrenamiento', 'ejercicio', 'pasos', 'distancia recorrida', 'cardiac', 'pulso', 'pulsaciones', 'gps'],
          'gps': [' gps '],
-         'hdmi': [' entrada hdmi', 'entradas hdmi', 'puerto' 'entrada usb', 'entradas usb'],
-         'imagen': ['imagen', 'resolucion', ' 4k ', ' hd ', 'colores', 'pantalla', 'definicion', ' hdr '],  #Por producto tv
+         'imagen': ['imagen', 'resolucion', ' 4k ', ' hd ', 'colores', 'pantalla', 'definicion', ' hdr ', ' ve '],  # Agregue 've' (VERB) exclusivamente para tv pues en la mayoria de los casos se refiere a la imagen
          'juegos': ['juegos', 'jueguito', 'gaming'],
-         'microfono': ['microfono', ' micro ', ' mic '],
+         #'marca': ['marca'] + l_marcas,
          'material': ['material', 'construccion', 'agarre', 'tacto', 'antideslizante', ' grip '],
+         'mensajes': ['mensajes', 'whastsapp', 'llamada', 'microfono'],
          'memoria': [' memoria', 'almacenamiento', ' ram ', ' ram,', 'velocidad', 'espacio', 'capacidad', 'gb ', ' disco ', ' ssd '],  # no incluiria: lag  # saco temporalmente ' rapid', ' lent'  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp", ' fluid'
-         'mensajes': ['mensajes', 'notificaciones', 'whastsapp'],
-         'marca': ['marca'] + l_marcas,
+         'microfono': ['microfono', ' micro ', ' mic '],
          'oreja': [' oreja', 'cabeza', 'comodo', 'comodidad ', 'almohadillas', ' gomas ', ' oido', 'diseño'],
          'pantalla': [' pantalla', ' imagen ', ' imagen,', ' brillo', 'definicion', 'tactil'],  # no incluiria: definicion
-         'presion': ["presion arterial"],
          'proteccion': ['proteccion', 'protege', 'protej', 'caid', 'cubre ', 'cubrir', 'resiste', 'reforzada', 'cayo', 'golpes'], # bordees?
          'pulsaciones': ['pulsaciones', "frecuencia cardiaca"],
          'precio': ['precio', 'costo', ' caro ', ' caro,', 'barato', 'carisimo'],
          'procesador': ['procesador', 'velocidad', 'funcionamiento', 'software', ' rapid', ' lent', ' tilda', ' fluid',' traba '],
          'ruido': [' ruido', 'cancelacion', ' aisla', 'noise cancelling'],
          'señal': [' señal ', 'datos moviles'],
-         'sistema': ['sistema operativo'] + l_sistemas_operativos, # ahora no se si seguir usandolo, o si usar "aplicaciones" --> tengo que ver para celulares que hago
-         'sonido': ['sonido', 'audio ', 'audio,', 'volumen', 'escucha', ' suena', 'parlante'],
-         'tamaño': [' tamaño ', ' peso ', ' pesad', ' livian'],  # en celulares usaria (pero no en tv)?
+         'sonido': ['sonido', 'audio ', 'audio,', 'volumen', 'escucha', 'parlante', ' suena'],
+         'tamaño': ['tamaño'],  # ' peso ', ' pesad', ' livian'],  # en celulares usaria (pero no en tv)? no deberia tener relacion con el peso pues es exclusivante el tamaño de la pantalla y no del dispositivo
          'teclado': ['teclas', ' ñ '],
-         'video': ['video', ' placa ', 'juego', 'tarjeta grafica']  # https://www.xataka.com/basics/tarjeta-grafica-que-que-hay-dentro-como-funciona
+         'usar': [' de usar', 'sistema operativo', 'software', 'interfaz', 'sistema smart'] + l_sistemas_operativos, # ' usar ' es un verb y como tal se usa para otros sustantivos.. pero 'de usar' engloba 'facil de usar', 'practico de usar', 'no es dificil de usar', etc. Tuve que sacar 'entender' y 'intuitivo'
+         'video': ['video', ' placa ', 'juego', 'tarjeta grafica'], # https://www.xataka.com/basics/tarjeta-grafica-que-que-hay-dentro-como-funciona
+         'voz': ['voz', 'assistant', 'alexa']
          }
+    # no uso mas sistema sino 'usar' --> 'sistema': ['sistema operativo'] + l_sistemas_operativos,  # ahora no se si seguir usandolo, o si usar "aplicaciones" --> tengo que ver para celulares que hago
+
     return d
 
 def main(df_alt):

@@ -90,8 +90,9 @@ def main():
     print(" c) Extrayendo datos del producto...".center(120))
     df_alt, df_opi = collect_data.data_extractor(df_alt, df_opi, home_page_url)
     '''
+
     # Levanto df para hacer 2 y 3 independientemente
-    producto = 'smartband'
+    producto = 'tv'
     df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
 
@@ -110,11 +111,11 @@ def main():
     print(" c) Analisis de cantidad de opiniones por valor de cada campo especifico ".center(120))
     explore_data.n_opi_by_value(df_alt, df_opi)
 
-    '''
+    
     # Exporto data
     df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
     df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
-    '''
+
 
     print(" (3) DATA PREPARATION ".center(120, "#"))
     print(" INICIALIZO DICCIONARIO DE PALABRAS RELACIONADAS ".center(120))  # 7. INICIALIZO DICCIONARIO DE PALABRAS RELACIONADAS
@@ -167,6 +168,12 @@ def main():
     print(df_opi)
     '''
 
+    print(" 5. CONVIERTO COLUMNAS A NUMERICAS PARA PODER OPERAR MATEMATICAMENTE ".center(120))
+    print("# Convierto columnas SI-NO a 1-0 (FORMAT DATA)")  # Columnas si-no a 1-0
+    df_alt_cleaned = format_data.yes_no_column_to_one_zero_column(df_alt_cleaned)
+    print("# Convierto columnas de strings con numeros a columnas numericas (FORMAT DATA)")  # Convierto columnas inherentemente numericas a numericas
+    df_alt_cleaned = format_data.string_column_to_numeric_column(df_alt_cleaned)
+
     print(" 4. ELIMINO ALTERNATIVAS ".center(120))  # 4. ELIMINO ALTERNATIVAS
     print(" # Por precio= NaN")
     df_alt_cleaned = clean_data.drop_alternatives_without_price(df_alt_cleaned)
@@ -175,14 +182,7 @@ def main():
     print("# Por NaN values (CLEAN DATA)")  # Por tener muchos valores NaN
     df_alt_cleaned = clean_data.drop_alternatives_with_most_na(df_alt_cleaned, df_opi)
     print("# Por valores erroneos en publicaciones (CLEAN DATA)")  # Por tener valores erroneos
-    df_alt_cleaned = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned, df_opi)  #falla
-
-
-    print(" 5. CONVIERTO COLUMNAS A NUMERICAS PARA PODER OPERAR MATEMATICAMENTE ".center(120))
-    print("# Convierto columnas SI-NO a 1-0 (FORMAT DATA)")  # Columnas si-no a 1-0
-    df_alt_cleaned = format_data.yes_no_column_to_one_zero_column(df_alt_cleaned)
-    print("# Convierto columnas de strings con numeros a columnas numericas (FORMAT DATA)")  # Convierto columnas inherentemente numericas a numericas
-    df_alt_cleaned = format_data.string_column_to_numeric_column(df_alt_cleaned)
+    df_alt_cleaned = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned, df_opi)  # debe ser despues de convertir a numerica las columnas
 
     print("6. CATEGORIZO COLUMNAS NUMERICAS CONTINUAS EN DATAFRAME ALTERNATIVAS".center(120))  # CATEGORIZO COLUMNAS NUMERICAS CONTINUAS EN DATAFRAME ALTERNATIVAS
     df_alt_cleaned.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alt_cleaned.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
@@ -194,15 +194,20 @@ def main():
     # Exporto dataframe de customer needs del producto
     df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
     df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
-    '''
 
+    '''
     # Levanto df para hacer modelling independientemente
     producto = 'tv'
-    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
-    df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_opi_without_date.xlsx', index_col=0)
-    df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_relation_matrix.xlsx', index_col=0)
+    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
+    df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_without_date.xlsx'.format(producto), index_col=0)
+    df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
     print(df_alt_cleaned, df_opi, df_relation_matrix)
     df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto), index_col=0)  # cuando corra tod@ junto pongo product.nombre
+
+    d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(df_alt_cleaned)
+    # Exporto diccionario
+    with open("d_rel_words.pkl", "wb") as tf:
+        pickle.dump(d_rel_words, tf)
 
     l_cust_needs_one_word = list(df_cust_needs.index)
     print(l_cust_needs_one_word)

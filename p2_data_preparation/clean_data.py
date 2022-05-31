@@ -84,7 +84,7 @@ def drop_alternatives_with_most_na(df_alt, df_opi):
     l_idx_a_borrar = []
     n_valores_posibles = len(df_alt.columns[1:])  # excluyo id
     ids_con_opi = df_opi['id_alternativa'].unique()
-    PORC_MIN_NO_NAN = 0.25
+    PORC_MIN_NO_NAN = 0.5
 
     # Por alternativa del dataframe
     for i in range(len(df_alt)):
@@ -234,7 +234,7 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
     print("Cantidad de alterantivas restantes: {}\n".format(df_alt.shape[0]))
     return df_alt
 
-def disaggregate_columns_with_lists(df_alt):
+def disaggregate_columns_with_lists(df_alt):  # terminar de codear nombres
     """
     Desagrega columnas cuyos valores son listas. Cada elemento de la lista contendra su columna.
     :param df_alt: Dataframe alternativas
@@ -243,7 +243,7 @@ def disaggregate_columns_with_lists(df_alt):
     """
     # Defino variable
     df_alt_res = df_alt.copy()  # Dataframe a retornar
-    PORC_MIN_NO_NAN = 0.1
+    PORC_MIN_NO_NAN = 0.2
 
     # Por columna
     for columna in df_alt.columns:

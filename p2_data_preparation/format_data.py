@@ -162,9 +162,12 @@ def yes_no_column_to_one_zero_column(df):
     # Defino variables
     valores_buscados = {"si": 1, "sí": 1, "no": 0}  # Defino lista con los valores buscados
     columnas_si_no = []
+    PORC_MIN_CARAC_DIF = 0.15
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df.columns:
+
+        is_carac_dif = False
 
         # SI LA COLUMNA CONTIENE STRINGS
         if df[columna].dtype == 'object':
@@ -188,8 +191,15 @@ def yes_no_column_to_one_zero_column(df):
 
             # Si LA COLUMNA ES DEL TIPO SI-NO
             if columna_si_no:
-                columnas_si_no.append(columna)
 
+                # SI ES UNA CARACTERISTICA DIFERNCIADORA (mayoria de "Sí" frente a "No")
+                cant_si = len(df[df[columna] == "Sí"])
+                cant_no = len(df[df[columna] == "No"])
+                if cant_no/cant_si < PORC_MIN_CARAC_DIF:
+                    is_carac_dif = True
+                    print("La columna {} es una caracteristica diferenciadora!".format(columna))
+
+                # REEMPLAZO SI Y NO POR 1 Y 0 RESPECTIVAMENTE
                 # Por valor
                 for i in range(len(df[columna])):
                     # Si el valor no es nan
@@ -200,7 +210,16 @@ def yes_no_column_to_one_zero_column(df):
 
                     # Si el valor es nan
                     except:
-                        pass
+                        # Si el atributo es una caracteristica diferenciadora
+                        if is_carac_dif:
+                            # Reemplazo NaN por 0
+                            df.loc[i, columna] = 0
+                        # Si el atributo no es una caracteristica diferenciadora
+                        else:
+                            # Dejo el NaN
+                            pass
+                columnas_si_no.append(columna)
+
 
     print("Columnas convertidas: {}".format(columnas_si_no))
     return df

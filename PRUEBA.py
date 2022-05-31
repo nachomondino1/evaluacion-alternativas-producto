@@ -3,12 +3,11 @@ import numpy as np
 # from data_preparation.utils import preparacion_texto
 from p2_data_preparation.format_data import correct_price_column
 
-
-
+'''
 from p2_data_preparation.clean_data import disaggregate_columns_with_lists
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/tv/df_alt.xlsx')
 df_alt = disaggregate_columns_with_lists(df_alt)
-
+'''
 
 '''
 # CONVERTIDOR DE UNIDADES
@@ -95,13 +94,19 @@ if 'c' in d.keys():
 print(list(d.values()))
 '''
 
-'''
+
 # Dataframe
 df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
-print(df)
+# idx = df.index[df['col1'] == 4][0]
+# print(idx)
 
-idx = df.index[df['col1'] == 4][0]
-print(idx)
+print(df)
+print(df.loc[1:4,:])
+'''
+new_fila = pd.Series([1, 2])
+
+df = pd.concat([df, new_fila], axis=1)
+print(df)
 '''
 
 '''

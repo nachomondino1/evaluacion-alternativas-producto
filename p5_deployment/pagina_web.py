@@ -193,6 +193,7 @@ def aggrid_interactive_table(df: pd.DataFrame):
                        update_mode=GridUpdateMode.MODEL_CHANGED, allow_unsafe_jscode=True)
     return selection
 
+
 def main():
     # (1) SOLICITO INGRESO DE DATOS EN SIDEBAR (tipo de cliente y producto a relevar)
     st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo
@@ -205,7 +206,7 @@ def main():
 
     # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_correct_price.xlsx'.format(product))
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
     df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
     # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
@@ -239,13 +240,26 @@ def main():
         l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # hace falta hacerles una variable? En caso de que si, las dejo aca?
         l_cust_needs_one_word = list(df_cust_needs.index)
         df_cust_needs['Peso'] = None  # inicializo columna peso de customer needs
+        temp_options = ["No es importante", 'Poco importante', 'Algo importante', 'Importante', 'Muy importante']
+        d = {"No es importante": 0, 'Poco importante': 1, 'Algo importante': 3, 'Importante': 5, 'Muy importante': 7}
+
         for i in range(len(l_cust_needs_three_words)):
             # pido peso y lo guardo
-            peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=0, max_value=10, value=0, step=1)
-            df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = peso
+            # peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=0, max_value=10, value=0, step=1)
+            peso = st.select_slider(label=l_cust_needs_three_words[i], options=temp_options)
+            df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d[peso]
             # d_cust_needs_weights[l_cust_needs_three_words[i]] = peso  # df = pd.DataFrame(d_cust_needs_weights, index=[0])  # por algun motivo no se hace bien... aunque el dic si
         # st.write("Verifico (2): ",d_cust_needs_weights)
-        st.write("Verifico (2): ", df_cust_needs)
+        # st.write("Verifico (2): ", df_cust_needs)
+        st.write("Verifico (2):")
+        st.dataframe(df_cust_needs)
+
+        """
+        col1, col2 = st.columns(2)
+        col1.metric(label="Posicion", value="1")
+        col2.metric(label="Alternativa", value=df_alt.loc[1])
+        # col2.metric("Wind", "9 mph", "-8%")
+        """
 
         # (3) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
         d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs, df_relation_matrix)
@@ -279,16 +293,16 @@ def main():
     # SI EL CLIENTE ES UNA EMPRESA
     else:
         # Le muestro resultados al cliente
-        st.write('## Tabla 1: NUMERO DE ALTERNATIVAS POR CLUSTER')
+        st.write('## Tabla 1: Numero de alternativas por cluster')
         st.write(df_alt_per_clust)
 
-        st.write('## Tabla 2: CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS')
+        st.write('## Tabla 2: Valor tipico de cada cluster')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
         st.write(df_centroids_values)
 
-        st.write('## Tabla 3: NUMERO DE MARCAS POR CLUSTER')
+        st.write('## Tabla 3: Numero de marcas por cluster')
         st.write(df_brand_per_cluster)
 
-        st.write('## Tabla 4: Alternativas por grupo')
+        st.write('## Tabla 4: Todas las alternativas y su clister')  # Alternativas por grupo
         st.write(df_alt_clust)
 
 
