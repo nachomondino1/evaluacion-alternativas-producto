@@ -208,20 +208,20 @@ def main():
 
     # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('./data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
-    df_alt = pd.read_excel('./data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
-    df_alt_cleaned = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
-    df_cust_needs = pd.read_excel("./data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+    df_alt = pd.read_excel('//data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
+    df_alt = pd.read_excel('//data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
+    df_alt_cleaned = pd.read_excel('//data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+    df_cust_needs = pd.read_excel("//data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
     # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
     # Archivos de (3) Modelling
-    df_relation_matrix = pd.read_excel("./data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
-    df_alt_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
-    df_alt_per_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
-    df_centroids_values = pd.read_excel('./data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
-    df_brand_per_cluster = pd.read_excel('./data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
+    df_relation_matrix = pd.read_excel("//data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+    df_alt_clust = pd.read_excel('//data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
+    df_alt_per_clust = pd.read_excel('//data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
+    df_centroids_values = pd.read_excel('//data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
+    df_brand_per_cluster = pd.read_excel('//data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
 
     # l_cust_needs = list(df_relation_matrix.index)
-    df_value_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
+    df_value_sent = pd.read_excel('//data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
 
     print(df_alt.shape)
     # Selecciono ids de alternativas que no han sido borradas
