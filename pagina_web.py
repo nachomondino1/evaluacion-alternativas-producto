@@ -208,19 +208,20 @@ def main():
 
     # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
-    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
-    df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+    df_alt = pd.read_excel('./data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
+    df_alt = pd.read_excel('./data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
+    df_alt_cleaned = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+    df_cust_needs = pd.read_excel("./data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
     # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
     # Archivos de (3) Modelling
-    df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
-    df_alt_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
-    df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
-    df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
-    df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
+    df_relation_matrix = pd.read_excel("./data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+    df_alt_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
+    df_alt_per_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
+    df_centroids_values = pd.read_excel('./data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
+    df_brand_per_cluster = pd.read_excel('./data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
 
     # l_cust_needs = list(df_relation_matrix.index)
-    df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
+    df_value_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
 
     print(df_alt.shape)
     # Selecciono ids de alternativas que no han sido borradas
@@ -373,3 +374,33 @@ def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre po
         if cust_need in customer_need:
             return customer_need  # retorno customer need de 3 palabras
 '''
+
+
+
+"""
+   # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
+    # Archivos de (2) Data preparation
+    df_alt = pd.read_excel('./data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
+    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+    df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+    # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
+    # Archivos de (3) Modelling
+    df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+    df_alt_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
+    df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
+    df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
+    df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
+
+    # l_cust_needs = list(df_relation_matrix.index)
+    df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
+
+    print(df_alt.shape)
+    # Selecciono ids de alternativas que no han sido borradas
+    ids_cleaned = df_alt_cleaned["id_alternativa"].unique()
+    # Filtro dataframe alternativas por ids
+    df_alt = df_alt[df_alt.id_alternativa.isin(ids_cleaned)]
+    df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
+    print(df_alt.shape)
+
+"""
