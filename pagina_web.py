@@ -1,8 +1,8 @@
 # Importo librerias
 import pandas as pd
 import streamlit as st
-from st_aggrid import AgGrid, GridOptionsBuilder
-from st_aggrid.shared import GridUpdateMode
+#from st_aggrid import AgGrid, GridOptionsBuilder
+#from st_aggrid.shared import GridUpdateMode
 
 
 def get_attrs_technical_importance(df_cust_needs, df_relation_matrix):
@@ -177,6 +177,7 @@ def recommend_table(df_alt, df_alt_val_final):  # FUNCIONA MAL, EL DF_ALT_VAL_FI
 
     return df_alt
 
+'''
 def aggrid_interactive_table(df: pd.DataFrame):
     """
     Creates an st-aggrid interactive table based on a dataframe.
@@ -192,6 +193,7 @@ def aggrid_interactive_table(df: pd.DataFrame):
     selection = AgGrid(df, enable_enterprise_modules=True, gridOptions=options.build(), theme="light",
                        update_mode=GridUpdateMode.MODEL_CHANGED, allow_unsafe_jscode=True)
     return selection
+'''
 
 
 def main():
