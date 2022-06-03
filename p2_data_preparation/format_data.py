@@ -65,19 +65,20 @@ def string_column_to_numeric_column(df):
     # DEFINO PASAJE DE UNIDADES
     # unidades de memoria a GB, unidades de superficie a m2, unidades de peso a kg, unidad de longitud a mm, unidad
     # densidad de imagen a ppi, unidades de carga ekectrica a mah, unidades de cant de pixeles a mpx
-    d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA
-         'lb': 0.453592, 'mg': 1/10**(6), "g": 1/1000, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO
-         '"': 25.24, 'pulgadas': 25.24, 'in': 25.24, 'mm': 1, 'cm': 100, 'ft': 304.8, 'm': 1000,  # UNIDADES DE LONGITUD
-         'm2': 1, 'ha': 10000,  # UNIDADES DE LONGITUD
-         'ppi': 1, 'dpi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN
-         'mah': 1, 'ah': 1000, # UNIDADES DE CARGA ELECTRICA
+    # https://convertlive.com/es/c/convertir/peso (link para convertir unidades)
+    d = {"kb": 1/1048576, 'mb': 1/1024, "gb": 1, "tb": 1024,  # UNIDADES DE MEMORIA (verificado)
+         'mg': 0.000001, "g": 1/1000, 'lb': 0.453592, 'kg': 1, 'tn': 1000,  # UNIDADES DE PESO  (verificado)
+         'mm': 1, '"': 25.4, 'pulgadas': 25.4, 'in': 25.4, 'cm': 10, 'ft': 304.8, 'm': 1000,  # UNIDADES DE LONGITUD (verificado)
+         'm2': 1, 'ha': 10000,  # UNIDADES DE LONGITUD (verificado)
+         'ppi': 1, 'dpi': 1,  # UNIDADES DE DENSIDAD DE IMAGEN (verificado)
+         'mah': 1, 'ah': 1000, # UNIDADES DE CARGA ELECTRICA (verificado)
          'px': 1/1000000, 'mpx': 1,  # CANTIDAD DE PIXELES
-         'ms': 1/3.6*10**6, 'h': 1, 'días': 24, 'semanas': 24*7,  # UNIDAD DE TIEMPO
-         'ω': 1, 'mo': 1, 'o': 1,  # UNIDAD DE IMPEDANCIA
-         'db': 1,  # UNIDAD DE RELACION ENTRE DOS VALORES DE PRESION SONORA, O TEENSION Y POTENCIA ELECTRICA
+         'ms': 1/3.6*10**6, 'h': 1, 'días': 24, 'semanas': 24*7,  # UNIDAD DE TIEMPO (verificado)
+         'ω': 1, 'mo': 1, 'o': 1,  # UNIDAD DE IMPEDANCIA (verificado)
+         'db': 1,  # UNIDAD DE RELACION ENTRE DOS VALORES DE PRESION SONORA, O TEENSION Y POTENCIA ELECTRICA (verificado)
          'hz': 1/10**(9), 'mhz': 1/1000, 'ghz': 1,  # UNIDAD DE FRECUENCIA
-         'cd/m²': 1,  # UNIDAD DE BRILLO
-         'w': 1  # UNIDAD DE POTENCIA ELECTRICA
+         'cd/m²': 1,  # UNIDAD DE BRILLO (verificado)
+         'w': 1  # UNIDAD DE POTENCIA ELECTRICA (verificado)
          }
 
     # POR COLUMNA DEL DATAFRAME
@@ -191,13 +192,14 @@ def yes_no_column_to_one_zero_column(df):
 
             # Si LA COLUMNA ES DEL TIPO SI-NO
             if columna_si_no:
+                print("La columna {} es SI-NO".format(columna))
 
                 # SI ES UNA CARACTERISTICA DIFERNCIADORA (mayoria de "Sí" frente a "No")
-                cant_si = len(df[df[columna] == "Sí"])
-                cant_no = len(df[df[columna] == "No"])
+                cant_no, cant_si = len(df[df[columna] == "No"]), len(df[df[columna] == "Sí"])
                 if cant_no/cant_si < PORC_MIN_CARAC_DIF:
                     is_carac_dif = True
-                    print("La columna {} es una caracteristica diferenciadora!".format(columna))
+                    print("\t Ademas, es una caracteristica diferenciadora!")
+                    print("\t Cantidad de si: {}, Cantidad de No: {}".format(cant_si, cant_no))
 
                 # REEMPLAZO SI Y NO POR 1 Y 0 RESPECTIVAMENTE
                 # Por valor
@@ -219,7 +221,6 @@ def yes_no_column_to_one_zero_column(df):
                             # Dejo el NaN
                             pass
                 columnas_si_no.append(columna)
-
 
     print("Columnas convertidas: {}".format(columnas_si_no))
     return df

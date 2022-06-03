@@ -268,9 +268,9 @@ def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod.
     pal_irrel_note = ['computadora','notebook', 'pc']
     pal_irrel_auris = ['auriculares', 'auris']
     pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'marcas', 'pc', 'cable', 'hdmi', 'sistema', 'google', 'parlantes', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
-    pal_irrel_smartband = ['smartwatch', 'smart', 'band', 'oxigeno', 'presion', 'pulsera', 'reloj', 'malla', 'gps', 'muñeca', 'datos', 'medicion', 'mediciones', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
+    pal_irrel_smartband = ['smartwatch', 'smart', 'band', 'oxigeno', 'presion', 'pulsera', 'reloj', 'pasos', 'notificaciones', 'mensajes', 'musica', 'pulsaciones', 'ritmo', 'sueño', 'gps', 'muñeca', 'datos', 'medicion', 'mediciones', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
 
-    pal_irrel += pal_irrel_tv
+    pal_irrel += pal_irrel_cel
 
     # Si la palabra no es relvante
     if word in pal_irrel:

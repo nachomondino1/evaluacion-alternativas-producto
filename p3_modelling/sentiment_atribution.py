@@ -47,7 +47,7 @@ def to_customer_needs(df_opi, l_customer_needs_one_word):
             sent_frase = sentiment(sentence=frase)
 
             # IDENTIFICO QUE CUSTOMER NEEDS MENCIONA
-            frase_limpia = delete_accent(frase.lower())  # limpio la frase para poder identificar customer needs en ella
+            frase_limpia = " " + delete_accent(frase.lower()) + " " # limpio la frase para poder identificar customer needs en ella. Agrego espacios para identificar la primera y la ultima palabra
             d_cust_needs_mentioned = words_mentioned_in_text(words=l_customer_needs_one_word, text=frase_limpia)  # diccionario con customer needs como key y 1 o 0 como value segun si la frase la menciona o no.
             n_cust_need_ment = sum(d_cust_needs_mentioned.values())  # numero de customer needs mencionadas en frase
 
@@ -66,7 +66,7 @@ def to_customer_needs(df_opi, l_customer_needs_one_word):
                 for sentence in frases_entre_comas:
 
                     # Identifico customer need en frase entre comas
-                    sentence_limpia = delete_accent(sentence.lower())
+                    sentence_limpia = " " + delete_accent(sentence.lower()) + " "
                     d_cust_needs_mentioned = words_mentioned_in_text(words=l_customer_needs_one_word, text=sentence_limpia)
                     print("\t FRASE ENTRE COMAS: ", sentence)
 

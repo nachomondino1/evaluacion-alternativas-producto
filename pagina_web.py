@@ -139,7 +139,6 @@ def recommend_table(df_alt, df_alt_val_final):  # FUNCIONA MAL, EL DF_ALT_VAL_FI
     """
     # Defino variables
     val_max = df_alt_val_final['val_final'].dropna().max()
-    l_porc_recom = []
 
     df_alt['porcentaje_recomendacion'] = None
 
@@ -151,9 +150,6 @@ def recommend_table(df_alt, df_alt_val_final):  # FUNCIONA MAL, EL DF_ALT_VAL_FI
         idx_2 = df_alt_val_final.index[df_alt_val_final['id_alternativa'] == id_alt][0]
 
         val_alt = df_alt_val_final.loc[idx_2, 'val_final']
-
-        # OBTENGO SU VALORACION FINAL
-        # val_fin = df_alt_val_final.loc[i, 'val_final']
 
         # CALCULO PORCENTAJE DE RECOMENDACION
         # Si la valoracion maxima es positiva
@@ -170,218 +166,26 @@ def recommend_table(df_alt, df_alt_val_final):  # FUNCIONA MAL, EL DF_ALT_VAL_FI
         df_alt.loc[idx_1, "porcentaje_recomendacion"] = porc_recom
         print(val_alt, val_max, porc_recom)
 
-    # GUARDO PORCENTAJES DE RECOMENDACION DE LAS ALTERNITVAS
-    # df_alt['porcentaje_recomendacion'] = l_porc_recom
     df_alt = df_alt.sort_values('porcentaje_recomendacion', ascending=False)
-    st.write(df_alt)
-
+    df_alt = df_alt.reset_index(drop=True)
     return df_alt
-
-'''
-def aggrid_interactive_table(df: pd.DataFrame):
-    """
-    Creates an st-aggrid interactive table based on a dataframe.
-    :param df: Source dataframe
-    :return:         # dict: The selected row
-    """
-    # https://share.streamlit.io/streamlit/example-app-interactive-table/main
-    options = GridOptionsBuilder.from_dataframe(df, enableRowGroup=True, enableValue=True, enablePivot=True)
-
-    options.configure_side_bar()
-
-    options.configure_selection("single")
-    selection = AgGrid(df, enable_enterprise_modules=True, gridOptions=options.build(), theme="light",
-                       update_mode=GridUpdateMode.MODEL_CHANGED, allow_unsafe_jscode=True)
-    return selection
-'''
-
 
 def main():
     # (1) SOLICITO INGRESO DE DATOS EN SIDEBAR (tipo de cliente y producto a relevar)
     st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo
     st.sidebar.write('# Ingrese los siguientes datos')  # titulo 1 de sidebar
     client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
-    product_options = ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
-    client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)  #  client = st.sidebar.radio('1) ¿Que tipo de cliente eres?', client_options)
-    product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)  # product = st.sidebar.radio('2) ¿Que producto desea evaluar?', product_options)
+    product_options = ['Auriculares', 'Celulares', 'Fundas de celular', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
+    # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)  #  client = st.sidebar.radio('1) ¿Que tipo de cliente eres?', client_options)
+    client = st.sidebar.radio('1) ¿Que tipo de cliente eres?', client_options)
+    # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
+    product = st.sidebar.radio('2) ¿Que producto desea evaluar?', product_options)
     product = product.lower()
 
     # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt_formated.xlsx'.format(product))  # correct_price
-    df_alt = pd.read_excel('evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
-    df_alt_cleaned = pd.read_excel('evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
-    df_cust_needs = pd.read_excel("evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
-    # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
-    # Archivos de (3) Modelling
-    df_relation_matrix = pd.read_excel("evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
-    df_alt_clust = pd.read_excel('evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format(product), index_col=0)
-    df_alt_per_clust = pd.read_excel('evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
-    df_centroids_values = pd.read_excel('evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
-    df_brand_per_cluster = pd.read_excel('evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
-
-    # l_cust_needs = list(df_relation_matrix.index)
-    df_value_sent = pd.read_excel('evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
-
-    print(df_alt.shape)
-    # Selecciono ids de alternativas que no han sido borradas
-    ids_cleaned = df_alt_cleaned["id_alternativa"].unique()
-    # Filtro dataframe alternativas por ids
-    df_alt = df_alt[df_alt.id_alternativa.isin(ids_cleaned)]
-    df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    print(df_alt.shape)
-
-
-    # SI EL CLIENTE ES UN USUARIO FINAL
-    if client == 'Usuario final':
-
-        # (2) SOLICITO PESOS DE LAS CUSTOMER NEEDS
-        # Imprimo titulo
-        st.sidebar.write('## Ingrese la importancia que usted le da a cada necesidad del cliente tipica de {}'.format(product))
-
-        # Por customer need
-        l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # hace falta hacerles una variable? En caso de que si, las dejo aca?
-        l_cust_needs_one_word = list(df_cust_needs.index)
-        df_cust_needs['Peso'] = None  # inicializo columna peso de customer needs
-        temp_options = ["No es importante", 'Poco importante', 'Algo importante', 'Importante', 'Muy importante']
-        d = {"No es importante": 0, 'Poco importante': 1, 'Algo importante': 3, 'Importante': 5, 'Muy importante': 7}
-
-        for i in range(len(l_cust_needs_three_words)):
-            # pido peso y lo guardo
-            # peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=0, max_value=10, value=0, step=1)
-            peso = st.select_slider(label=l_cust_needs_three_words[i], options=temp_options)
-            df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d[peso]
-            # d_cust_needs_weights[l_cust_needs_three_words[i]] = peso  # df = pd.DataFrame(d_cust_needs_weights, index=[0])  # por algun motivo no se hace bien... aunque el dic si
-        # st.write("Verifico (2): ",d_cust_needs_weights)
-        # st.write("Verifico (2): ", df_cust_needs)
-        st.write("Verifico (2):")
-        st.dataframe(df_cust_needs)
-
-        """
-        col1, col2 = st.columns(2)
-        col1.metric(label="Posicion", value="1")
-        col2.metric(label="Alternativa", value=df_alt.loc[1])
-        # col2.metric("Wind", "9 mph", "-8%")
-        """
-
-        # (3) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
-        d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs, df_relation_matrix)
-        print(d_attrs_tech_imp)
-        st.write("Verifico (3): ",d_attrs_tech_imp)
-
-        # (4) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
-        df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_value_sent, d_attrs_tech_imp)
-        # df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
-        st.write("Verifico (4): ", df_alts_val_fin)
-
-        # (5) IMPRIMO RESULTADOS
-        # 5.1) Muestro tabla de recomendacion
-        st.write('## Tabla de recomendaciones')
-        st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para usted')
-        st.write('#### Las 10 alternativas que mas le recomendamos')
-
-        # Calculo porcentaje de recomendacion de cada alternativa
-        df_alts_recommend = recommend_table(df_alt, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
-        # df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
-
-        # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
-        # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
-        idxs_top_ten = df_alts_recommend.index[:10]
-        aggrid_interactive_table(df=df_alts_recommend.loc[idxs_top_ten]) #['Marca', "Modelo", "precio", 'porcentaje_recomendacion']]) --> falla para fundas de celular
-
-        # 5.2) Muestro tabla completa de alternartivas
-        st.write('#### Todas las alternativas')
-        aggrid_interactive_table(df=df_alts_recommend)
-
-    # SI EL CLIENTE ES UNA EMPRESA
-    else:
-        # Le muestro resultados al cliente
-        st.write('## Tabla 1: Numero de alternativas por cluster')
-        st.write(df_alt_per_clust)
-
-        st.write('## Tabla 2: Valor tipico de cada cluster')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
-        st.write(df_centroids_values)
-
-        st.write('## Tabla 3: Numero de marcas por cluster')
-        st.write(df_brand_per_cluster)
-
-        st.write('## Tabla 4: Todas las alternativas y su clister')  # Alternativas por grupo
-        st.write(df_alt_clust)
-
-
-if __name__ == '__main__':
-    main()
-
-
-
-''' Ex funcion cuado retornaba diccionario y usaba customer_needs_translation...
-def get_attrs_technical_importance(d_cust_needs_weights, df_relation_matrix):
-    """
-    Obtiene la importancia tecnica de cada atributo del producto
-    :param customer_needs_weights: Diccionario
-    :param relation_matrix: Dataframe
-    :return: Diccionario
-    """
-    # Es para cada propiedad del producto. Para cada propiedad del producto j: Suma por cada req del cliente i de (Valoracion del cliente de requisito i * relacion entre req i y prop j)
-    # return Diccionario con atributo
-
-    # Defino variables
-    atributos = df_relation_matrix.columns  # Atributos del producto
-    customer_needs = list(df_relation_matrix.index)  # Customer needs de 1 palabra del producto
-    d = {}  # inicializo diccionario a retornar
-
-    # POR ATRIBUTO
-    for atributo in atributos:
-
-        # Reinicio variable de importancia tecnica
-        imp_tecnica = 0
-
-        # POR CUSTOMER NEED
-        for customer_need in customer_needs:
-            # print(customer_need, atributo)
-
-            # defino relacion entre atributo y customer need
-            # idx_customer_need = customer_needs.index(customer_need)
-            # idx_attr = relation_matrix.columns.get_loc(atributo) # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
-            # print(idx_customer_need, idx_attr)
-            # relacion = relation_matrix.iloc[idx_customer_need, idx_attr]
-            relacion = df_relation_matrix.loc[customer_need, atributo]
-
-            # CALCULO IMPORTANCIA TECNICA
-            customer_need_three_words = customer_needs_translation(d_cust_needs_weights.keys(), customer_need)
-            # print(customer_need_three_words)
-            # print(customer_needs_weights[customer_need_three_words])
-            # print("relacion:", relacion)
-            imp_tecnica += d_cust_needs_weights[customer_need_three_words] * relacion  # deeberia ser contains(customer_need) pues una es de 1 palabra y la otra de 3.
-
-        # GUARDO IMPORTANCIA TECNICA
-        d[atributo] = imp_tecnica
-
-    return d
-    
-    
-def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre ponerle, busca relacion entre customer needs de 3 palabras y las de 1...
-    """
-    Traduce customer need de 1 palabra a customer need de 3 palabras
-    :param customer_needs: Lista de customer needs de 3 palabras
-    :param customer_needs_substring: String. Customer need de 1 palabra.
-    :return:
-    """
-    # POR CUSTOMER NEED DE 3 PALABRAS
-    for customer_need in l_cust_needs:
-
-        # SI CUSTOMER NEED DE 1 PALABRA ESTA EN CUSTOMER NEED DE 3 PALABRAS
-        if cust_need in customer_need:
-            return customer_need  # retorno customer need de 3 palabras
-'''
-
-
-
-"""
-   # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
-    # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('./data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
-    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(product)) # correct_price
+    # df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format(product))  # correct_price
+    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(product))  # correct_price
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
     df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
     # Si funciona l_cust_needs, borro estas lineas pues no hace falta exportar cust needs sino que las obtengo de matriz de relaciones...  --> necesito si o si las cust needs de 3 palabras y e esas no estan en matriz de relaciones
@@ -403,4 +207,123 @@ def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre po
     df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
     print(df_alt.shape)
 
-"""
+    # SI EL CLIENTE ES UN USUARIO FINAL
+    if client == 'Usuario final':
+
+        # (2) SOLICITO PESOS DE LAS CUSTOMER NEEDS
+        # Imprimo titulo
+        st.write('## Ingrese importancia de cada necesidad del cliente tipica de {}'.format(product))
+
+        # Por customer need
+        l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # hace falta hacerles una variable? En caso de que si, las dejo aca?
+        l_cust_needs_one_word = list(df_cust_needs.index)
+        df_cust_needs['Peso'] = None  # inicializo columna peso de customer needs
+
+        temp_options = ["No es importante", 'Poco importante', 'Neutral', 'Importante', 'Muy importante']
+        d = {"No es importante": -10, 'Poco importante': -2.5, 'Neutral': 0, 'Importante': 2.5, 'Muy importante': 10}
+
+        for i in range(len(l_cust_needs_three_words)):
+            # pido peso y lo guardo
+            # peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=-10, max_value=10, value=0, step=5)
+            peso = st.select_slider(label=l_cust_needs_three_words[i].title(), options=temp_options, value="Neutral") # puedo agregarle help y sus palabras relacionadas por ej
+            df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d[peso]
+            # d_cust_needs_weights[l_cust_needs_three_words[i]] = peso  # df = pd.DataFrame(d_cust_needs_weights, index=[0])  # por algun motivo no se hace bien... aunque el dic si
+        # st.write("Verifico (2):")
+        # st.dataframe(df_cust_needs)
+
+        # (3) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
+        d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs, df_relation_matrix)
+        print(d_attrs_tech_imp)
+        # st.write("Verifico (3): ",d_attrs_tech_imp)
+
+        # (4) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
+        df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_value_sent, d_attrs_tech_imp)
+        # df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
+        # st.write("Verifico (4): ", df_alts_val_fin)
+
+        # (5) IMPRIMO RESULTADOS
+        # 5.1) Muestro tabla de recomendacion
+        st.write('## Tabla de recomendaciones')
+        st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para usted')
+        st.write('#### Las 10 alternativas que mas le recomendamos')
+        # Calculo porcentaje de recomendacion de cada alternativa
+        df_alts_recommend = recommend_table(df_alt, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
+        # df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
+        # st.dataframe(df_alts_recommend)
+
+        # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
+        df_top_ten = df_alts_recommend.iloc[0:10, 1:]  # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
+        st.dataframe(df_top_ten)
+
+        with st.expander("Ver todas las alternativas y su grupo"):
+            st.write("""
+                The chart above shows some numbers I picked for you.
+                I rolled actual dice for these, so they're *guaranteed* to
+                be random.
+            """)
+            st.dataframe(df_alt_clust)
+
+        # idxs_top_ten = df_alts_recommend.index[:10]
+        #aggrid_interactive_table(df=df_alts_recommend.loc[idxs_top_ten]) #['Marca', "Modelo", "precio", 'porcentaje_recomendacion']]) --> falla para fundas de celular
+
+    # SI EL CLIENTE ES UNA EMPRESA
+    else:
+        # Le muestro resultados al cliente
+        st.write('Llevamos a cabo un analisis en el que agrupamos las alternativas de {} que tengan caracteristicas similares. Los resultados fueron:'.format(product))
+        st.write("\t * Nº GRUPOS: {}".format(len(df_alt_per_clust)))
+        st.write("\t * NOMBRES DE GRUPOS: {}".format( " - ".join(list(df_alt_per_clust.index))))
+
+        st.write('Conozcamos que hay dentro de cada uno de estos grupos!')
+
+        st.write('### Tabla 1: Numero de alternativas por grupo')
+        st.write(" A continuacion vemos la cantidad de alternativas dentro de cada uno de estos grupos.")
+        chart_data = pd.DataFrame(data=df_alt_per_clust)
+        st.bar_chart(chart_data)  # st.write(df_alt_per_clust)
+
+        st.write('### Tabla 2: Numero de alternativas por grupo y marca')
+        st.write(df_brand_per_cluster)
+
+        st.write('### Tabla 3: Ejemplo tipico de cada grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
+        st.write(df_centroids_values)
+
+        # st.write('### Tabla 4: Todas las alternativas y su grupo')  # Alternativas por grupo
+        # st.write(df_alt_clust)
+
+        with st.expander("Ver todas las alternativas y su grupo"):
+            st.write("""
+                The chart above shows some numbers I picked for you.
+                I rolled actual dice for these, so they're *guaranteed* to
+                be random.
+            """)
+            st.dataframe(df_alt_clust)
+
+if __name__ == '__main__':
+    main()
+
+
+
+'''
+def aggrid_interactive_table(df: pd.DataFrame):
+    """
+    Creates an st-aggrid interactive table based on a dataframe.
+    :param df: Source dataframe
+    :return:         # dict: The selected row
+    """
+    # https://share.streamlit.io/streamlit/example-app-interactive-table/main
+    options = GridOptionsBuilder.from_dataframe(df, enableRowGroup=True, enableValue=True, enablePivot=True)
+
+    options.configure_side_bar()
+
+    options.configure_selection("single")
+    selection = AgGrid(df, enable_enterprise_modules=True, gridOptions=options.build(), theme="light",
+                       update_mode=GridUpdateMode.MODEL_CHANGED, allow_unsafe_jscode=True)
+    return selection
+
+
+col1, col2 = st.columns(2)
+col1.metric(label="Posicion", value="1")
+col2.metric(label="Alternativa", value=df_alt.loc[1])
+# col2.metric("Wind", "9 mph", "-8%")
+'''
+
+

@@ -2,6 +2,17 @@ import pandas as pd
 import numpy as np
 # from data_preparation.utils import preparacion_texto
 from p2_data_preparation.format_data import correct_price_column
+import re
+
+
+#valores = ['720px x 1600px', '720px - 1600px']
+#for valor in valores:
+#    print(re.split(',| x | - ', valor))
+
+valor = "      Hola, MUNDO       "
+valor = valor.lstrip().rstrip()
+print(valor)
+print(len(valor))
 
 '''
 from p2_data_preparation.clean_data import disaggregate_columns_with_lists
@@ -94,7 +105,7 @@ if 'c' in d.keys():
 print(list(d.values()))
 '''
 
-
+'''
 # Dataframe
 df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
 # idx = df.index[df['col1'] == 4][0]
@@ -102,7 +113,7 @@ df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
 
 print(df)
 print(df.loc[1:4,:])
-'''
+
 new_fila = pd.Series([1, 2])
 
 df = pd.concat([df, new_fila], axis=1)
