@@ -35,13 +35,15 @@ def most_frequent_words(df_opi_tokenizado):
     freq_ngrams = most_frequent_dict_key(d, QUANT_WORDS)
     print("{} palabras mas frecuentes: {}".format(QUANT_WORDS, freq_ngrams))
 
+
+    '''
     # FILTRO LAS PALABRAS MAS FRECUENTES
     print("Filtro palabras mas frecuentes")
     # Por palabra frecuente
     for palabra in freq_ngrams:
 
         # Si es sustantivo
-        if contains_word_type(text=palabra, word_type=['NOUN']) or palabra=='usar':  # 'usar' por atributo 'sistema operativo'. Facil de usar, intuitivo, etc...
+        if contains_word_type(text=palabra, word_type=['NOUN']): #or palabra=='usar':  # 'usar' por atributo 'sistema operativo'. Facil de usar, intuitivo, etc...
 
             # Si no es una palabra irrelevante
             if not is_irrelevant_word(palabra):
@@ -53,6 +55,33 @@ def most_frequent_words(df_opi_tokenizado):
     freq_ngrams_filt = delete_related_words(freq_ngrams_filt)
     print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
     return freq_ngrams_filt
+    '''
+
+    return freq_ngrams
+
+def filter_most_frequent_words(l_freq_words, d_rel_words):
+    # Filtro lista de palabras mas frecuentes!
+
+    # FILTRO LAS PALABRAS MAS FRECUENTES
+    print("Filtro palabras mas frecuentes")
+    l_freq_words_filt = []
+    # Por palabra frecuente
+    for palabra in l_freq_words:
+
+        # Si es sustantivo
+        if contains_word_type(text=palabra, word_type=['NOUN']):  # hacer que reciban lista y la filtren...
+
+            # Si no es una palabra irrelevante
+            if not is_irrelevant_word(palabra):  # hacer que reciban lista y la filtren...
+
+                # La guardo
+                l_freq_words_filt.append(palabra)
+
+    # Elimono palabras relacionadas para evitar repeticion de customer needs
+    freq_ngrams_filt = delete_related_words(l_freq_words_filt, d_rel_words)
+    print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
+
+    return l_freq_words_filt
 
 def most_frequent_phrases(df_tokenizado):
     """
@@ -197,19 +226,26 @@ def create_relation_matrix(l_atributos, l_cust_needs):
                     # sigo en el ciclo while hasta que cargue la relacion correctamente
                     print("Ingreso no valido. El ingreso debe ser un numero, en particular, 0, 1, 3 o 9. ")
 
-        # Print resumen de cuantos ptos tiene cada customer need
+        # Imprimo resumen de cuantos ptos tiene cada customer need
         print("{:^40s}\t{:^40}".format("Customer need", "Suma de ptos de relaciones"))
         for cust_need in df_relation_matrix.index:
             print("{:^40s}\t{:^40}".format(cust_need, sum(df_relation_matrix.loc[cust_need].dropna())))
 
-        '''
-        # Si el atributo no tiene relacion con ninguna customer need       
-        if sum(df_relation_matrix[atributo]) == 0:
-            df_relation_matrix = df_relation_matrix.drop([atributo], axis=0)
-        '''
+    #PRUEBA
+    # Si el atributo no tiene relacion con ninguna customer need
+    # Por customer need
+    for customer_need in l_cust_needs:
+
+        # Si no tiene relacion con ningun atributo
+        if sum(df_relation_matrix.loc[customer_need]) == 0:
+
+            # Creo atributo con el cual relacionarla
+            df_relation_matrix[customer_need] = 0
+
+            # Asigno relacion de 9 con atributo creado
+            df_relation_matrix.loc[customer_need, customer_need] = 1
 
     return df_relation_matrix
-
 
 ################################################ FUNCIONES SECUNDARIAS ################################################
 # UTILIZADA EN MOST_FREQUENT_WORDS() Y EN MOST_FREQUENT_PHRASES()
@@ -237,7 +273,7 @@ def most_frequent_dict_key(dict, quantity_freq):
     return l_freq
 
 
-# UTILIZADA EN MOST_FREQUENT_WORDS()
+# UTILIZADA EN FILTER_MOST_FREQUENT_WORDS()
 def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod...
     """
     Determina si una palabra es relevante o no para la seleccion de customer needs.
@@ -250,11 +286,11 @@ def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod.
                  'descripcion', 'disney',
                  'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
                  'funcion', 'flow', # 'funciones'
-                 'gama', 'gusto', 'gracias', 'general', 'google'
+                 'gama', 'gusto', 'gracias', 'general', 'google', 'gb',
                  'hora', 'horas', 'hs',
                  'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
                  'netflix', 'nota',
-                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder',
+                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena',
                  'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto',
                  'tiempo', 'tipo',
                  'uso',
@@ -262,12 +298,13 @@ def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod.
                  'semana', 'super',
                  'youtube',
                  'whatsapp', 'windows']
+    # xiaomi, samsung, aparato, moto, motorola
 
     pal_irrel_cel = ['celulares', 'iphone', 'telefono']
     pal_irrel_tablets = ['tablet', 'tablets']
     pal_irrel_note = ['computadora','notebook', 'pc']
     pal_irrel_auris = ['auriculares', 'auris']
-    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'marcas', 'pc', 'cable', 'hdmi', 'sistema', 'google', 'parlantes', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
+    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'marcas', 'pc', 'cable', 'hdmi', 'sistema', 'parlantes', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
     pal_irrel_smartband = ['smartwatch', 'smart', 'band', 'oxigeno', 'presion', 'pulsera', 'reloj', 'pasos', 'notificaciones', 'mensajes', 'musica', 'pulsaciones', 'ritmo', 'sueño', 'gps', 'muñeca', 'datos', 'medicion', 'mediciones', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
 
     pal_irrel += pal_irrel_cel
@@ -279,7 +316,7 @@ def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod.
     else:
         return False
 
-def delete_related_words(l_palabras):
+def delete_related_words(l_palabras, d_rel_words):
     """
     Elimina palabras que se refieran a una misma caracterisitca del producto dejando una sola de ellas
     :param l_palabras: Lista de palabras
@@ -288,9 +325,11 @@ def delete_related_words(l_palabras):
     # Defino funcion
     find_related_words = lambda word, d_rel_words: d_rel_words[word] if word in d_rel_words.keys() else [word]
 
+    '''
     # Importo diccionario de palabras relacionadas
     with open("d_rel_words.pkl", "rb") as tf:
         d_rel_words = pickle.load(tf)
+    '''
 
     # Por palabra
     for palabra in l_palabras:

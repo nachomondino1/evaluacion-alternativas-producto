@@ -5,14 +5,107 @@ from p2_data_preparation.format_data import correct_price_column
 import re
 
 
+def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque falla is_alt_new() de collect_initial_data
+    """
+    Borra las alternativas repetidas (las que se le escapan al collect_initial_data.py)
+    :param df_alt: Dataframe alternativas con columna 'Modelo'
+    :param df_opi: Dataframe opiniones
+    :return: Dataframe alternativas con alternativas unicas
+    """
+    # Defino variables
+    ids_con_opi = list(df_opi['id_alternativa'].unique())  # ids con opiniones
+    df_alt_dropped = pd.DataFrame()
+
+    # ELIMINO ALTERNATIVAS DUPLICADAS
+    # Por modelo
+    for modelo in df_alt["Modelo"].dropna().unique():
+
+        # Busco alternativas del modelo
+        df_alt_mismo_mod = df_alt[df_alt['Modelo']==modelo]
+        n_mismo_mod = len(df_alt_mismo_mod)
+
+
+        # PRUEBA
+        # ORDENO ALTERNATIVAS SEGUN SI TIENEN O NO OPINIONES
+        df_alt_mismo_mod['with opis'] = 0  # Agrego columna 'with opis' al df
+        print(df_alt_mismo_mod)
+
+        # Agrego colunna "with opis"
+        for i in df_alt_mismo_mod.index:
+
+            id_alt = df_alt_mismo_mod.loc[i, 'id_alternativa']
+            print('\t Alternativa:', i, id_alt)
+
+            # Si tiene opiniones
+            if id_alt in ids_con_opi:
+
+                df_alt_mismo_mod.loc[i, 'with opis'] = 1
+                print("\t\t Tiene opiniones!")
+                print(df_alt_mismo_mod)
+            else:
+                print("\t\t No tiene opiniones")
+
+        # Ordeno alternativas por columna "with opis"
+        df_alt_mismo_mod = df_alt_mismo_mod.sort_values(by='with opis', ascending=False)
+        print(df_alt_mismo_mod)
+        df_alt_mismo_mod = df_alt_mismo_mod.drop(['with opis'], axis=1)
+        print(df_alt_mismo_mod)
+
+
+
+        # ELIMINO MODELOS IGUALES
+        df_alt_mismo_mod_sin_reps = df_alt_mismo_mod.dropna(axis=1) # Elimino columnas que tengan NaN (la mayoria de repeticiones de modelos tienen tod@ igual salvo que una tiene NaN en algunas col y la otra no)
+        df_alt_mismo_mod_sin_reps = df_alt_mismo_mod_sin_reps.drop_duplicates(subset=list(df_alt_mismo_mod_sin_reps.columns[2:]))  # Elimino duplicados
+        n_mismo_mod_sin_rep = len(df_alt_mismo_mod_sin_reps)
+
+        print("Alternativas sin repetidos:")
+        print(df_alt_mismo_mod_sin_reps)
+
+        # Si los modelos son iguales
+        if n_mismo_mod != n_mismo_mod_sin_rep:
+
+            # Borrar las alt que no tengan opiniones... (pues de las alt duplicadas puedo estar eliminando aquella que tienee las opis asociadas y no quiero eso)
+            # Me quedo con primera fila de las repetidas (asegurandome que tenga opiniones pues esta ordenado por si tiene o no opis)
+
+            df_aux = df_alt_mismo_mod[df_alt_mismo_mod.index.isin(df_alt_mismo_mod_sin_reps.index)]
+            print("Se descubieron {} modelos repetidos".format(n_mismo_mod-n_mismo_mod_sin_rep))
+            df_alt_dropped = pd.concat([df_alt_dropped, df_aux])
+            print("Alternativas de modelos a guardar")
+            print(df_aux)
+
+        else:
+            df_alt_dropped = pd.concat([df_alt_dropped, df_alt_mismo_mod])
+            print("Alternativas de modelos a guardar")
+            print(df_alt_mismo_mod)
+
+
+    # VERIFICO QUE LAS ALTERNATIVAS BORRADAS NO TENGAN OPINIONES
+    n_alt_with_opis_filt = len(df_alt_dropped[df_alt_dropped.id_alternativa.isin(ids_con_opi)])
+    print("Se elimino {} alternativa/s por ser repetidas. De ellas, {} tenian al menos una opinion".format(len(df_alt)-len(df_alt_dropped), len(ids_con_opi) - n_alt_with_opis_filt))
+    print("Cantidad de alterantivas restantes: {}\n".format(df_alt_dropped.shape[0]))
+
+    df_alt_dropped.drop(['Modelo'], axis=1)  # Pues sino dejaria columna 'Modelo' en df_alt_cleaned
+    df_alt_dropped = df_alt_dropped.reset_index(drop=True)  # reseteo index al eliminar filas
+    return df_alt_dropped
+
+
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_alt.xlsx')
+df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_opi.xlsx')
+print(df_alt, df_opi)
+
+drop_alt_duplicates(df_alt, df_opi)
+
+
+
+
+
+
+
+
+
 #valores = ['720px x 1600px', '720px - 1600px']
 #for valor in valores:
 #    print(re.split(',| x | - ', valor))
-
-valor = "      Hola, MUNDO       "
-valor = valor.lstrip().rstrip()
-print(valor)
-print(len(valor))
 
 '''
 from p2_data_preparation.clean_data import disaggregate_columns_with_lists
@@ -21,7 +114,7 @@ df_alt = disaggregate_columns_with_lists(df_alt)
 '''
 
 '''
-# CONVERTIDOR DE UNIDADES
+# CONVERSOR DE UNIDADES
 h = 1
 ms = h * 3.6*10**6
 print(ms)
@@ -190,8 +283,9 @@ import stanza
 pos_tagger = stanza.Pipeline(lang='es', processors='tokenize,pos')
 
 
-text = "Samsung galaxy z flip3 5g 128 gb phantom black 8 gb ram. Espectacular. Arranco con los puntos flojos: la batería y las cámaras. La batería con suerte llega a la noche, lo cual de por sí puede no ser un problema, pero uno espera algo más de un producto en este rango de precios. Lo mismo con las cámaras, existen otros celulares de la misma gama con cámaras bastante superiores. Se tuvieron que reducir las prestaciones de estos dos componentes por el diseño y arquitectura de este celular que se pliega? es probable. Tampoco viene con cargador, sólo con un cable usb-c en ambos extremos. Todo lo demás es excelente, pantalla super nítida con excelente densidad ppi, interacción muy fluida, android 12, mucha memoria, mucho espacio en disco, ligero y delgado, excelente soporte de audio (32-bit/384khz), la posibilidad de sacarse selfies con las cámaras de atrás al tener el celular plegado y la mejor característica de todas: el tamaño del celular cuando está cerrado. Es pasar de tener un ladrillo en la mano o en el bolsillo a algo muy pequeño, fruto de avance tecnológico. No hace falta abrir a cada momento el celular, con la pequeña pantalla de atrás donde se reciben las notificaciones basta y sobra para decidir si es necesario. Además, en argentina está a muy buen precio comparado con precios internacionales. Excelente producto. Lo recomiendo y dudo que en el futuro vuelva atrás y abandone la línea de celulares plegables."
+# text = "Samsung galaxy z flip3 5g 128 gb phantom black 8 gb ram. Espectacular. Arranco con los puntos flojos: la batería y las cámaras. La batería con suerte llega a la noche, lo cual de por sí puede no ser un problema, pero uno espera algo más de un producto en este rango de precios. Lo mismo con las cámaras, existen otros celulares de la misma gama con cámaras bastante superiores. Se tuvieron que reducir las prestaciones de estos dos componentes por el diseño y arquitectura de este celular que se pliega? es probable. Tampoco viene con cargador, sólo con un cable usb-c en ambos extremos. Todo lo demás es excelente, pantalla super nítida con excelente densidad ppi, interacción muy fluida, android 12, mucha memoria, mucho espacio en disco, ligero y delgado, excelente soporte de audio (32-bit/384khz), la posibilidad de sacarse selfies con las cámaras de atrás al tener el celular plegado y la mejor característica de todas: el tamaño del celular cuando está cerrado. Es pasar de tener un ladrillo en la mano o en el bolsillo a algo muy pequeño, fruto de avance tecnológico. No hace falta abrir a cada momento el celular, con la pequeña pantalla de atrás donde se reciben las notificaciones basta y sobra para decidir si es necesario. Además, en argentina está a muy buen precio comparado con precios internacionales. Excelente producto. Lo recomiendo y dudo que en el futuro vuelva atrás y abandone la línea de celulares plegables."
 # text = "Tengan en cuenta que el quantum yolo es apenas más económico pero es 3g y tiene un procesador de 4 nucleos ( el up de 8) y una pantalla de 5 pulgadas (el up 5"
+text = 'Uno lo encuadra en la pantalla y al sacar la imagen sale alejada'
 
 # doc = nlp(text)
 doc = pos_tagger(text)

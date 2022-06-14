@@ -148,7 +148,7 @@ def chooseBestKforKMeans(scaled_data, k_range):
 
     return best_k
 
-def kMeansRes(scaled_data, k, alpha_k=0.04):  #lo subi de 0.02 a 0.06 para tener menos clusters...
+def kMeansRes(scaled_data, k, alpha_k=0.06):  #lo subi de 0.02 a 0.06 para tener menos clusters...
     '''
     Parameters
     ----------
@@ -343,7 +343,10 @@ def create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster):
                 break
 
     # Defino variable
-    l_marcas = list(df_alt[atrib_marca].dropna().unique())
+    l_marcas = []
+    for marca in df_alt[atrib_marca].dropna().unique():
+        if len(df_alt[df_alt[atrib_marca]==marca]) > 5:
+            l_marcas.append(marca)
     df_brand_per_cluster = pd.DataFrame(index=df_alt_cleaned_cluster['label'].unique(), columns=l_marcas)
     print(l_marcas)
 
