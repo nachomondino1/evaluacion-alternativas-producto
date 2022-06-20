@@ -1,127 +1,106 @@
 # Importo librerias
 import pandas as pd
 import operator
-import pickle
 from p3_modelling.sentiment_atribution import contains_word_type
 
 ################################################ FUNCIONES PRINCIPALES ################################################
-def most_frequent_words(df_opi_tokenizado):
+def most_frequent_ngrams(df_opi_tokenizado, n_ngram, QUANT_NGRAMS): # acordate que no se puede probar individualmente porque se levanta mal el df_opi_tokenizado (en vez de lista lo entinede como string)
     """
-    Obtiene lista de las palabras mas frecuentes utilizadas en las opiniones de un producto
+    Obtiene lista de los ngrams mas frecuentes utilizados en las opiniones de un producto
+    :param QUANT_NGRAMS: Parametro de cuantas palabras mas frecuentes buscar
     :param df_opi_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
     tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
     :return: Lista de palabras mas frecuentes en opiniones y relevantes
     """
-    # Defino variables
-    QUANT_WORDS = 200  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
     d = {}
     idx_token = df_opi_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
-    freq_ngrams_filt = []
 
     # POR OPINION
     for i in range(len(df_opi_tokenizado)):
         opinion = df_opi_tokenizado.iloc[i, idx_token]
 
-        # POR PALABRA
-        for palabra in opinion:
+        # OBTENGO NGRAMS (CONJ DE N PALABRAS) DE OPINION (++1 ngram por opinion)
+        ngrams = generate_n_grams(opinion, n_ngram)
 
-            # SUMO 1 A SU FRECUENCIA
-            if palabra in d.keys():  # Si su frecuencia es mayor a 1
-                d[palabra] += 1  # Sumar uno a su frecuencia
-            else:  # Si aun no tiene frecuencia
-                d[palabra] = 1 # lo inicializo
+        # GUARDO NGRAM Y SU FRECUENCIA
+        # Por cada ngram
+        for ngram in ngrams:
+            # Sumo 1 a su frecuencia
+            d[ngram] = d[ngram]+1 if ngram in d.keys() else 1
 
-    # OBTENGO LAS PALABRAS MAS FRECUENTES
-    freq_ngrams = most_frequent_dict_key(d, QUANT_WORDS)
-    print("{} palabras mas frecuentes: {}".format(QUANT_WORDS, freq_ngrams))
+    # OBTENGO LISTA DE LOS 3-GRAMS MAS FRECUENTES
+    l_freq_ngrams = most_frequent_dict_key(d, QUANT_NGRAMS)
+    print("{} frases de {} palabra mas frecuentes: {}".format(QUANT_NGRAMS, n_ngram, l_freq_ngrams))
 
+    # Exporto dataframe de palabras mas frecuentes (momentaneamente lo pongo aca)
+    if n_ngram == 1:
+        df = pd.DataFrame(data=d.values(), columns=['frecuencia'], index=d.keys())
+        df = df.sort_values(by='frecuencia', ascending=False)  # sorted() no es para dataframes
+        df.to_excel('/Users/nachomondino/Desktop/df_most_freq_words.xlsx')
 
-    '''
-    # FILTRO LAS PALABRAS MAS FRECUENTES
-    print("Filtro palabras mas frecuentes")
-    # Por palabra frecuente
-    for palabra in freq_ngrams:
-
-        # Si es sustantivo
-        if contains_word_type(text=palabra, word_type=['NOUN']): #or palabra=='usar':  # 'usar' por atributo 'sistema operativo'. Facil de usar, intuitivo, etc...
-
-            # Si no es una palabra irrelevante
-            if not is_irrelevant_word(palabra):
-
-                # La guardo
-                freq_ngrams_filt.append(palabra)
-
-    # Elimono palabras relacionadas para evitar repeticion de customer needs
-    freq_ngrams_filt = delete_related_words(freq_ngrams_filt)
-    print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
-    return freq_ngrams_filt
-    '''
-
-    return freq_ngrams
+    return l_freq_ngrams
 
 def filter_most_frequent_words(l_freq_words, d_rel_words):
     # Filtro lista de palabras mas frecuentes!
 
-    # FILTRO LAS PALABRAS MAS FRECUENTES
-    print("Filtro palabras mas frecuentes")
+    # DEFINO VARIABLES
     l_freq_words_filt = []
+    l_pal_irrel = ['android', 'año', 'años', 'amazon',
+                 'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado',
+                 'descripcion', 'disney',
+                 'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
+                 'funcion', 'flow',
+                 'gama', 'gusto', 'gracias', 'general', 'google', 'gb',
+                 'hora', 'horas', 'hs',
+                 'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
+                 'netflix', 'nota',
+                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena',
+                 'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto',
+                 'tiempo', 'tipo', 'tv',
+                 'uso',
+                 'verdad',
+                 'semana', 'super',
+                 'youtube',
+                 'whatsapp', 'windows']
+
     # Por palabra frecuente
     for palabra in l_freq_words:
+        print("PALABRA: {}".format(palabra))
 
-        # Si es sustantivo
-        if contains_word_type(text=palabra, word_type=['NOUN']):  # hacer que reciban lista y la filtren...
+        # Si la palabra es relevante
+        if palabra not in l_pal_irrel:
 
-            # Si no es una palabra irrelevante
-            if not is_irrelevant_word(palabra):  # hacer que reciban lista y la filtren...
+            # Si es sustantivo
+            if contains_word_type(text=palabra, word_type=['NOUN']): # En smartband: or palabra == 'facil' or palabra=='conecta':  # hacer que reciban lista y la filtren...
 
                 # La guardo
                 l_freq_words_filt.append(palabra)
+                print("\t Se guardo la palabra {}".format(palabra))
 
-    # Elimono palabras relacionadas para evitar repeticion de customer needs
-    freq_ngrams_filt = delete_related_words(l_freq_words_filt, d_rel_words)
-    print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
+    l_freq_words_filt_copy = l_freq_words_filt
+    # ELIMINO PALABRAS RELACIONADAS
+    for palabra in l_freq_words_filt:
 
+        # SI TIENE, ELIMINO SUS PALABRAS RELACIONADAS DE LISTA
+        if palabra in d_rel_words.keys():
+
+            # Obtengo sus palabras relacionadas
+            l_related_words = d_rel_words[palabra][1:]  # siempre la primera palabra relacionada es la propia palabra
+
+            # Por palabra relacionada
+            for word in l_related_words:  # sin incluir palabra propiamente
+
+                word = word.replace(" ","")  # Elimino espacios agregados para identificar cust needs en opiniones y evitar confusion
+
+                # Si esta en lista de palabras
+                if word in l_freq_words_filt:
+
+                    # La remuevo
+                    l_freq_words_filt_copy.remove(word)  # La eliminacion afecta el ciclo for? Sí
+                    print("\t Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
+
+    print("{} palabras restantes: {}".format(len(l_freq_words_filt), l_freq_words_filt))
     return l_freq_words_filt
-
-def most_frequent_phrases(df_tokenizado):
-    """
-    Obtiene lista de frases de 3 palabras mas frecuentes utilizadas en las opiniones de un producto
-    :param df_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
-    tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
-    :return: Lista de las <CANT_POSIBLES_CUSTOMER_NEEDS> frases de 3 palabras mas frecuentes
-    """
-    print("BUSCO POSIBLES CUSTOMER NEEDS")
-    # Defino variables
-    CANT_POSIBLES_CUSTOMER_NEEDS = 4000  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
-    d = {}
-    idx_token = df_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
-
-    # POR OPINION
-    for i in range(len(df_tokenizado)):
-        opinion = df_tokenizado.iloc[i, idx_token]
-
-        # OBTENGO SUS FRASES DE 3 PALABRAS O "TRIGRAMS" (una opinion estara compuesta de mas de un trigram)
-        ngrams = generate_n_grams(opinion, ngram=3)
-
-        # GUARDO FRASE Y SU FRECUENCIA
-        # Por cada trigram
-        for ngram in ngrams:
-
-            # Si el trigram ya fue cargado
-            if ngram in d.keys():
-                # Sumar uno a su frecuencia
-                d[ngram] += 1
-
-            # Si el trigram no fue cargado
-            else:
-                # lo inicializo
-                d[ngram] = 1
-
-    # OBTENGO LISTA DE LOS 3-GRAMS MAS FRECUENTES
-    freq_ngrams = most_frequent_dict_key(d, CANT_POSIBLES_CUSTOMER_NEEDS)
-    print("Posibles customer needs: {}".format(freq_ngrams))      # print("Primeras {} posibles customer needs: {}".format(100, freq_ngrams[:100]))
-
-    return freq_ngrams
 
 def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
     """
@@ -231,7 +210,6 @@ def create_relation_matrix(l_atributos, l_cust_needs):
         for cust_need in df_relation_matrix.index:
             print("{:^40s}\t{:^40}".format(cust_need, sum(df_relation_matrix.loc[cust_need].dropna())))
 
-    #PRUEBA
     # Si el atributo no tiene relacion con ninguna customer need
     # Por customer need
     for customer_need in l_cust_needs:
@@ -248,7 +226,7 @@ def create_relation_matrix(l_atributos, l_cust_needs):
     return df_relation_matrix
 
 ################################################ FUNCIONES SECUNDARIAS ################################################
-# UTILIZADA EN MOST_FREQUENT_WORDS() Y EN MOST_FREQUENT_PHRASES()
+# UTILIZADA EN MOST_FREQUENT_NGRAMS()
 def most_frequent_dict_key(dict, quantity_freq):
     """
     De un diccionario de frecuencias (value es numerico, en particular, la frecuencia de la key), selecciona las keys
@@ -272,84 +250,19 @@ def most_frequent_dict_key(dict, quantity_freq):
 
     return l_freq
 
-
-# UTILIZADA EN FILTER_MOST_FREQUENT_WORDS()
-def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod...
+def generate_n_grams(text, ngram):
     """
-    Determina si una palabra es relevante o no para la seleccion de customer needs.
-    :param word: String. Una sola palabra
-    :return: True si la palabra es irrelevante para la seleccion de customer needs, de lo contrario, False
+    Obtiene lista de los n-grams de un texto
+    :param text: Lista. Texto tokenizado, es decir, como lista de palabras
+    :param ngram: Largo de frases a buscar
+    :return: Lista de frases de largo <ngrams> en <texto>
     """
-    # Defino lista de palabras irrelevantes
-    pal_irrel = ['android', 'año', 'años', 'amazon',
-                 'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado',
-                 'descripcion', 'disney',
-                 'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
-                 'funcion', 'flow', # 'funciones'
-                 'gama', 'gusto', 'gracias', 'general', 'google', 'gb',
-                 'hora', 'horas', 'hs',
-                 'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
-                 'netflix', 'nota',
-                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena',
-                 'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto',
-                 'tiempo', 'tipo',
-                 'uso',
-                 'verdad',
-                 'semana', 'super',
-                 'youtube',
-                 'whatsapp', 'windows']
-    # xiaomi, samsung, aparato, moto, motorola
+    # words = [word for word in text.split(" ") if word not in set(stopwords.words('english'))]
+    # print("Sentence after removing stopwords:", text)
+    temp = zip(*[text[i:] for i in range(0, ngram)])
+    ans = [' '.join(ngram) for ngram in temp]
+    return ans
 
-    pal_irrel_cel = ['celulares', 'iphone', 'telefono']
-    pal_irrel_tablets = ['tablet', 'tablets']
-    pal_irrel_note = ['computadora','notebook', 'pc']
-    pal_irrel_auris = ['auriculares', 'auris']
-    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'marcas', 'pc', 'cable', 'hdmi', 'sistema', 'parlantes', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
-    pal_irrel_smartband = ['smartwatch', 'smart', 'band', 'oxigeno', 'presion', 'pulsera', 'reloj', 'pasos', 'notificaciones', 'mensajes', 'musica', 'pulsaciones', 'ritmo', 'sueño', 'gps', 'muñeca', 'datos', 'medicion', 'mediciones', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
-
-    pal_irrel += pal_irrel_cel
-
-    # Si la palabra no es relvante
-    if word in pal_irrel:
-        return True
-    # Si la palabra es relvante
-    else:
-        return False
-
-def delete_related_words(l_palabras, d_rel_words):
-    """
-    Elimina palabras que se refieran a una misma caracterisitca del producto dejando una sola de ellas
-    :param l_palabras: Lista de palabras
-    :return: Lista de palabras sin palabras que se refieran a una misma caracteristica
-    """
-    # Defino funcion
-    find_related_words = lambda word, d_rel_words: d_rel_words[word] if word in d_rel_words.keys() else [word]
-
-    '''
-    # Importo diccionario de palabras relacionadas
-    with open("d_rel_words.pkl", "rb") as tf:
-        d_rel_words = pickle.load(tf)
-    '''
-
-    # Por palabra
-    for palabra in l_palabras:
-
-        # ELIMINO PALABRAS RELACIONADAS DE LISTA
-        # Obtengo sus palabras relacionadas
-        l_related_words = find_related_words(palabra, d_rel_words)[1:]
-
-        # Por palabra relacionada
-        for word in l_related_words:  # sin incluir palabra propiamente
-            word = word.replace(" ", "")  # Elimino espacios agregados para identificar cust needs en opiniones y evitar confusion
-
-            # Si esta en lista de palabras
-            if word in l_palabras:
-                # La remuevo
-                l_palabras.remove(word)
-                # str_palabras = delete_substring_in_string(str_palabras, word)
-                print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
-
-    return l_palabras
 
 def palabras_plural(palabra): # falta doc y ver si la dejo
     """
@@ -363,21 +276,6 @@ def palabras_plural(palabra): # falta doc y ver si la dejo
     for i in range(len(plurales)):
         palabra_en_plural.append(palabra+plurales[i])
     return palabra_en_plural
-
-
-# UTILIZADA EN MOST_FREQUENT_PHRASES()
-def generate_n_grams(text, ngram):
-    """
-    Obtiene lista de los n-grams de un texto
-    :param text: Lista. Texto tokenizado, es decir, como lista de palabras
-    :param ngram: Largo de frases a buscar
-    :return: Lista de frases de largo <ngrams> en <texto>
-    """
-    # words = [word for word in text.split(" ") if word not in set(stopwords.words('english'))]
-    # print("Sentence after removing stopwords:", text)
-    temp = zip(*[text[i:] for i in range(0, ngram)])
-    ans = [' '.join(ngram) for ngram in temp]
-    return ans
 
 
 # UTILIZADA EN SELECT_CUSTOMER_NEEDS()
@@ -504,92 +402,199 @@ print(df_opi_tokenizado)
 main(df_alt_cleaned, df_opi_tokenizado)
 '''
 
-
-
-'''
-def customer_needs_translation(l_cust_needs, cust_need):  # no se que enombre ponerle, busca relacion entre customer needs de 3 palabras y las de 1...
-    # ES NECESARIA? O PUEDO USAR DF_CUST_NEEDS?
+''' Ex 2 funciones que hacian el trabajo de most_frequent_ngrams(). Eran 2 pues una era para palabras y la otra para las frases..
+def most_frequent_words(df_opi_tokenizado, QUANT_WORDS):
     """
-    Traduce customer need de 1 palabra a customer need de 3 palabras
-    :param customer_needs: Lista de customer needs de 3 palabras
-    :param customer_needs_substring: String. Customer need de 1 palabra.
-    :return:
-    """
-    # POR CUSTOMER NEED DE 3 PALABRAS
-    for customer_need in l_cust_needs:
-
-        # SI CUSTOMER NEED DE 1 PALABRA ESTA EN CUSTOMER NEED DE 3 PALABRAS
-        if cust_need in customer_need:
-            return customer_need  # retorno customer need de 3 palabras
-'''
-
-
-
-
-'''
-def select_attr_and_cust_needs(df_alt, df_cust_needs):
-    """
-    Permite seleccionar atributos y customer needs a traves de terminal
-    :param l_atributos: Lista de atributos del producto
-    :param l_cust_needs: Lista de customer needs del producto de 1 palabra
-    :param l_cust_need_three_words: Lista de customer needs del producto de 3 palabras
-    :return: Listas pasadas por parametro filtradas
-    """
-    # SELECCIONO ATRIBUTOS
-    print("Selecciona atributos que se relacionaran con customer needs (evitar atributos extraidos unicamente para ser mostrados al cliente):")
-    l_atributos_filt = drop_unwanted_elements(df_alt.columns[2:])  # elimino atributos no deseados
-
-    # ELIMINO ATRIBUTOS NO RELEVANTES DE DATAFRAME ALTERNATIVAS
-    # Por atributo
-    for atributo in df_alt.columns[2:]:
-        # Si no es relevante
-        if atributo not in l_atributos_filt:
-            # Elimino atributo
-            df_alt = df_alt.drop([atributo], axis=1)
-
-    # SELECCIONO CUSTOMER NEEDS
-    print("Selecciona customer needs que se relacionaran con atributos (evitar customer needs que se refieran a lo mismo):")
-
-    l_cust_needs_three = df_cust_needs['cust_needs_three_words']
-    l_cust_needs_three_filt = drop_unwanted_elements(l_cust_needs_three)  # elimino atributos no deseados
-
-    # ELIMINO CUSTOMER NEEDS NO RELEVANTES DE DATAFRAME DE CUSTOMER NEEDS
-    # Por customer need
-    for cust_need in df_cust_needs['cust_needs_three_words']:
-        # Si no es relevante
-        if cust_need not in l_cust_needs_three_filt:
-            # Elimino customer need
-            idx = df_cust_needs.index[df_cust_needs['cust_needs_three_words'] == cust_need]
-            df_cust_needs = df_cust_needs.drop([idx], axis=0)
-
+    Obtiene lista de las palabras mas frecuentes utilizadas en las opiniones de un producto
+    :param QUANT_WORDS: Parametro de cuantas palabras mas frecuentes buscar
+    :param df_opi_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
+    tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
+    :return: Lista de palabras mas frecuentes en opiniones y relevantes
     """
     # Defino variables
-    l_cust_needs_three_words_filt = []
+    # QUANT_WORDS = 200  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    d = {}
+    idx_token = df_opi_tokenizado.columns.get_loc(
+        "opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 
-    print("Selecciona atributos que se relacionaran con customer needs (evitar atributos extraidos unicamente para ser mostrados al cliente):")
-    l_atributos_filt = drop_unwanted_elements(l_atributos)  # elimino atributos no deseados
+    # POR OPINION
+    for i in range(len(df_opi_tokenizado)):
+        opinion = df_opi_tokenizado.iloc[i, idx_token]
 
-    print("Selecciona customer needs que se relacionaran con atributos (evitar customer needs que se refieran a lo mismo):")
-    l_cust_needs_filt = drop_unwanted_elements(l_cust_needs)  # elimino atributos no deseados
+        # POR PALABRA
+        for palabra in opinion:
 
-    # Por customer need de 1 palabra
-    for cust_need in l_cust_needs_filt:
-        # Selecciono su customer need de tres palabras
-        l_cust_needs_three_words_filt.append(customer_needs_translation(l_cust_need_three_words, cust_need))
+            # SUMO 1 A SU FRECUENCIA
+            if palabra in d.keys():  # Si su frecuencia es mayor a 1
+                d[palabra] += 1  # Sumar uno a su frecuencia
+            else:  # Si aun no tiene frecuencia
+                d[palabra] = 1  # lo inicializo
+
+    # OBTENGO LAS PALABRAS MAS FRECUENTES
+    freq_ngrams = most_frequent_dict_key(d, QUANT_WORDS)
+    print("{} palabras mas frecuentes: {}".format(QUANT_WORDS, freq_ngrams))
+
+    """
+    # FILTRO LAS PALABRAS MAS FRECUENTES
+    print("Filtro palabras mas frecuentes")
+    # Por palabra frecuente
+    for palabra in freq_ngrams:
+
+        # Si es sustantivo
+        if contains_word_type(text=palabra, word_type=['NOUN']): #or palabra=='usar':  # 'usar' por atributo 'sistema operativo'. Facil de usar, intuitivo, etc...
+
+            # Si no es una palabra irrelevante
+            if not is_irrelevant_word(palabra):
+
+                # La guardo
+                freq_ngrams_filt.append(palabra)
+
+    # Elimono palabras relacionadas para evitar repeticion de customer needs
+    freq_ngrams_filt = delete_related_words(freq_ngrams_filt)
+    print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
+    return freq_ngrams_filt
     """
 
+    return freq_ngrams
 
+def most_frequent_phrases(df_tokenizado):
     """
-    # Borrar atributos de dataframe alternativas cleaned que no esten en l_atributos
-    for atributo in df_alt_cleaned.columns[1:]:
-        if atributo not in l_atributos:
-            df_alt_cleaned = df_alt_cleaned.drop([atributo], axis=1)
-    print()
+    Obtiene lista de frases de 3 palabras mas frecuentes utilizadas en las opiniones de un producto
+    :param df_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
+    tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
+    :return: Lista de las <CANT_POSIBLES_CUSTOMER_NEEDS> frases de 3 palabras mas frecuentes
     """
+    print("BUSCO POSIBLES CUSTOMER NEEDS")
+    # Defino variables
+    CANT_POSIBLES_CUSTOMER_NEEDS = 4000  # parametro de cuantas mas frecuentes frases buscar. dependera del producto?
+    d = {}
+    idx_token = df_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 
-    # return l_atributos_filt, l_cust_needs_filt, l_cust_needs_three_words_filt
-    return df_alt, df_cust_needs
+    # POR OPINION
+    for i in range(len(df_tokenizado)):
+        opinion = df_tokenizado.iloc[i, idx_token]
+
+        # OBTENGO SUS FRASES DE 3 PALABRAS O "TRIGRAMS" (una opinion estara compuesta de mas de un trigram)
+        ngrams = generate_n_grams(opinion, ngram=3)
+
+        # GUARDO FRASE Y SU FRECUENCIA
+        # Por cada trigram
+        for ngram in ngrams:
+
+            # Si el trigram ya fue cargado
+            if ngram in d.keys():
+                # Sumar uno a su frecuencia
+                d[ngram] += 1
+
+            # Si el trigram no fue cargado
+            else:
+                # lo inicializo
+                d[ngram] = 1
+
+    # OBTENGO LISTA DE LOS 3-GRAMS MAS FRECUENTES
+    freq_ngrams = most_frequent_dict_key(d, CANT_POSIBLES_CUSTOMER_NEEDS)
+    print("Posibles customer needs: {}".format(freq_ngrams))      # print("Primeras {} posibles customer needs: {}".format(100, freq_ngrams[:100]))
+
+    return freq_ngrams
 '''
+
+''' Ex funcion que filtraba frequent words. Utilizaba funciones extra en vez de estar todo en una...
+def filter_most_frequent_words(l_freq_words, d_rel_words):
+    # Filtro lista de palabras mas frecuentes!
+
+    # FILTRO LAS PALABRAS MAS FRECUENTES
+    print("Filtro palabras mas frecuentes")
+    l_freq_words_filt = []
+    # Por palabra frecuente
+    for palabra in l_freq_words:
+
+        # Si es sustantivo
+        if contains_word_type(text=palabra, word_type=['NOUN']):  # hacer que reciban lista y la filtren...
+
+            # Si no es una palabra irrelevante
+            if not is_irrelevant_word(palabra):  # hacer que reciban lista y la filtren...
+
+                # La guardo
+                l_freq_words_filt.append(palabra)
+
+    # Elimono palabras relacionadas para evitar repeticion de customer needs
+    freq_ngrams_filt = delete_related_words(l_freq_words_filt, d_rel_words)
+    print("{} palabras restantes: {}".format(len(freq_ngrams_filt), freq_ngrams_filt))
+
+    return l_freq_words_filt
+
+def is_irrelevant_word(word):  # definir que hago con las pal irrel de ≠ prod...
+    """
+    Determina si una palabra es relevante o no para la seleccion de customer needs.
+    :param word: String. Una sola palabra
+    :return: True si la palabra es irrelevante para la seleccion de customer needs, de lo contrario, False
+    """
+    # Defino lista de palabras irrelevantes
+    pal_irrel = ['android', 'año', 'años', 'amazon',
+                 'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado',
+                 'descripcion', 'disney',
+                 'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
+                 'funcion', 'flow', # 'funciones'
+                 'gama', 'gusto', 'gracias', 'general', 'google', 'gb',
+                 'hora', 'horas', 'hs',
+                 'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
+                 'netflix', 'nota',
+                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena',
+                 'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto',
+                 'tiempo', 'tipo',
+                 'uso',
+                 'verdad',
+                 'semana', 'super',
+                 'youtube',
+                 'whatsapp', 'windows']
+    # xiaomi, samsung, aparato, moto, motorola
+
+    pal_irrel_cel = ['celulares', 'iphone', 'telefono']
+    pal_irrel_tablets = ['tablet', 'tablets']
+    pal_irrel_note = ['computadora','notebook', 'pc']
+    pal_irrel_auris = ['auriculares', 'auris']
+    pal_irrel_tv = ['tele', 'televisor', 'tv', 'control', 'marcas', 'pc', 'cable', 'hdmi', 'sistema', 'parlantes', 'remoto', 'canales', 'teclado', 'patas', 'smart', 'opcion', 'led', 'configuracion', 'internet', 'wifi', 'apps', 'conexion', 'video', 'chromecast', 'soporte', 'velocidad', 'falta', 'botones', 'pared', 'poder', 'boton', 'respuesta', 'parte', 'peliculas', 'prime'] # palabras que descarte en tv para seleccionar cust needs
+    pal_irrel_smartband = ['smartwatch', 'smart', 'band', 'oxigeno', 'presion', 'pulsera', 'reloj', 'pasos', 'notificaciones', 'mensajes', 'musica', 'pulsaciones', 'ritmo', 'sueño', 'gps', 'muñeca', 'datos', 'medicion', 'mediciones', 'auriculares', 'entrenamiento', 'control', 'sangre', 'actividades', 'calorias', 'opcion', 'materiales', 'deporte', 'relojes', 'opciones']
+
+    pal_irrel += pal_irrel_cel
+
+    # Si la palabra no es relvante
+    if word in pal_irrel:
+        return True
+    # Si la palabra es relvante
+    else:
+        return False
+
+def delete_related_words(l_palabras, d_rel_words):
+    """
+    Elimina palabras que se refieran a una misma caracterisitca del producto dejando una sola de ellas
+    :param l_palabras: Lista de palabras
+    :return: Lista de palabras sin palabras que se refieran a una misma caracteristica
+    """
+    # Defino funcion
+    find_related_words = lambda word, d_rel_words: d_rel_words[word] if word in d_rel_words.keys() else [word]
+
+    # Por palabra
+    for palabra in l_palabras:
+
+        # ELIMINO PALABRAS RELACIONADAS DE LISTA
+        # Obtengo sus palabras relacionadas
+        l_related_words = find_related_words(palabra, d_rel_words)[1:]
+
+        # Por palabra relacionada
+        for word in l_related_words:  # sin incluir palabra propiamente
+            word = word.replace(" ", "")  # Elimino espacios agregados para identificar cust needs en opiniones y evitar confusion
+
+            # Si esta en lista de palabras
+            if word in l_palabras:
+                # La remuevo
+                l_palabras.remove(word)
+                # str_palabras = delete_substring_in_string(str_palabras, word)
+                print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
+
+    return l_palabras
+'''
+
 
 '''
 def drop_unwanted_elements(l):
@@ -685,84 +690,3 @@ def is_noun(word):
 '''
 
 
-'''
-    pal_irrel = ['android', 'año', 'años', 'auriculares', 'auris',
-                 'band',
-                 'calidad', 'conforme', 'compra', 'cosas', 'celulares', 'color', 'compu', 'computadora', 'cosa', 'caso', 'cuidado',
-                 'equipo', 'expectativas', 'encanto', 'estrellas',
-                 'funcion', 'funciones',
-                 'gama', 'gusto', 'gracias', 'general',
-                 'hora', 'horas', 'hs',
-                 'iphone',
-                 'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
-                 'netflix', 'notebook', 'nota',
-                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'pulsera', 'pc', 'punto', 'puntos', 'publicacion',
-                 'redes', 'relacion', 'rendimiento', 'resto', 'reloj', 'regalo', 'respecto',
-                 'tele', 'telefono', 'televisor', 'tiempo', 'tv', 'tablet', 'tablets', 'tipo',
-                 'uso',
-                 'verdad',
-                 'semana', 'super',
-                 'whatsapp', 'windows']
-
-'''
-
-
-'''
-
-# EX FUNCION delete_related_words (HORRIBLE, BORRABA PALABRAS RELACIONADAS DE UN STRING EN VEZ DE LSITA POR CULPA DE LOS ESPACIOS QUE TENIAN LAS PALABRAS REELACIONADAS..)
-def delete_related_words(l_palabras):
-    """
-    Elimina palabras que se refieran a una misma caracterisitca del producto dejando una sola de ellas
-    :param l_palabras: Lista de palabras
-    :return: Lista de palabras sin palabras que se refieran a una misma caracteristica
-    """
-    # Defino funcion
-    find_related_words = lambda word, d_rel_words: d_rel_words[word] if word in d_rel_words.keys() else [word]
-
-    # Importo diccionario de palabras relacionadas
-    with open("d_rel_words.pkl", "rb") as tf:
-        d_rel_words = pickle.load(tf)
-
-    # Convierto lista de palabras a string
-    str_palabras = "   ".join(l_palabras)  # agrego espacios porque eliminare strings que tienen espacios para evitar identificiarlo mal en opiniones
-    
-    # Por palabra
-    for palabra in l_palabras:
-
-        ''
-        # ELIMINO PALABRA EN PLURAL DE LISTA
-        # Por palabra en plural
-        for palabra_plural in palabras_plural(palabra):
-            # Si esta la palabra en plural
-            if palabra_plural in str_palabras:
-                # La remuevo
-                str_palabras = delete_substring_in_string(str_palabras, palabra_plural)
-                print("Se removio palabra '{}' dado que ya esta '{}'".format(palabra_plural, palabra))
-        ''
-
-        # ELIMINO PALABRAS RELACIONADAS DE LISTA
-        # Obtengo sus palabras relacionadas
-        l_related_words = find_related_words(palabra, d_rel_words)[1:]
-
-        # Por palabra relacionada
-        for word in l_related_words:  # sin incluir palabra propiamente
-
-            # Si esta en lista de palabras
-            if word in str_palabras:
-                # La remuevo
-                str_palabras = delete_substring_in_string(str_palabras, word)
-                print("Se removio palabra '{}' dado que ya esta '{}'".format(word, palabra))
-    return str_palabras.split()
-
-
-# funcion secundaria de ex delete_related_words()
-def delete_substring_in_string(string, substring):  # falta doc
-    if substring in string:
-        idx_ini = string.find(substring)
-        string_cleaned = string[:idx_ini] + string[idx_ini + len(substring) + 1:]
-    else:
-        string_cleaned = string
-        print("No se encontro el substring {} en el string {}".format(substring, string))
-
-    return string_cleaned
-'''

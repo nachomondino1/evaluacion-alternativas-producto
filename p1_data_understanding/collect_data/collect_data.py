@@ -185,7 +185,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
                     # ENTONCES NO EXTRAIGO OPINIONES
                     print("PUBLICACION SIN OPINIONES")
 
-                '''
+
                 # VERIFICO PARAMETRO DE CORTE
                 historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
                 # Si las ultimas publicaciones tienen muy pocos datos
@@ -193,7 +193,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
                     # corto la extraccion de datos (parametro de corte 1)
                     ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
                     break
-                '''
+
 
             # CLICKEO EN BOTON "VOLVER" PARA SALIR DE LA PAGINA DE LA PUBLICACION
             crawler.driver.back()
@@ -414,6 +414,7 @@ def main(home_page_url):
     df_alternativas, df_opiniones = data_extractor(df_alternativas, df_opiniones, home_page_url)
 
     return df_alternativas, df_opiniones
+
 
 ''' # para correr pruebas en archivo independientemente de main.py
 main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")

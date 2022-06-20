@@ -92,7 +92,7 @@ def main():
     '''
     '''
     # Levanto df para hacer 2 y 3 independientemente
-    producto = 'tv'
+    producto = 'celulares'
     df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
 
@@ -122,9 +122,6 @@ def main():
     # INICIALIZO DICCIONARIO DE PALABRAS RELACIONADAS (lo tengo que inicializar antes de construct data... (pues lo uso) ?)
     d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(producto)
 
-    df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/tv/df_cust_needs.xlsx', index_col=0)
-    print(df_cust_needs)
-
     print("3.1. CUSTOMER NEEDS")  # La eleccion de customer needs en independiente de la eleccion de atributos. Toda customer need sera tenida en cuenta independientemente de si tiene o no al menos un atributo con el cual relacionarse
     print(" # CLEAN DATA: Limpieza de opiniones  ")
     print("## Elimino opiniones repetidas y opiniones NaN")  # Elimino opiniones repetidas y NaN
@@ -147,13 +144,13 @@ def main():
 
     print("## Selecciono customer needs del producto propiamente")  # Selecciono frases mas frecuentes como customer needs
     df_cust_needs = construct_data.select_customer_needs(l_most_freq_words_filt, l_possible_customer_needs)
-    
+
 
     print("3.2. ATRIBUTOS")
     print("# FORMAT DATA: Convierto columnas de strings con numeros a columnas numericas")  # Convierto columnas inherentemente numericas a numericas
     df_alt_cleaned = format_data.string_column_to_numeric_column(df_alt)
     print("# FORMAT DATA: Desagrego columnas cuyos valores son listas")
-    # df_alt_cleaned = clean_data.disaggregate_columns_with_lists(df_alt_cleaned)  # dsp de convert no num porque el "/" a veces es parte de la unidad. Las columnas generadas no requieren de quitar ninguna unidad pues son 1-0
+    df_alt_cleaned = clean_data.disaggregate_columns_with_lists(df_alt_cleaned)  # dsp de convert no num porque el "/" a veces es parte de la unidad. Las columnas generadas no requieren de quitar ninguna unidad pues son 1-0
     print("# FORMAT DATA: Convierto columnas SI-NO a 1-0")  # Columnas si-no a 1-0
     df_alt_cleaned = format_data.yes_no_column_to_one_zero_column(df_alt_cleaned)
     print(" # CLEAN DATA: Descarto atributos extriados exclusivamente para ser mostrados a cliente")
@@ -178,22 +175,21 @@ def main():
 
     print(" 3.3. MATRIZ DE RELACIONES".center(120))
     print("# Obtengo matriz de relaciones") # 3. RELACIONO CUSTOMER NEEDS Y ATRIBUTOS MEDIANTE 'MATRIZ DE RELACIONES'
-    #df_relation_matrix = construct_data.create_relation_matrix(list(df_alt_cleaned.columns[1:]), list(df_cust_needs.index))
+    df_relation_matrix = construct_data.create_relation_matrix(list(df_alt_cleaned.columns[1:]), list(df_cust_needs.index))
     # Agrego customer needs sin relaciones como atributos del producto --> al crear la matriz, si temrina con relacion 0, agregar columna...
 
 
     # EXPORTO DATAFRAMES
     # Exporto dataframes alternativas cleaned y opiniones cleaned
     df_alt_cleaned.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-    # df_opi_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto))
+    df_opi_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto))
     # Exporto dataframe de customer needs del producto
     # df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
     # df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
     '''
-
-
+    '''
     # Levanto df para hacer modelling independientemente
-    producto = 'smartband'
+    producto = 'tv'
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_without_date.xlsx'.format(producto), index_col=0)
     df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
@@ -219,18 +215,23 @@ def main():
     df_cust_need_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_cust_need_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
     df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
     df_attr_alt_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
+    '''
 
-    """
     # Levanto df para hacer modelling independientemente
     producto = 'celulares'
     df_alt_correct_price = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
     df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto))
+    df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto))
     print(df_alt_correct_price)
+    print(df_attr_alt_sent)
+
+    df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(producto))
+
 
     print(" (4.2) CLUSTERING ".center(120))
     print(" a) Creando el dataframe para clustering...")
-    df_input_clustering = clustering.create_clustering_dataframe(df_alt_cleaned, df_attr_values_sent)
+    df_input_clustering = clustering.create_clustering_dataframe(df_alt_cleaned, df_attr_alt_sent, df_attr_values_sent)
     print(df_input_clustering)
 
     print(" b) Aplicando clustering...")
@@ -245,26 +246,26 @@ def main():
     df_alt_cleaned_cluster = clustering.replace_labels_with_names(df_alt_cleaned_cluster, d_labels_names)
 
     print(" d) Obteniendo dataframe alternativas para mostrar al cliente con los nombres de clusters correspondientes...")
-    df_alt_correct_price_clust = clustering.drop_alternatives_unwanted(df_alt_correct_price, df_alt_cleaned_cluster)  # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
+    # df_alt_correct_price_clust = clustering.drop_alternatives_unwanted(df_alt_correct_price, df_alt_cleaned_cluster)  # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
+    df_alt_to_client_clust = clustering.add_clust_label(df_alt_to_client, df_alt_cleaned_cluster)  # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
 
     print(" e) Obteniendo tabla de numero de alternativas por cluster...")
     df_alt_per_clust = clustering.create_table_num_alt_per_cluster(df_alt_cleaned_cluster)
     print(df_alt_per_clust)
 
     print(" f) Obteniendo tabla de centroides segun valores de atributos...")
-    df_centroids_values = clustering.create_table_cluster_centroids_values(df_alt_correct_price, df_alt_cleaned_cluster)
+    df_centroids_values = clustering.create_table_cluster_centroids_values(df_alt_to_client_clust, df_alt_cleaned_cluster)
     print(df_centroids_values)
 
     print(" g) Obteniendo tabla de numero de marcas por cluster...")
-    df_brand_per_cluster = clustering.create_table_brand_per_cluster(df_alt_correct_price, df_alt_cleaned_cluster)
+    df_brand_per_cluster = clustering.create_table_brand_per_cluster(df_alt_to_client_clust, df_alt_cleaned_cluster)
     print(df_brand_per_cluster)
 
     # Exporto resultados de clustering
-    df_alt_correct_price_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_clust.xlsx'.format(producto))
+    df_alt_to_client_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(producto))
     df_alt_per_clust.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(producto))
     df_centroids_values.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(producto))
     df_brand_per_cluster.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(producto))
-    """
 
 
 if __name__ == '__main__':

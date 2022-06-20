@@ -134,8 +134,11 @@ class MercadoLibreCrawler(Crawler):
 
         # GUARDO DATOS EXTRAIDOS
         # Creo lista de id_publicacion segun la cantidad de opiniones
+        l_id_alternativa = [id_publicacion] * len(l_opinion)
+        '''Reemplace por linea de arriba pero no lo probe
         for i in range(len(l_opinion)):  # podria haber puesto cualquier campo en lugar de title
             l_id_alternativa.append(id_publicacion)
+        '''
 
         # Creo lista que contiene todas las listas con los datos extraidos
         data = [l_id_alternativa, l_opinion]

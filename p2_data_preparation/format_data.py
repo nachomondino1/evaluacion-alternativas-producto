@@ -196,10 +196,13 @@ def yes_no_column_to_one_zero_column(df):
 
                 # SI ES UNA CARACTERISTICA DIFERNCIADORA (mayoria de "Sí" frente a "No")
                 cant_no, cant_si = len(df[df[columna] == "No"]), len(df[df[columna] == "Sí"])
-                if cant_no/cant_si < PORC_MIN_CARAC_DIF:
-                    is_carac_dif = True
-                    print("\t Ademas, es una caracteristica diferenciadora!")
-                    print("\t Cantidad de si: {}, Cantidad de No: {}".format(cant_si, cant_no))
+                try:
+                    if cant_no/cant_si < PORC_MIN_CARAC_DIF:
+                        is_carac_dif = True
+                        print("\t Ademas, es una caracteristica diferenciadora!")
+                        print("\t Cantidad de si: {}, Cantidad de No: {}".format(cant_si, cant_no))
+                except ZeroDivisionError:  # si no hay valor si
+                    pass
 
                 # REEMPLAZO SI Y NO POR 1 Y 0 RESPECTIVAMENTE
                 # Por valor

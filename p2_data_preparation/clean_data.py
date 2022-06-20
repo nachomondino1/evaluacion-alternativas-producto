@@ -122,7 +122,7 @@ def drop_alternatives_with_most_na(df_alt, df_opi):
     df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
     return df_alt
 
-def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque falla is_alt_new() de collect_initial_data
+def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque falla is_alt_new() de collect_initial_data --> ya no ese temporal pues aqui borro por modelo y no tan general como por fila (sin id y precio)
     """
     Borra las alternativas repetidas (las que se le escapan al collect_initial_data.py)
     :param df_alt: Dataframe alternativas con columna 'Modelo'
@@ -131,12 +131,6 @@ def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque fa
     """
     # Defino variables
     ids_con_opi = list(df_opi['id_alternativa'].unique())  # ids con opiniones
-
-    '''
-    # Elimino alternativas duplicadas
-    df_alt_dropped = df_alt.drop_duplicates(subset=list(df_alt.columns[2:]), ignore_index=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
-    df_alt_dropped = df_alt_dropped.reset_index(drop=True)  # reseteo index al eliminar filas
-    '''
 
     df_alt_dropped = pd.DataFrame()
     # ELIMINO ALTERNATIVAS DUPLICADAS
@@ -151,7 +145,8 @@ def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque fa
 
         # PRUEBA
         # ORDENO ALTERNATIVAS SEGUN SI TIENEN O NO OPINIONES
-        df_alt_mismo_mod['with opis'] = 0  # Agrego columna 'with opis' al df
+        df_alt_mismo_mod['with opis'] = 0  # Agrego columna 'with opis' al df  # assign() e insert() no me funcionaron
+
         # Agrego colunna "with opis"
         for i in df_alt_mismo_mod.index:
 
@@ -189,111 +184,100 @@ def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque fa
     print("Se elimino {} alternativa/s por ser repetidas. De ellas, {} tenian al menos una opinion".format(len(df_alt)-len(df_alt_dropped), len(ids_con_opi) - n_alt_with_opis_filt))
     print("Cantidad de alterantivas restantes: {}\n".format(df_alt_dropped.shape[0]))
 
-    '''
-    # SACAR
-    # Obtengo ids borrados
-    ids_alt_before = list(df_alt['id_alternativa'])
-    ids_alt_after = list(df_alt_dropped['id_alternativa'])
-    ids_dropped = []
-    for ids in ids_alt_before:
-        if ids not in ids_alt_after:
-            ids_dropped.append(ids)
-
-    # Por id borrado
-    for ids in ids_dropped:
-        # Si no tiene opiniones
-        if ids in ids_con_opi:
-            # Sumo 1 al contador
-            j += 1
-
-    print("Se elimino {} alternativa/s por ser repetidas. De ellas, {} tenian al menos una opinion".format(len(ids_dropped), j))
-    print("Cantidad de alterantivas restantes: {}\n".format(df_alt_dropped.shape[0]))
-    '''
-
-    df_alt_dropped.drop(['Modelo'], axis=1)  # Pues sino dejaria columna 'Modelo' en df_alt_cleaned
+    df_alt_dropped = df_alt_dropped.drop(['Modelo'], axis=1)  # Pues sino dejaria columna 'Modelo' en df_alt_cleaned
     df_alt_dropped = df_alt_dropped.reset_index(drop=True)  # reseteo index al eliminar filas
     return df_alt_dropped
 
-def drop_alternatives_with_wrong_values(df_alt, df_opi):
+def drop_alternatives_with_wrong_values(df_alt, df_alt_to_client, df_opi):
     """
     Elimina alternativas que tengan al menos un valor cargado incorrectamente en la publicacion de Mercado Libre. Solo
     tiene en cuenta valores de atributos numericos.
     :param df_alt: Dataframe alternativas
+    :param df_alt_to_client: Dataframe alternativas con las alternativas que seran mostradas al cliente
     :param df_opi: Dataframe opiniones
     :return: Dataframe alternativas sin alternativas con valores mal cargados
     """
     # DEFINO VARIABLE
     l_idx_alt_a_borrar = set()  # set de indices de alternativas a borrar (una alternativa puede tener mas de un outlier)
+    l_idx_alt_to_client_a_borrar = set()  # set de indices de alternativas a borrar (una alternativa puede tener mas de un outlier)
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df_alt.columns[1:]:  #excluyo id
 
         # Defino variables
         l_unique_values = df_alt[columna].dropna().unique()
-        n_unique_values = len(l_unique_values)
-        FREC_MIN = round(0.5 * len(df_alt) / n_unique_values, 0)  # 50% del nºalt que deberia tener cada valor
         print(columna.upper())
-        print("\t Numero de valores unicos: {} ; Frecuencia minima: {}".format(n_unique_values, FREC_MIN))
 
         # SI LA COLUMNA ES NUMERICA Y TIENE MAS DE DOS VALORES UNICOS (evita columnas 1-0)
-        if df_alt[columna].dtype in ['float64', 'int64'] and n_unique_values > 2:
+        if df_alt[columna].dtype in ['float64', 'int64'] and len(l_unique_values) > 2:
 
             # Calculo cuantiles y rango
             l_values_sort = sorted(list(df_alt[columna].dropna()))  # sino los valores nan se acumulan en extremo de lista...
             q1, q3 = l_values_sort[int(0.25 * len(l_values_sort))], l_values_sort[int(0.75 * len(l_values_sort))]  # percentiles 25 y 75
             IQR = q3 - q1  # Rango intercuartil (resta de percentil 75 y 25)
             lim_inf, lim_sup = q1 - 1.5 * IQR, q3 + 1.5 * IQR  # Limites superior e inferior. Fuera son outliers.
-            print("\t Q1: {:.1f}, Q3: {:.1f}, IQR: {:.1f}, LIM INF: {:.1f}, LIM SUP: {:.1f}".format(q1, q3, IQR, lim_inf, lim_sup))
+            lim_inf_valor_mal_cargado, lim_sup_valor_mal_cargado = q1 - 5 * IQR, q3 + 5 * IQR  # 10 no, es mucho
+            print("\t Q1: {:.1f} \t Q3: {:.1f} \t IQR: {:.1f}".format(q1, q3, IQR))
+            print("\t LIMITES: \t outlier_inf = {:.1f}  outlier_sup = {:.1f} \t mal_cargado_inf = {:.1f} mal_cargado_sup = {:.1f}".format(lim_inf, lim_sup, lim_inf_valor_mal_cargado, lim_sup_valor_mal_cargado))
 
             # Defino variables
-            l_unique_values_sup = sorted([elemento for elemento in l_unique_values if elemento > lim_sup], reverse=True)  # valores unicos por encima de lim sup
-            l_unique_values_inf = sorted([elemento for elemento in l_unique_values if elemento < lim_inf])  # valores unicos por debajo de lim inf
+            l_val_erroneos = [valor for valor in l_unique_values if valor > lim_sup or valor < lim_inf]
 
-            # POR LISTA
-            for lista in [l_unique_values_inf, l_unique_values_sup]:
+            # POR VALOR ERRONEO (FUERA DEL RANGO INTERCUARTIL)
+            for valor in l_val_erroneos:
 
-                # POR VALOR UNICO DE LA COLUMNA
-                for valor in lista:  # sortear de mayor a menor... Al primer mayor que no borra por frec, deja el resto que esta por debajo...
+                # Defino variables
+                frec_val = len(df_alt[df_alt[columna] == valor])  # Frecuencia del valor
+                idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]  # Indices de alternativas cuyo atributo toma el valor outlier # no es el mismo index que en df_alt_to_client
+                ids = [df_alt.loc[i, "id_alternativa"] for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]  #Ids de alternativas cuyo atributo toma el valor outlier # son los mismos que en df_alt_to_client
+                print("\tValor: {} \tFrecuencia: {}.".format(valor, frec_val), end=" ")
 
-                    # Defino variables
-                    frec_val = len(df_alt[df_alt[columna] == valor])
-                    print("\tValor: {} \tFrecuencia: {}.".format(valor, frec_val), end=" ")
+                # SI EL VALOR ERRONEO ES UN VALOR "MAL CARGADO"
+                if valor > lim_sup_valor_mal_cargado or valor < lim_inf_valor_mal_cargado:
+                    print("El valor {} es un valor MAL CARGADO".format(valor))
 
-                    # Si tiene una frecuencia muy baja
-                    if frec_val <= FREC_MIN:
+                    # POR CADA ALTERNATIVA CUYO VALOR ES UN DATO MAL CARGADO (MAL CARGADO POR EL VENDEDOR)
+                    for i in range(frec_val):
 
-                        # Obtengo indices de alternativas cuyo atributo tomo el valor unico que es un outlier
-                        idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
-                        ids = [df_alt.loc[i, "id_alternativa"] for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
-                        print("Es un outlier")
+                        idx = idxs[i]
+                        id_alt = ids[i]
+                        print("\t\t Alternativa Nº{}: ".format(i + 1), end=" ")
 
-                        # POR CADA ALTERNATIVA CUYO VALOR ES UN OUTLIER
-                        for i in range(frec_val):
+                        # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
+                        if id_alt in list(df_opi['id_alternativa'].unique()):
 
-                            idx = idxs[i]
-                            id = ids[i]
-                            print("\t\t Alternativa Nº{}: ".format(i + 1), end=" ")
+                            # REEMPLAZO OUTLIER POR NAN
+                            df_alt.loc[idx, columna] = None
+                            print("Dado que la alternativa tiene opiniones asociadas, reemplazo el valor por NaN")
 
-                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
-                            if id in list(df_opi['id_alternativa'].unique()):
+                        # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
+                        else:
+                            # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
+                            l_idx_alt_a_borrar.add(idx)
+                            print("Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
 
-                                # REEMPLAZO OUTLIER POR NAN
-                                df_alt.loc[idx, columna] = None
-                                print("Dado que la alternativa tiene opiniones asociadas, reemplazo el outlier por NaN")
+                        # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
+                        # eliminar directamente segun ids_to_client o ids pues son iguales
+                        idx_client = df_alt_to_client[df_alt_to_client['id_alternativa'] == id_alt].index[0]
+                        l_idx_alt_to_client_a_borrar.add(idx_client)  # el idx es ≠ y borra otra alternativa...
+                        print("\t\t Elimino alternativa del dataframe que le mostrare al cliente. No le puedo mostrar "
+                              "una alternativa con este valor mal cargado")
 
-                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
-                            else:
-                                # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
-                                l_idx_alt_a_borrar.add(idx)
-                                print("Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
+                # SI EL VALOR ERRONEO ES UN VALOR "OUTLIER" (ESTA BIEN CARGADO)
+                else:
+                    print("El valor {} es un valor OUTLIER")
 
-                    # Si tiene una frecuencia alta
-                    else:
-                        print("El valor es muy frecuente para ser un outlier")
-                        break
+                    # POR CADA ALTERNATIVA CUYO VALOR ES UN OUTLIER
+                    for i in range(frec_val):
 
+                        # INDEPENDIENTEMENTE DE SI TIENE OPINIONES, REEMPLAZO OUTLIER POR NAN
+                        df_alt.loc[idxs[i], columna] = None
+                        print("\t\t Alternativa Nº{}: ".format(i + 1), end=" ")
+                        print("Dado que la alternativa no tiene un valor mal cargado, reemplazo el outlier por NaN")
+
+        '''
         else:  # columnas no numericas, PODRIA IMPLEMENTAR ELIMINACION DE VALORES ERRONEOS... PRIMERRO DECIDIR SI CONVIENE, QUE GANO? QUE PIERDO?
-            '''
+
             l_unique_values = df_alt[columna].dropna().unique()
 
             # POR VALOR UNICO DE LA COLUMNA
@@ -317,18 +301,22 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
                         # REEMPLAZO OUTLIER POR NAN
                         df_alt.loc[idx, columna] = None
                         print("Dado que la alternativa tiene opiniones asociadas, reemplazo el outlier por NaN")
-            '''
-            pass
+        '''
 
     # BORRO ALTERNATIVAS QUE TIENEN VALORES MAL CARGADOS
-    for idx in l_idx_alt_a_borrar:
-        df_alt = df_alt.drop([idx], axis=0)
+    for idx_1 in l_idx_alt_a_borrar:
+        df_alt = df_alt.drop([idx_1], axis=0)
+
+    for idx_2 in l_idx_alt_to_client_a_borrar:
+        df_alt_to_client = df_alt_to_client.drop([idx_2], axis=0)
+
     # Reinicio indices
     df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
+    df_alt_to_client = df_alt_to_client.reset_index(drop=True)
 
     print("Cantidad de alternativas eliminadas: {}".format(len(l_idx_alt_a_borrar)))
     print("Cantidad de alterantivas restantes: {}\n".format(df_alt.shape[0]))
-    return df_alt
+    return df_alt, df_alt_to_client
 
 def disaggregate_columns_with_lists(df_alt):  # terminar de codear nombres
     """
@@ -734,62 +722,7 @@ def main(df_alt, df_opi):
     return df_alt, df_opi, df_opi_tokenizado
 
 
-'''
-def delete_attr_x_values(df):
-    """
-    Elimino columnas del dataframe que toman un solo valor constante, o bien, toma muchos valores
-    :param df: Dataframe
-    :return: Dataframe sin columnas que tomen un solo valor o, por el contrario, muchos
-    """
-    # Defino variables
-    PORC_MUCHOS_VAL = 2  # al menos el doble de clases que lo optimo
-    col_excepciones = ["id_alternativa", "Marca"]  # columnas que no eliminar a pesar de que toman muchos valores
-    col_eliminadas = []
-
-    # POR COLUMNA DEL DATAFRAME
-    for columna in df.columns:
-        print(columna.upper().center(120))
-
-        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
-        if columna not in col_excepciones:
-
-            # Obtengo lista de frecuencia de sus valores
-            unique_values = list(df[columna].dropna().unique())  # dropna para evitar que NaN sea una valor unico
-            n_unique_values = len(unique_values)
-            n_opt_unique_values = int(len(df[columna].dropna()) ** 0.5)
-            print("Nºvalores: {}; Nºopt de valores: {}; Nºmax de valores: {}".format(n_unique_values, n_opt_unique_values, PORC_MUCHOS_VAL*n_opt_unique_values))
-
-            # SI LA COLUMNA ES CONSTANTE (TOMA UN UNICO VALOR)
-            if n_unique_values == 1:  #cuando hay muchas alt al menos hay 1 con valor distinto..
-
-                # Elimino atributo
-                df = df.drop([columna], axis=1)
-                col_eliminadas.append(columna)
-                print("Elimino la columna por tomar 1 solo valor")
-
-            # SI LA COLUMNA ES CONTINUA (TOMA MUCHOS VALORES DISTINTOS)
-            elif n_unique_values > PORC_MUCHOS_VAL * n_opt_unique_values:
-
-                # Elimino el atributo
-                df = df.drop([columna], axis=1)
-                col_eliminadas.append(columna)
-                print("Elimino la columna por tomar muchos valores distintos")
-
-            # SI LA COLUMNA ES DISCRETA (no toma ni 1 valor ni muchos)
-            else:
-                # No hacer nada
-                print("No la elimino pues toma valores discretos.")
-
-        # SI COLUMNA NO ES DE LAS COLUMNAS EXCEPCIONES
-        else:
-            print("Se especifico que la columna no debe ser revisada.")
-
-    print("COLUMNAS ELIMINADAS: ", col_eliminadas)
-
-    return df
-'''
-
-''' Solo no eliminaba los valores de frec > frec_min. Podia eliminar precio 190.000 por frec=1 pero no el de 205.000 por frec=4 > frec_min. Es logico que si el precio 205.000 no es outlier, entonces el precio de 190.000 tampoco pues es menor a 205.000.... 
+''' CUANDO AUN NO DIFERENCIABA OUTLIER DE VALOR MAL CARGADO
 def drop_alternatives_with_wrong_values(df_alt, df_opi):
     """
     Elimina alternativas que tengan al menos un valor cargado incorrectamente en la publicacion de Mercado Libre. Solo
@@ -800,71 +733,75 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
     """
     # DEFINO VARIABLE
     l_idx_alt_a_borrar = set()  # set de indices de alternativas a borrar (una alternativa puede tener mas de un outlier)
-    FREC_MIN = int(0.012 * len(df_alt))
-    print("Frecuencia minima: {}".format(FREC_MIN))
 
     # POR COLUMNA DEL DATAFRAME
     for columna in df_alt.columns[1:]:  #excluyo id
-        print(columna.upper())
-        n_unique_values = len(df_alt[columna].dropna().unique())
 
-        # FREC_MIN = int(0.012 * len(df_alt))
-        FREC_MIN = round(0.5 * len(df_alt) / n_unique_values, 0)  # 40% del nºalt que deberia tener cada valor
-        print("Numero de valores unicos: {} ; Frecuencia minima: {}".format(n_unique_values, FREC_MIN))
+        # Defino variables
+        l_unique_values = df_alt[columna].dropna().unique()
+        n_unique_values = len(l_unique_values)
+        # FREC_MIN = round(0.5 * len(df_alt) / n_unique_values, 0)  # 50% del nºalt que deberia tener cada valor  # lo tuve que subir de 50% a 150% por tamaño de pantalla de smartband # Al tener que tener una frec min > 1, tengo que estar muy seguro para considerar que un outlier no lo es...
+        print(columna.upper())
+        # print("\t Numero de valores unicos: {} ; Frecuencia minima: {}".format(n_unique_values, FREC_MIN))
 
         # SI LA COLUMNA ES NUMERICA Y TIENE MAS DE DOS VALORES UNICOS (evita columnas 1-0)
         if df_alt[columna].dtype in ['float64', 'int64'] and n_unique_values > 2:
 
             # Calculo cuantiles y rango
-            l_col_sort = sorted(list(df_alt[columna].dropna()))  # sino los valores nan se acumulan en extremo de lista...
-            idx_perc_25, idx_perc_75 = int(0.25 * len(l_col_sort)), int(0.75 * len(l_col_sort))
-            q1, q3 = l_col_sort[idx_perc_25], l_col_sort[idx_perc_75]
-            IQR = q3 - q1
-            lim_inf, lim_sup = q1 - 1.5 * IQR, q3 + 1.5 * IQR
-            print("Q1: {:.1f}, Q3: {:.2f}, IQR: {:.1f}, LIM INF: {:.2f}, LIM SUP: {:.1f}".format(q1, q3, IQR, lim_inf, lim_sup))
+            l_values_sort = sorted(list(df_alt[columna].dropna()))  # sino los valores nan se acumulan en extremo de lista...
+            q1, q3 = l_values_sort[int(0.25 * len(l_values_sort))], l_values_sort[int(0.75 * len(l_values_sort))]  # percentiles 25 y 75
+            IQR = q3 - q1  # Rango intercuartil (resta de percentil 75 y 25)
+            lim_inf, lim_sup = q1 - 1.5 * IQR, q3 + 1.5 * IQR  # Limites superior e inferior. Fuera son outliers.
+            print("\t Q1: {:.1f}, Q3: {:.1f}, IQR: {:.1f}, LIM INF: {:.1f}, LIM SUP: {:.1f}".format(q1, q3, IQR, lim_inf, lim_sup))
 
-            l_unique_values = sorted(list(df_alt[columna].dropna().unique()), reverse=True)  #  valores unicos ordenados de mayor a menor. EL TEMA ES QUE NO FUNCA PARA VALORES MIN PUES DEBERIA SER ASCENDING ORDER
+            # Defino variables
+            l_unique_values_sup = sorted([elemento for elemento in l_unique_values if elemento > lim_sup], reverse=True)  # valores unicos por encima de lim sup
+            l_unique_values_inf = sorted([elemento for elemento in l_unique_values if elemento < lim_inf])  # valores unicos por debajo de lim inf
+        
+            # POR LISTA
+            for lista in [l_unique_values_inf, l_unique_values_sup]:
 
-            # POR VALOR UNICO DE LA COLUMNA
-            for valor in l_unique_values:  # sortear de mayor a menor... Al primer mayor que no borra por frec, deja el resto que esta por debajo...
-
-                # SI EL VALOR ES UN POSIBLE OUTLIER
-                if (valor < lim_inf) or (valor > lim_sup):
+                # POR VALOR UNICO DE LA COLUMNA
+                for valor in lista:  # sortear de mayor a menor... Al primer mayor que no borra por frec, deja el resto que esta por debajo...
 
                     # Defino variables
                     frec_val = len(df_alt[df_alt[columna] == valor])
                     print("\tValor: {} \tFrecuencia: {}.".format(valor, frec_val), end=" ")
 
-                    if frec_val <= FREC_MIN:
+                    # Si tiene una frecuencia muy baja
+                    # if frec_val <= FREC_MIN:
 
-                        # Obtengo indices de alternativas cuyo atributo tomo el valor unico que es un outlier
-                        idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
-                        ids = [df_alt.loc[i, "id_alternativa"] for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
-                        print("Es un outlier")
+                    # Obtengo indices de alternativas cuyo atributo tomo el valor unico que es un outlier
+                    idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
+                    ids = [df_alt.loc[i, "id_alternativa"] for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]
+                    print("Es un outlier")
 
-                        # POR CADA ALTERNATIVA CUYO VALOR ES UN OUTLIER
-                        for i in range(frec_val):
+                    # POR CADA ALTERNATIVA CUYO VALOR ES UN OUTLIER
+                    for i in range(frec_val):
 
-                            idx = idxs[i]
-                            id = ids[i]
-                            print("\t\t Alternativa Nº{}: ".format(i + 1), end=" ")
+                        idx = idxs[i]
+                        id = ids[i]
+                        print("\t\t Alternativa Nº{}: ".format(i + 1), end=" ")
 
-                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
-                            if id in list(df_opi['id_alternativa'].unique()):
+                        # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
+                        if id in list(df_opi['id_alternativa'].unique()):
 
-                                # REEMPLAZO OUTLIER POR NAN
-                                df_alt.loc[idx, columna] = None
-                                print("Dado que la alternativa tiene opiniones asociadas, reemplazo el outlier por NaN")
+                            # REEMPLAZO OUTLIER POR NAN
+                            df_alt.loc[idx, columna] = None
+                            print("Dado que la alternativa tiene opiniones asociadas, reemplazo el outlier por NaN")
 
-                            # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
-                            else:
-                                # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
-                                l_idx_alt_a_borrar.add(idx)
-                                print("Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
+                        # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
+                        else:
+                            # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
+                            l_idx_alt_a_borrar.add(idx)
+                            print("Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
 
+                    """
+                    # Si tiene una frecuencia alta
                     else:
-                        lim_sup = valor  #prueba...
                         print("El valor es muy frecuente para ser un outlier")
+                        break
+                    """
 
     # BORRO ALTERNATIVAS QUE TIENEN VALORES MAL CARGADOS
     for idx in l_idx_alt_a_borrar:
@@ -875,4 +812,5 @@ def drop_alternatives_with_wrong_values(df_alt, df_opi):
     print("Cantidad de alternativas eliminadas: {}".format(len(l_idx_alt_a_borrar)))
     print("Cantidad de alterantivas restantes: {}\n".format(df_alt.shape[0]))
     return df_alt
+
 '''

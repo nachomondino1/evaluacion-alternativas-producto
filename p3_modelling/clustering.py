@@ -6,6 +6,77 @@ from sklearn.preprocessing import StandardScaler
 # import matplotlib.pyplot as plt
 
 
+def create_clustering_dataframe(df_alt, df_sent_alt, df_sent_attr_values):
+    """
+    Agrega informacion de distintos dataframes para crear el dataframe con todos valores numericos y sin NaN y asi poder
+    hacer clustering
+    :param df_alt: Dataframe cuya unidad de analisis es cada una de las alternativas del producto, sus columnas
+    son los atributos del producto y las celdas el valor que toma el atributo en una alternativa
+    :param df_attr_values: Dataframe cuya unidad de analisis son los valores de los atributos del producto. Sus columnas
+    son valor, atributo al que perenece y su sentiment
+    :return: Dataframe cuya unidad de análisis es cada una de las alternativas del producto, sus columnas son los
+    atributos del producto y las celdas, a diferencia del df_attr_values, son los sentiment que toma el valor del
+    atributo
+    """
+    # Creo dataframe a retornar vacio con los nombres de las columnas correspondientes
+    l_atributos = list(df_sent_attr_values['atributo'].unique()) + list(df_sent_alt['atributo'].unique())
+    df_input_clust = pd.DataFrame(columns=['id_alternativa'] + l_atributos)  # el id_alt no sera utilizado pero igual lo necesito
+
+    # POR ALTERNATIVA
+    for i in range(len(df_alt)):
+        # print("++++ Nº MODELO: {} ++++ ".format(i))
+
+        # Guardo id_alternativa
+        id_alt =  df_alt.iloc[i, 0]
+        df_input_clust.loc[i, "id_alternativa"] = id_alt
+
+        # POR ATRIBUTO
+        for atributo in l_atributos:
+            # print("ATRIBUTO: ", atributo)
+
+            # SI EL ATRIBUTO TIENE SENTIMENT POR CADA UNO DE SUS VALORES
+            if atributo in list(df_sent_attr_values['atributo'].unique()):
+
+                # Obtengo valor del atributo para el modelo
+                idx_atrib = df_alt.columns.get_loc(atributo)
+                valor = df_alt.iloc[i, idx_atrib]
+
+                # SI EL VALOR DEL ATRIBUTO DE LA ALTERNATIVA NO ES NAN
+                if str(valor) != 'nan':  # isnan() no lo pude implementar print(str(valor)!= 'nan', np.isnan(valor))
+
+                    # BUSCO SENTIMENT DEL VALOR
+                    sent = float(df_sent_attr_values[(df_sent_attr_values['atributo'] == atributo) & (df_sent_attr_values['valor'] == valor)]['sent'])
+                    # print("Valor {} toma sentiment {}".format(valor, sent))
+
+                # SI EL VALOR DEL ATRIBUTO DE LA ALTERNATIVA ES NAN
+                else:
+                    # Busco min prom_sent
+                    sent = df_sent_attr_values[df_sent_attr_values['atributo'] == atributo]['sent'].min()
+                    # print("Valor {} es NaN. Busco peor sentiment, en este caso, {}".format(valor, prom_sent))
+
+            # SI EL ATRIBUTO TIENE SENTIMENT POR CADA ALTERNATIVA ("ATRIBUTO FICTICIO")
+            else:
+                # print("El atributo es ficticio")
+                # SI TIENE SENTIMENT
+                try:
+                    # Obtengo sentiment de alternativa para el atributo
+                    sent = float(df_sent_alt[(df_sent_alt['id_alternativa']==id_alt) & (df_sent_alt['atributo']==atributo)]['sent'])
+                # SI NO TIENE SENTIMENT (NAN)
+                except TypeError:
+                    sent = None  # total luego lo reemplazo al nan
+                # print("Sentiment: ",sent)
+
+            # GUARDO SENTIMENT
+            df_input_clust.loc[i, atributo] = sent
+
+    print(df_input_clust)
+    # Reemplazo valores Nan por valores medios de cada columna
+    df_input_clust.iloc[:, 1:] = replace_nan(df_input_clust.iloc[:, 1:])  # no incluyo id_alt? al pedo total no lo va a reemplazar...
+    print(df_input_clust)
+
+    return df_input_clust
+
+'''
 def create_clustering_dataframe(df_alt, df_attr_values):
     """
     Agrega informacion de distintos dataframes para crear el dataframe con todos valores numericos y sin NaN y asi poder
@@ -63,6 +134,7 @@ def create_clustering_dataframe(df_alt, df_attr_values):
     print(df_input_clust)
 
     return df_input_clust
+'''
 
 def replace_nan(df):
     """
@@ -365,6 +437,27 @@ def create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster):
 
     return df_brand_per_cluster
 
+def add_clust_label(df_alt, df_alt_clust):
+
+    # Creo columna label
+    df_alt['label'] = None
+
+    # Por alternativa
+    for i in range(len(df_alt)):
+
+        # Obtengo su id
+        id_alt = df_alt.loc[i, 'id_alternativa']
+
+        # Busco su label
+        label = df_alt_clust[df_alt_clust['id_alternativa']==id_alt]['label'].values[0]
+
+        # Agrego label a alternativa
+        df_alt.loc[i, 'label'] = label
+
+    return df_alt
+
+
+''' Reemplazada por add_cluster_label()
 def drop_alternatives_unwanted(df_alt, df_alt_cleaned_clust):
     """
     Selecciono alternativas que no han sido eliminadas durante data preparation y agrego columna label
@@ -383,6 +476,7 @@ def drop_alternatives_unwanted(df_alt, df_alt_cleaned_clust):
     df_alt_with_label['label'] = list(df_alt_cleaned_clust['label'])
 
     return df_alt_with_label
+'''
 
 def main(df_alt, df_alt_cleaned, df_attr_values_sent):
 

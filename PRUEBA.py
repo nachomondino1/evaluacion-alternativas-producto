@@ -4,96 +4,11 @@ import numpy as np
 from p2_data_preparation.format_data import correct_price_column
 import re
 
+from p2_data_preparation.construct_data import most_frequent_ngrams, filter_most_frequent_words
 
-def drop_alt_duplicates(df_alt, df_opi): # temporal hasta que entienda porque falla is_alt_new() de collect_initial_data
-    """
-    Borra las alternativas repetidas (las que se le escapan al collect_initial_data.py)
-    :param df_alt: Dataframe alternativas con columna 'Modelo'
-    :param df_opi: Dataframe opiniones
-    :return: Dataframe alternativas con alternativas unicas
-    """
-    # Defino variables
-    ids_con_opi = list(df_opi['id_alternativa'].unique())  # ids con opiniones
-    df_alt_dropped = pd.DataFrame()
-
-    # ELIMINO ALTERNATIVAS DUPLICADAS
-    # Por modelo
-    for modelo in df_alt["Modelo"].dropna().unique():
-
-        # Busco alternativas del modelo
-        df_alt_mismo_mod = df_alt[df_alt['Modelo']==modelo]
-        n_mismo_mod = len(df_alt_mismo_mod)
-
-
-        # PRUEBA
-        # ORDENO ALTERNATIVAS SEGUN SI TIENEN O NO OPINIONES
-        df_alt_mismo_mod['with opis'] = 0  # Agrego columna 'with opis' al df
-        print(df_alt_mismo_mod)
-
-        # Agrego colunna "with opis"
-        for i in df_alt_mismo_mod.index:
-
-            id_alt = df_alt_mismo_mod.loc[i, 'id_alternativa']
-            print('\t Alternativa:', i, id_alt)
-
-            # Si tiene opiniones
-            if id_alt in ids_con_opi:
-
-                df_alt_mismo_mod.loc[i, 'with opis'] = 1
-                print("\t\t Tiene opiniones!")
-                print(df_alt_mismo_mod)
-            else:
-                print("\t\t No tiene opiniones")
-
-        # Ordeno alternativas por columna "with opis"
-        df_alt_mismo_mod = df_alt_mismo_mod.sort_values(by='with opis', ascending=False)
-        print(df_alt_mismo_mod)
-        df_alt_mismo_mod = df_alt_mismo_mod.drop(['with opis'], axis=1)
-        print(df_alt_mismo_mod)
-
-
-
-        # ELIMINO MODELOS IGUALES
-        df_alt_mismo_mod_sin_reps = df_alt_mismo_mod.dropna(axis=1) # Elimino columnas que tengan NaN (la mayoria de repeticiones de modelos tienen tod@ igual salvo que una tiene NaN en algunas col y la otra no)
-        df_alt_mismo_mod_sin_reps = df_alt_mismo_mod_sin_reps.drop_duplicates(subset=list(df_alt_mismo_mod_sin_reps.columns[2:]))  # Elimino duplicados
-        n_mismo_mod_sin_rep = len(df_alt_mismo_mod_sin_reps)
-
-        print("Alternativas sin repetidos:")
-        print(df_alt_mismo_mod_sin_reps)
-
-        # Si los modelos son iguales
-        if n_mismo_mod != n_mismo_mod_sin_rep:
-
-            # Borrar las alt que no tengan opiniones... (pues de las alt duplicadas puedo estar eliminando aquella que tienee las opis asociadas y no quiero eso)
-            # Me quedo con primera fila de las repetidas (asegurandome que tenga opiniones pues esta ordenado por si tiene o no opis)
-
-            df_aux = df_alt_mismo_mod[df_alt_mismo_mod.index.isin(df_alt_mismo_mod_sin_reps.index)]
-            print("Se descubieron {} modelos repetidos".format(n_mismo_mod-n_mismo_mod_sin_rep))
-            df_alt_dropped = pd.concat([df_alt_dropped, df_aux])
-            print("Alternativas de modelos a guardar")
-            print(df_aux)
-
-        else:
-            df_alt_dropped = pd.concat([df_alt_dropped, df_alt_mismo_mod])
-            print("Alternativas de modelos a guardar")
-            print(df_alt_mismo_mod)
-
-
-    # VERIFICO QUE LAS ALTERNATIVAS BORRADAS NO TENGAN OPINIONES
-    n_alt_with_opis_filt = len(df_alt_dropped[df_alt_dropped.id_alternativa.isin(ids_con_opi)])
-    print("Se elimino {} alternativa/s por ser repetidas. De ellas, {} tenian al menos una opinion".format(len(df_alt)-len(df_alt_dropped), len(ids_con_opi) - n_alt_with_opis_filt))
-    print("Cantidad de alterantivas restantes: {}\n".format(df_alt_dropped.shape[0]))
-
-    df_alt_dropped.drop(['Modelo'], axis=1)  # Pues sino dejaria columna 'Modelo' en df_alt_cleaned
-    df_alt_dropped = df_alt_dropped.reset_index(drop=True)  # reseteo index al eliminar filas
-    return df_alt_dropped
-
-
-df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_alt.xlsx')
-df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_opi.xlsx')
-print(df_alt, df_opi)
-
-drop_alt_duplicates(df_alt, df_opi)
+df_opi_tokenizado = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_opi_cleaned.xlsx')
+l = most_frequent_ngrams(df_opi_tokenizado, 3, 200)
+print(l)
 
 
 
