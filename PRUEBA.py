@@ -1,20 +1,21 @@
 import pandas as pd
 import numpy as np
 # from data_preparation.utils import preparacion_texto
-from p2_data_preparation.format_data import correct_price_column
+from p2_data_preparation.format_data import string_column_to_numeric_column
 import re
 
+
+'''
 from p2_data_preparation.construct_data import most_frequent_ngrams, filter_most_frequent_words
 
 df_opi_tokenizado = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_opi_cleaned.xlsx')
 l = most_frequent_ngrams(df_opi_tokenizado, 3, 200)
 print(l)
+'''
 
-
-
-
-
-
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_alt.xlsx')
+df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_opi.xlsx')
+string_column_to_numeric_column(df_alt)
 
 
 
@@ -113,20 +114,23 @@ if 'c' in d.keys():
 print(list(d.values()))
 '''
 
-'''
+
 # Dataframe
 df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
+idx = [1,3]
+print(df.loc[idx])
+
 # idx = df.index[df['col1'] == 4][0]
 # print(idx)
 
-print(df)
-print(df.loc[1:4,:])
+# print(df)
+# print(df.loc[1:4,:])
 
-new_fila = pd.Series([1, 2])
+# new_fila = pd.Series([1, 2])
 
-df = pd.concat([df, new_fila], axis=1)
-print(df)
-'''
+# df = pd.concat([df, new_fila], axis=1)
+# print(df)
+
 
 '''
 # BARRA DE PROGRESO

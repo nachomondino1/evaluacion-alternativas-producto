@@ -140,8 +140,7 @@ def create_recomendation_table(df_alt, df_alt_val_final):
 
 def main():
     # (1) SOLICITO INGRESO DE DATOS EN SIDEBAR (tipo de cliente y producto a relevar)
-    # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo
-    st.header('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo
+    st.header('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
     st.sidebar.write('# Ingrese los siguientes datos')  # titulo 1 de sidebar
     client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
     product_options = ['Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
@@ -151,7 +150,7 @@ def main():
 
     # IMPORTO ARCHIVOS UNA VEZ SELECCIONADO EL PRODUCTO
     # Archivos de (2) Data preparation
-    df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(product))  # correct_price
+    df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))  # df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(product))  # correct_price
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
     df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
     # Archivos de (3) Modelling
@@ -163,129 +162,45 @@ def main():
     df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
     df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
 
-
-    # VER DONDE METER (saco alternativas eliminadas en Data prepartion de df_alt)
-    print(df_alt.shape)
-    # Selecciono ids de alternativas que no han sido borradas
-    ids_cleaned = df_alt_cleaned["id_alternativa"].unique()
-    # Filtro dataframe alternativas por ids
-    df_alt = df_alt[df_alt.id_alternativa.isin(ids_cleaned)]
-    df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    print(df_alt.shape)
-    st.write(df_alt)
-
-    # ESTA BUENA LA IDEA PERO AUN NO FUNCIONA... (si funciona saco lo de arriba)
-    df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))
-    st.write(df_alt_to_client)
-
-    cont = 0
-    for id_alt in list(df_alt_to_client["id_alternativa"]):
-        if id_alt not in list(df_alt_cleaned['id_alternativa']):
-            cont += 1
-            st.write(id_alt)
-
-    st.write(cont)
-    # hay 29 alternativas que estan en df_alt_to_client y no en df_alt_cleaned  # como puede ser? Efectivamente, son alt que tienen un valor mal cargado y sin embarrgo estan en df_alt_to_client... Claramente algo falla en la eliminacion dee alts..
-
-
     # SI EL CLIENTE ES UN USUARIO FINAL
     if client == 'Usuario final':
 
         st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
-                 "Por ejemplo, queremos comprar un celular y empezamos a leer opiniones, ver videos que hagan una reseña"
-                 " e tenemo ")
+                 "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
+                 "una reseña, entre otros.")
 
-        image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/1.jpeg')
-        st.image(image_1)  # Imagen de persona antes ≠ alternativas
+        image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_1, use_column_width=True)
 
         st.write("Hoy en dia, cada vez hay mas alternativas lo que hace que la eleccion de una sola sea un proceso "
                  "extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y encima no "
                  "terminemos escogiendo la alternativa ideal para nosotros.")
 
-        image_2 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/2.jpeg')
-        st.image(image_2, use_column_width='always')
+        image_2 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/alternativas_posibles.png')
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_2, use_column_width=True)
 
-        st.write("Normalmente, para ver si una alternativa es buena o no ver un video que haga una reseña, leer un articulo "
-                 "en la web, escuchar la recomendacion de un amigo, leer opiniones, etcetera. Pero si, todo eso solo para"
-                 "una alternativa cuando en el mercado hay cientos")
-
-        st.write("Lamentablemente, en muchos casos, esto puede consumirnos mucho tiempo ademas de que es probable que no "
-                 "terminemos comprando la alternativa que mas se ajusta con lo que buscamos. "
-                 "Para facilitar este proceso, podras utilizar la siguiente herramienta pensada para encontrar la "
-                 "alternativa mas idonea segun las necesidades de cada cliente")
-
+        st.write("Afortundamente, podras facilitar este proceso utilizando la siguiente herramienta pensada para "
+                 "encontrar **la mejor alternativa para usted**")
 
         # (2) SOLICITO PESOS DE LAS CUSTOMER NEEDS
         # Imprimo titulo
         st.write('###  Importancia de cada necesidad del cliente'.format(product))
         st.write('Ingrese la importancia que tiene para usted cada necesidad del cliente tipica de {}'.format(product))
 
-        # Por customer need
-        l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # hace falta hacerles una variable? En caso de que si, las dejo aca?
-        l_cust_needs_one_word = list(df_cust_needs.index)
-        df_cust_needs['Peso'] = None  # inicializo columna peso de customer needs
-
-        temp_options = ["No es importante", 'Poco importante', 'Neutral', 'Importante', 'Muy importante']
-        d = {"No es importante": -10, 'Poco importante': -2.5, 'Neutral': 0, 'Importante': 2.5, 'Muy importante': 10}  # Pensar si dejo asi los pesos...
-
-
-        # set_weigths()
-        # Pasar a funcion aparte?
-        # INTENTO AGREGAR PERFILES DE CLIENTES --> QUE SETEEN PESOS PREDETERMINADOS
-        d_usos = {
-            'celulares': {'Jugar': {'precio': 'Neutral', 'bateria': 'Importante', 'camara': 'Poco importante',
-                                'pantalla': 'Importante', 'memoria': 'Neutral', 'tamaño': 'Neutral',
-                                'velocidad': 'Muy importante', 'sonido': 'Neutral', 'diseño': 'Neutral',
-                                'sistema': 'Neutral'},
-                          'Trabajar': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Neutral',
-                                 'pantalla': 'Neutral', 'memoria': 'Importante', 'tamaño': 'Neutral',
-                                 'velocidad': 'Muy importante', 'sonido': 'Neutral', 'diseño': 'Neutral',
-                                       'sistema': 'Poco importante'},
-                          'Redes':  {'precio': 'Neutral', 'bateria': 'Importante', 'camara': 'Muy importante',
-                                 'pantalla': 'Neutral', 'memoria': 'Neutral', 'tamaño': 'Neutral',
-                                 'velocidad': 'Muy importante', 'sonido': 'Neutral', 'diseño': 'Importante',
-                                 'sistema': 'Poco importante'},
-                          'Comunicacion':  {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Neutral',
-                                 'pantalla': 'Neutral', 'memoria': 'Importante', 'tamaño': 'Muy importante',
-                                 'velocidad': 'Neutral', 'sonido': 'Muy importante', 'diseño': 'Neutral',
-                                 'sistema': 'Muy importante'},
-                      },
-            'tv': {'monitor': {'precio': 'Importante', 'imagen': 'Muy importante', 'sonido': 'Importante',
-                                'sistema': 'Poco importante', 'control': 'Poco importante', 'tamaño': 'No es importante',
-                                'velocidad': 'Neutral', 'diseño': 'Neutral', 'conexion': 'Importante'}},
-            'smartband': {}
-            # 'auriculares': {}
-        }
-
-        option = st.selectbox('AYUDA: Recomendacion de importancias segun el uso', [' '] + list(d_usos[product].keys())) #(d_perfil_cliente[product])+ [
-
-        # Si no eligio perfil de cliente
-        for i in range(len(l_cust_needs_three_words)):
-            # pido peso y lo guardo # peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=-10, max_value=10, value=0, step=5)
-            label = '{}) {}:'.format(i+1, l_cust_needs_three_words[i].upper())
-
-            if option == " ":
-                peso = st.select_slider(label=label, options=temp_options, value="Neutral") # puedo agregarle help y sus palabras relacionadas por ej
-
-            else:
-                perfil = d_usos[product][option]
-                peso = st.select_slider(label=label, options=temp_options, value=perfil[l_cust_needs_one_word[i]]) # puedo agregarle help y sus palabras relacionadas por ej
-
-            # Guardo peso numerico
-            df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d[peso]
-            # d_cust_needs_weights[l_cust_needs_three_words[i]] = peso  # df = pd.DataFrame(d_cust_needs_weights, index=[0])  # por algun motivo no se hace bien... aunque el dic si
-        #st.write("Verifico (2):") # st.dataframe(df_cust_needs)
+        # Solicito pesos al cliente
+        df_cust_needs_with_weight = set_weigths(df_cust_needs, product)
 
         # SI EL CLIENTE DA CLICK A BOTON "PROCESAR"
         if st.button('Procesar'):
 
             # (3) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
-            d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs, df_relation_matrix)
+            d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
             # print(d_attrs_tech_imp) # st.write("Verifico (3): ",d_attrs_tech_imp)
 
             # (4) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
             df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_attr_alt_sent, df_value_sent, d_attrs_tech_imp)
-            # df.to_excel('/Users/nachomondino/Desktop/df_valoracion_final.xlsx', 'Hoja de datos', index=False)
             # st.write("Verifico (4): ", df_alts_val_fin)
 
             # (5) IMPRIMO RESULTADOS
@@ -295,161 +210,178 @@ def main():
             st.write('#### Las 10 alternativas que mas le recomendamos')
             # Calculo porcentaje de recomendacion de cada alternativa
             df_alts_recommend = create_recomendation_table(df_alt_to_client, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
-            # df2.to_excel('/Users/nachomondino/Desktop/df_valoracion_final_recommend.xlsx', 'Hoja de datos', index=False)
-            # st.dataframe(df_alts_recommend)
 
             # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
             df_top_ten = df_alts_recommend.iloc[0:10, 1:]  # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
             st.dataframe(df_top_ten)
 
             with st.expander("Ver todas las alternativas y su grupo"):
-                st.write("""
-                    La tabla de abajo muestra todas las alternativas tenidas en cuenta en el analisis.
-                """)
+                st.write("""La tabla de abajo muestra todas las alternativas tenidas en cuenta en el analisis.""")
                 st.dataframe(df_alts_recommend)
-
-            aggrid_interactive_table(df_alts_recommend)
-            # idxs_top_ten = df_alts_recommend.index[:10]
-            #aggrid_interactive_table(df=df_alts_recommend.loc[idxs_top_ten]) #['Marca', "Modelo", "precio", 'porcentaje_recomendacion']]) --> falla para fundas de celular
 
     # SI EL CLIENTE ES UNA EMPRESA
     else:
+        st.write('La herramienta tiene como objetivo identificar el **posicionamiento de las marcas de un producto '
+                 'en el mercado**. Para ello, llevamos a cabo un analisis en el que agrupamos las alternativas '
+                 'del producto (en este caso, {}) segun la similaridad de sus caracteristicas.'.format(product))
+
+        image_3 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/posicion_mercado.jpeg')
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_3, use_column_width=True)
+
         # Le muestro resultados al cliente
-        st.write('Llevamos a cabo un analisis en el que agrupamos las alternativas de {} que tengan caracteristicas similares. Los resultados fueron:'.format(product))
-        st.write("\t * Nº GRUPOS: {}".format(len(df_alt_per_clust)))
-        st.write("\t * NOMBRES DE GRUPOS: {}".format( " - ".join(list(df_alt_per_clust.index))))
+        st.write('Los resultados fueron:')
+        st.write("   * Nº GRUPOS: {}".format(len(df_alt_per_clust)))
+        st.write("   * NOMBRES DE GRUPOS: {}".format(" - ".join(list(df_alt_per_clust.index))))
 
         st.write('Conozcamos que hay dentro de cada uno de estos grupos!')
 
         st.write('### Tabla 1: Numero de alternativas por grupo')
         st.write(" A continuacion vemos la cantidad de alternativas dentro de cada uno de estos grupos.")
-        chart_data = pd.DataFrame(data=df_alt_per_clust)
-        st.bar_chart(chart_data)  # st.write(df_alt_per_clust)
+        st.bar_chart(df_alt_per_clust)
 
         st.write('### Tabla 2: Numero de alternativas por grupo y marca')
         st.write(df_brand_per_cluster)
 
+        st.write('Para visualizarlo mejor, tenemos el siguiente grafico:')
+        image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/grupos_por_marca_{}.png'.format(product))
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_4, use_column_width=True)
+
+
         st.write('### Tabla 3: Ejemplo tipico de cada grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
         st.write(df_centroids_values)
 
-        # st.write('### Tabla 4: Todas las alternativas y su grupo')  # Alternativas por grupo
-        # st.write(df_alt_clust)
-
         with st.expander("Ver todas las alternativas y su grupo"):
-            st.write("""
-            La tabla de abajo muestra todas las alternativas tenidas en cuenta en el analisis y su correspondiente grupo
-            """)
+            st.write("""La tabla de abajo muestra todas las alternativas tenidas en cuenta en el analisis y su correspondiente grupo""")
             st.dataframe(df_alt_to_client_clust)
 
 
+def set_weigths(df_cust_needs, product):
+    """
+    Obtengo peso (o importancia) de cada customer need para el cliente
+    :param df_cust_needs: Dataframe. Unidad de analisis: Customer need. Columnas: customer need de 1 palabra (index) y
+    customer need de 3 palabras.
+    :param product: String. Nombre del producto
+    :return: Dataframe. Unidad de analisis: Customer need. Columnas: customer need de 1 palabra (index), customer need
+    de 3 palabras y peso de la customer need.
+    """
+    # Defino variables
+    l_cust_needs_three_words = list(df_cust_needs['cust_needs_three_words'])  # hace falta hacerles una variable? En caso de que si, las dejo aca?
+    l_cust_needs_one_word = list(df_cust_needs.index)
+    df_cust_needs['Peso'] = None  # Inicializo columna peso de customer needs
+    temp_options = ["No es importante", 'Poco importante', 'Algo importante', 'Importante', 'Muy importante']
+    d = {"No es importante": -4, 'Poco importante': 1, 'Algo importante': 4, 'Importante': 7, 'Muy importante': 12}  # antes: -10, -2.5, 0, 2.5, 10 --> no esta bien que neutral sea 0
+
+    d_usos = get_usos(product)  # Usos del producto
+    col1, col2 = st.columns([2, 0.6])
+    perfil_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso',  ['Ninguno'] + list(d_usos.keys()))
+
+    # Si no eligio perfil de cliente
+    for i in range(len(l_cust_needs_three_words)):
+        # pido peso y lo guardo # peso = st.sidebar.slider(l_cust_needs_three_words[i].title(), min_value=-10, max_value=10, value=0, step=5)
+        label = '{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper())
+        help = get_help_button(l_cust_needs_one_word[i], product)
+
+        if perfil_selected == "Ninguno":
+            peso = st.select_slider(label=label, options=temp_options, value="Algo importante", help=help)  # puedo agregarle help y sus palabras relacionadas por ej
+
+        else:
+            perfil = d_usos[perfil_selected]
+            peso = st.select_slider(label=label, options=temp_options, value=perfil[l_cust_needs_one_word[i]], help=help)  # puedo agregarle help y sus palabras relacionadas por ej
+
+        # Guardo peso numerico
+        df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d[peso]
+
+    return df_cust_needs
+
+def get_help_button(cust_need, producto):
+    """
+    Texto de ayuda por cada customer need de cada producto
+    :param cust_need: String. Customer need
+    :param producto: String. Nombre de producto
+    :return: String. Texto 'help' que explica el significado de la customer need para dicho producto.
+    """
+    d = {'celulares':
+             {'precio': "Precio y marca del dispositivo. Aclaracion: Generalmente, a mayor importancia, se buscaran "
+                        "precios mas bajos (aunque siempre se priorizara una alta relacion precio-calidad)",
+              'bateria': 'Duracion de la bateria',
+              'camara': 'Resoluciones de foto y video tanto de la camara frontal como de la camara trasera',
+              'diseño': "Estetica y resistencia (caidas, agua y polvo)",
+              'memoria': "Capacidad de almacenamiento interna",
+              'pantalla': 'Calidad de imagen de la pantalla',
+              'sistema': 'Facilidad de uso, cantidad y calidad de funciones y frecuencia de actualizaciones del sistema operativo',
+              'sonido': 'Calidad del sonido, cantidad de parlantes y ubicacion de los mismos',
+              'tamaño': 'Tamaño de pantalla y peso del dispositivo. Aclaracion: A mayor importancia, se priorizaran tamaños '
+                        'mas grandes pero sin dejar de perder comodidad en la mano ni que sea tan pesado',
+              'velocidad': 'Velocidad de procesamiento del dispositivo'
+              },
+         # TV
+         'tv':{ 'control': "Sencillez del control remoto y comando por voz",
+                'conexion': "Estabilidad en las distintas conexiones (internet, ethernet y bluetooth) y  cantidad de "
+                            "entradas/puertos",
+                'diseño': 'Estetica y calidad de materiales',
+                'imagen': 'Calidad de imagen de la pantalla',
+                'precio': 'Precio y marca del dispositivo. Aclaracion: Generalmente, a mayor importancia, se buscaran '
+                          'precios mas bajos (aunque siempre se priorizara una alta relacion precio-calidad)',
+                'sistema': 'Facilidad de uso y cantidad y calidad tanto de aplicaciones (que tiene o que se pueden instalar) como de '
+                           'funciones,',
+                'sonido': 'Calidad de sonido',
+                'tamaño': 'Tamaño de la pantalla y peso',
+                'velocidad': 'Velocidad de procesamiento'},
+         # SMARTBAND
+         'smartband':{'conecta': 'Alcance y velocidad de conexion con celular',
+                      'bateria': 'Duracion de bateria',
+                      'diseño': 'Estetica y resistencia (golpes y agua)',
+                      'facil': 'Facilidad de uso y nivel de personalizacion',
+                      'funciones': 'Cantidad y precision de funciones (cuenta pasos, estres, etcetera)',
+                      'pantalla': 'Calidad de imagen de la pantalla y tamaño de esta',
+                      'precio': 'Precio y marca del dispositivo. Aclaracion: Generalmente, a mayor importancia, se '
+                                'buscaran precios mas bajos (aunque siempre se priorizara una alta relacion precio-calidad)'}
+         }
+
+    return d[producto][cust_need]
+
+def get_usos(product):
+    # Pasar a funcion aparte?
+    # INTENTO AGREGAR PERFILES DE CLIENTES --> QUE SETEEN PESOS PREDETERMINADOS
+    d_usos = {
+        'celulares': {'Jugar': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Poco importante',
+                                'pantalla': 'Importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
+                                'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'Poco importante',
+                                'sistema': 'Poco importante'},
+                      'Trabajar': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
+                                   'pantalla': 'Algo importante', 'memoria': 'Importante', 'tamaño': 'Poco importante',
+                                   'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'Poco importante',
+                                   'sistema': 'Poco importante'},
+                      'Redes': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Muy importante',
+                                'pantalla': 'Algo importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
+                                'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'Importante',
+                                'sistema': 'Poco importante'},
+                      'Comunicacion': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
+                                       'pantalla': 'Algo importante', 'memoria': 'Importante', 'tamaño': 'Muy importante',
+                                       'velocidad': 'Algo importante', 'sonido': 'Muy importante', 'diseño': 'Algo importante',
+                                       'sistema': 'Muy importante'},
+                      },
+        'tv': {'monitor': {'precio': 'Importante', 'imagen': 'Muy importante', 'sonido': 'Importante',
+                           'sistema': 'Poco importante', 'control': 'Poco importante', 'tamaño': 'No es importante',
+                           'velocidad': 'Algo importante', 'diseño': 'Algo importante', 'conexion': 'Importante'}},
+        'smartband': {} # deporte # Complemento del celular
+    }
+
+    return d_usos[product]
 
 
 if __name__ == '__main__':
     main()
 
 
-def set_weigths():
-    pass
 
 
 
-'''
-col1, col2 = st.columns(2)
-col1.metric(label="Posicion", value="1")
-col2.metric(label="Alternativa", value=df_alt.loc[1])
+# col1, col2 = st.columns(2)
+# col1.metric(label="Posicion", value="1")
+# col2.metric(label="Alternativa", value=df_alt.loc[1])
 # col2.metric("Wind", "9 mph", "-8%")
-'''
 
-''' Funcion get_alts_final_value() con dos ciclos for (uno para cada tipo de atributo, ficticio y no ficticio) lo que lleva a repeticion de lineas
-def get_alts_final_value(df_alt, df_attr_alt_sent, df_attr_value_sent, d_attrs_tech_imp):
-    """
-    Obtiene valoracion final de cada alternativa del producto
-    :param df_alt: Dataframe alternativas. Unidad de analisis: alternativa. Columnas: atributos del producto.
-    :param df_attr_value_sent: Dataframe. Unidad de analisis: valor de un atributo. Columnas: valor, atributo al que pertence
-     y sentiment del valor.
-    :param d_attrs_tech_imp: Diccionario. Keys: atributo del producto. Values: importancia tecnica de atributo
-    :return: Dataframe. Unidad de analisis: alternativa. Columnas: atributos del producto + columna de valoracion final
-    """
-    # valoración final = sum por cada resp técnica de una alternativa (importancia tecnica j * sentiment de respuesta técnica {segun el valor que toma dicha resp técnica}
-    # Defino variables
-    df = df_alt.copy()
-    l_val_fin_alts = []
-    l_atributos = df_attr_alt_sent['atributo'].unique() + df_attr_value_sent['atributo'].unique()
 
-    # POR ALTERNATIVA
-    for i in range(len(df_alt)):
-        print("ALTERNATIVA Nº: {}".format(i).center(120))
-
-        # Defino variables
-        val_fin_alt = 0  # Reinicio suma de valoracion final por cada alternativa
-        id_alt = df_attr_alt_sent.loc[i, 'id_alternativa']
-
-        # SI EL ATRIBUTO ES FICTICIO (Creado artificialmente para ser relacionado con una customer need, no tiene valores)
-        for atributo in df_attr_alt_sent['atributo'].unique():
-
-            # Obtengo importancia tecnica del atributo
-            imp_tecnica_attr = d_attrs_tech_imp[atributo]
-
-            # NO DEBERIA HACER UN IF IMPORTANCIA TECNICA DEL ATTR > 0????? PUES AL TENER IMP TEC 0 AFRCTA VALORACION FINAL --> pa mi no afecta, no hace nada pues es una suma, pero si mejora eficiencia en procesamiento (reduce calculo al pedo)
-            # if imp_tecnica_attr > 0: # prueba
-
-            # OBTENGO SENTIMENT DEL ATRIBUTO
-            sent_valor = float(df_attr_alt_sent[(df_attr_alt_sent['atributo'] == atributo) & (df_attr_alt_sent['id_alternativa'] == id_alt)]['sent'])
-
-            # SI EL SENTIMENT DEL VALOR NO ES NAN
-            if str(sent_valor) != 'nan':
-                # CALCULO VALORACION FINAL DEL ATRIBUTO
-                val_fin_alt += sent_valor * d_attrs_tech_imp[atributo]
-                print(sent_valor, d_attrs_tech_imp[atributo], val_fin_alt)
-
-            # SI EL SENTIMENT DEL VALOR ES NAN, NO HAGO NADA --> justif en NDV
-
-        # SI EL ATRIBUTO NO ES FICTICIO (no lo cree artificialmente sino que lo extraje de Meli, tiene valores)
-        # POR ATRIBUTO
-        for atributo in df_attr_value_sent['atributo'].unique():  # ingreso solo a atributos que tienen al menos una relacion
-
-            # Obtengo importancia tecnica del atributo
-            imp_tecnica_attr = d_attrs_tech_imp[atributo]
-
-            # NO DEBERIA HACER UN IF IMPORTANCIA TECNICA DEL ATTR > 0????? PUES AL TENER IMP TEC 0 AFRCTA VALORACION FINAL
-            # if imp_tecnica_attr > 0: # prueba
-
-            # OBTENGO VALOR DEL ATRIBUTO
-            valor = df_alt.loc[i, atributo]
-            print("ATRIBUTO: {} , VALOR: {}".format(atributo, valor))
-
-            # SI EL VALOR NO ES NAN (la alternativa puede no tener valor para el atributo)
-            if str(valor) != 'nan':
-
-                # OBTENGO SENTIMENT DEL VALOR
-                sent_valor = float(df_attr_value_sent[(df_attr_value_sent['atributo'] == atributo) & (df_attr_value_sent['valor'] == valor)]['sent'])
-
-                # SI EL SENTIMENT DEL VALOR NO ES NAN
-                if str(sent_valor) != 'nan':
-
-                    # CALCULO VALORACION FINAL DEL ATRIBUTO
-                    val_fin_alt += sent_valor * d_attrs_tech_imp[atributo]
-                    print(sent_valor, d_attrs_tech_imp[atributo], val_fin_alt)
-
-                # SI EL SENTIMENT DEL VALOR ES NAN, NO HAGO NADA --> justif en NDV
-
-            # SI EL VALOR ES NAN
-            else:
-                # OBTENGO EL PEOR SENTIMENT DEL ATRIBUTO
-                worst_sent = df_attr_value_sent[df_attr_value_sent['atributo'] == atributo]["sent"].min()
-                print("El modelo Nº{} tiene valor NaN en atributo {}, por lo cual, le asigno el peor sentiment {} de"
-                      "los valores de dicho atributo".format(i, atributo, worst_sent))
-
-                # CALCULO VALORACION FINAL DEL ATRIBUTO
-                val_fin_alt += worst_sent * d_attrs_tech_imp[atributo]
-                print(worst_sent, d_attrs_tech_imp[atributo], val_fin_alt)
-
-        # GUARDO ALTERNATIVA Y SU VALORACION FINAL
-        l_val_fin_alts.append(val_fin_alt)
-
-    # Agrego columna al dataframe alternativas
-    df['val_final'] = l_val_fin_alts
-    print(l_val_fin_alts)
-    return df
-
-'''

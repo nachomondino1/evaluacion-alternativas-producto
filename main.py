@@ -12,26 +12,20 @@ import pickle
 def select_product():
     """
     Permite seleccionar un producto y verifica que sea valido, es decir, lo suficientemente acotado.
-    :return:
+    :return: Producto y pagina principal de Mercado Libre
     """
     # Pido producto a relevar al administrador
     producto = str(input("Ingrese producto a relevar: "))
 
     # Obtengo URL de pagina principal del producto en Mercado Libre
     home_page_url = get_home_page_url(producto)
-
     print("Validando producto ingresado...".center(120))
-    # Mientras el producto sea invalido
-    while True:
-        # Si el producto es valido
-        if is_product_valid(home_page_url):
-            # Salgo de la funcion con producto validado
-            return producto, home_page_url
-        # Si el producto no es valido
-        else:
-            # Vuelvo a pedir producto y busco el URL de su pagina principal en Mercado Libre
-            producto = str(input("Ingrese producto a buscar: "))
-            home_page_url = get_home_page_url(producto)
+
+    # Si el producto es valido
+    if not is_product_valid(home_page_url):
+        print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
+        return select_product()  # El return asegura que a la primera carga valida, salga
+    return producto, home_page_url
 
 def is_product_valid(home_page_url):
     """
@@ -39,7 +33,6 @@ def is_product_valid(home_page_url):
     :param home_page_url:
     :return: True si el producto es valido, de lo contrario, False
     """
-
     # Accedo a codigo html de home page
     html = urlopen(home_page_url)
     bs = BeautifulSoup(html, 'html.parser')
@@ -48,11 +41,8 @@ def is_product_valid(home_page_url):
     tag_nombre_subcat = bs.find('div', {'class': "ui-search-breadcrumb"}).find("meta", {"content": "2"})  # Antes buscaba solo si habia hasta el tag "ol" pero habia BUSQUEDAS QUE SON DE UNA SUBCATEGORIA Y EN LA HOMEPAGE SOLO APARECE SU CATEGORIA ppal y no la subcategoria... POR EJ:'comida preparada'  Lo podria solucionar en validacionBusqueda() buscando no solo el tag ol sino buscando el segundo tag li
 
     # SI NO ENCONTRE EL TAG DE LA SUBCATEGORIA (PRODUCTO NO VALIDO)
-    if tag_nombre_subcat is None:
-        print('Busqueda muy amplia, por favor sea mas especifico.', end=' ')
-        return False
-    else:
-        return True
+    res = False if tag_nombre_subcat is None else True
+    return res
 
 def get_home_page_url(producto):
     """
@@ -60,17 +50,14 @@ def get_home_page_url(producto):
     :return: String con URL de la pagina principal del producto en Mercado Libre
     """
     # DEFINO REGLAS QUE SIGUE LA URL DE LA PAGINA PRINCIPAL DE UN PRODUCTO EN MERCADO LIBRE
-    # si el producto tiene mas de una palabra, reemplazo espacios en blanco por guiones
-    reg1 = producto.replace(" ", "-")
-
-    # si el producto tiene mas de una palabra, reemplazo espacios en blanco por string "%20"
-    reg2 = producto.replace(" ", "%20")
+    reg1 = producto.replace(" ", "-")  # si el producto tiene mas de una palabra, reemplazo espacios en blanco por guiones
+    reg2 = producto.replace(" ", "%20")  # si el producto tiene mas de una palabra, reemplazo espacios en blanco por string "%20"
 
     # APLICO REGLAS A URL Y LA RETORNO
     return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
 
 def main():
-    '''
+
     # Escogo producto
     print(" (1) ELECCION DE PRODUCTO ".center(120, '#'))
     producto, home_page_url = select_product()
@@ -80,10 +67,10 @@ def main():
     print(" (2) DATA UNDERSTANDING ".center(120, '#'))
     print(" (2.1) COLLECT INITIAL DATA ".center(120))
     print(" a) Buscando atributos del producto...".center(120))
-    atributos = collect_data.get_product_attributes(home_page_url)
+    l_atributos = collect_data.get_product_attributes(home_page_url)
 
     print(" b) Creando dataframes del producto...".center(120))
-    df_alt = collect_data.create_dataframe_alternativas(atributos)
+    df_alt = pd.DataFrame(columns=['id_alternativa', 'precio'] + l_atributos)
     df_opi = pd.DataFrame(columns=['id_alternativa', 'opinion'])
     print("Se han creado con exito los dataframes \n")
 
@@ -91,8 +78,12 @@ def main():
     df_alt, df_opi = collect_data.data_extractor(df_alt, df_opi, home_page_url)
 
     # Exporto data
-    df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
-    df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
+    #df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
+    #df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
+
+    # PRUEBA
+    df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/cel_con_param_cond_nuevo/df_alt.xlsx'.format(producto), index=False)
+    df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/cel_con_param_cond_nuevo/df_opi.xlsx'.format(producto), index=False)
 
     '''
     # Levanto df para hacer 2 y 3 independientemente
@@ -129,7 +120,7 @@ def main():
 
 
     df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/tv/df_cust_needs.xlsx',index_col=0)
-    '''
+    """
     print("3.1. CUSTOMER NEEDS")  # La eleccion de customer needs en independiente de la eleccion de atributos. Toda customer need sera tenida en cuenta independientemente de si tiene o no al menos un atributo con el cual relacionarse
     print(" # CLEAN DATA: Limpieza de opiniones  ")
     print("## Elimino opiniones repetidas y opiniones NaN")  # Elimino opiniones repetidas y NaN
@@ -152,7 +143,7 @@ def main():
 
     print("## Selecciono customer needs del producto propiamente")  # Selecciono frases mas frecuentes como customer needs
     df_cust_needs = construct_data.select_customer_needs(l_most_freq_words_filt, l_possible_customer_needs)
-    '''
+    """
 
 
 
@@ -167,7 +158,7 @@ def main():
     df_alt_cleaned = clean_data.select_attributes(df_alt_cleaned)  # debo desagregar columnas antes...
     print(" # CLEAN DATA: Limpieza de alternativas")
     print(" ## Por precio=NaN")
-    df_alt_cleaned = clean_data.drop_alternatives_without_price(df_alt_cleaned)  # Incluir 'Modelo' luego lo quito
+    df_alt_cleaned =  df_alt_cleaned.dropna(subset=['precio']).reset_index(drop=True)  # clean_data.drop_alternatives_without_price(df_alt_cleaned)  # Incluir 'Modelo' luego lo quito
     print("## Por repeticion de modelos")  # Por repeticion
     # df_alt_cleaned_with_mod = pd.concat([df_alt_cleaned, df_alt['Modelo']])
     df_alt_cleaned = clean_data.drop_alt_duplicates(df_alt_cleaned, df_opi)   # FALTARIA DOC ahpra si es necesaria pues elimine atributos... al haber menos hay mas posib de filas repetidas
@@ -207,7 +198,7 @@ def main():
     #df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
     #df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
 
-    '''
+    
     # Levanto df para hacer modelling independientemente
     producto = 'tv'
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))

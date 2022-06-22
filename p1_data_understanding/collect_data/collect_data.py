@@ -4,15 +4,15 @@ import random
 from time import sleep
 from p1_data_understanding.collect_data.mercadolibre_crawler import MercadoLibreCrawler
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+
 
 ################################################ FUNCIONES PRINCIPALES ################################################
 def get_product_attributes(home_page_url):
     """
-    Obtiene los atributos mas relevantes de un producto.
-    :param home_page_url: String que contiene URL de la pagina principal de un producto en Mercado Libre
-    :return: Lista de atributos mas relevantes del producto
+    Obtiene los atributos mas relevantes de un producto mediante Web Scraping
+    :param home_page_url: String. URL de la pagina principal de un producto en Mercado Libre
+    :return: Lista. Atributos mas relevantes del producto
     """
     # DEFINO VARIABLES
     PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
@@ -56,10 +56,7 @@ def get_product_attributes(home_page_url):
             # OBTENGO EL ATRIBUTO(es el texto del tag)
             attr = tag.text
             # SUMO UNO A SU FRECUENCIA
-            if attr not in d_attr_frec.keys():  # si el atributo es nuevo
-                d_attr_frec[attr] = 1  # Lo agrego y le pongo frecuencia 1
-            else:  # Si el atributo no es nuevo
-                d_attr_frec[attr] += 1  # le sumo 1 a su frecuencia
+            d_attr_frec[attr] = d_attr_frec[attr]+1 if attr in d_attr_frec.keys() else 1
 
         # CLICKEO EN BOTON "VOLVER" PARA SALIR DE PUBLICACION
         crawler.driver.back()
@@ -72,32 +69,15 @@ def get_product_attributes(home_page_url):
     l_atributos = select_relevant_attributes(d_attr_frec)
     return l_atributos
 
-def create_dataframe_alternativas(atributos):
-    """
-    Inicializo Dataframe alternativas a partir de los atributos del producto.
-    :param campos_especificos: Lista atributos de un producto. Por ejemplo, "tamano de pantalla" para el producto
-    "celulares". El largo de la lista dependera de cada producto.
-    :return: Dataframe "alternativas" con los nombres de las columnas correspondientes y sin filas (vacio)
-    """
-    # INICIALIZO LISTA CON CAMPOS A EXTRAER CON CAMPOS "ID_ALTERNATIVA" Y "PRECIO" (INDEPENDIENTES DEL PRODUCTO)
-    campos_a_extraer = ['id_alternativa', 'precio']
-
-    # AGREGO COMPOS ESPECIFICOS DEL PRODUCTO A CAMPOS A EXTRAER
-    # Por campo especifico
-    for atributo in atributos:
-        # Lo agrego a lista de campos a extraer
-        campos_a_extraer.append(atributo)
-
-    return pd.DataFrame(columns=campos_a_extraer)
-
 def data_extractor(df_alt, df_opi, home_page_url):
     """
     Extrae datos de opiniones y de las publicaciones de un producto mediante web scraping y los almacena en los
     DataFrames pasados como parametro. Representa toda la logica de extraccion.
-    :param df_alt: DataFrame vacio con columnas id_alternativa, precio y una por cada campo especifico del
-    producto.
-    :param df_opi: DataFrame vacio con columnas id_alternativa y opinion.
-    :return: Dataframes opiniones y alterenativas cargados con los datos extraidos del producto
+    :param df_alt: DataFrame. Unidad de analisis: alternativa. Columnas: id_alternativa, precio y una por cada campo
+    especifico del producto. Cantidad de filas: vacio
+    :param df_opi: DataFrame. Unidad de analisis: opinion. Columnas: id_alternativa y opinion. Cantidad de filas: vacio
+    :param home_page_url: String. URL de pagina principal del producto en Mercado Libre
+    :return: Dataframes pasados como parametro cargados con datos
     """
     # DEFINO PARAMETROS DE CORTE, TIEMPOS DE ESPERA Y VARIABLES UTILES
     # Defino parametros de corte de la extraccion
@@ -106,13 +86,19 @@ def data_extractor(df_alt, df_opi, home_page_url):
     no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
     # Defino otras variables
     SLEEP_MIN, SLEEP_MAX = 1, 2  # tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
-    historico_paginas = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
+    # l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
+    l_historial_pag = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
     # a parametro de corte 2
     crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO
     crawler.driver.get(home_page_url)  # hasta que no se carga toda la pagina, no sigue...
+
+
+    # Prueba: Filtro para ingresar a publicaciones con Condicion=Nuevo (Evito publicaciones con condicion usado)
+    sleep(3)
+    home_page_url_filt_condition_new = crawler.get_home_page_url_condition_new()
+    crawler.driver.get(home_page_url_filt_condition_new)
 
     # POR PAGINA DE PAGINACION
     while (ult_pub_sin_data == 0) and (pag_num < PAG_MAX) and (no_mas_paginas == 0):  # Hasta que los param de corte lo indiquen...
@@ -124,7 +110,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
         # POR CADA PUBLICACION DE LA PAGINA (tipicamente 1 pagina tiene 50 a 55 publicaciones)
         for url_publicacion in urls_publicaciones:
-            print("Publicacion numero:", len(historico_paginas), ". URL:", url_publicacion)  # imprimo nro de pub y url
+            print("Publicacion numero: {} \t URL: {}".format(len(l_historial_pag)+1, url_publicacion))  # imprimo nro de pub y url
 
             pagina_extraida = 0  # A priori, asumo que no pude extraer datos de la publicacion (param de corte 1)
 
@@ -136,14 +122,17 @@ def data_extractor(df_alt, df_opi, home_page_url):
             id_alternativa = crawler.get_publication_id(url_publicacion)
 
             # EXTRAIGO DATOS DE LA PUBLICACION
-            d_data_alternativas = crawler.get_modelo_data(id_publicacion=id_alternativa, l_atributos=df_alt.columns[2:])  # excluyo id y precio
+            # d_data_alternativas = crawler.get_modelo_data(id_publicacion=id_alternativa, l_atributos=df_alt.columns[2:])  # excluyo id y precio
+            df_new_pub = crawler.get_modelo_data(id_publicacion=id_alternativa, l_atributos=list(df_alt.columns)[2:])  # excluyo id y precio
 
             # SI LA ALTERNATIVA ES NUEVA
-            if is_alternative_new(df_alt, d_data_alternativas):
+            # if is_alternative_new(df_alt, d_data_alternativas):
+            if is_alternative_new(df_alt, df_new_pub):
 
                 # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
-                df_alt = add_lines_to_dataframe(d_data_alternativas, df_alt)
-                # print(df_alt)
+                df_alt = pd.concat([df_alt, df_new_pub], ignore_index=True)
+                # df_alt = add_lines_to_dataframe(d_data_alternativas, df_alt)
+                print("Nº alternativas extraidas: {}".format(df_alt.shape[0]))
 
                 # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
                 url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
@@ -156,7 +145,8 @@ def data_extractor(df_alt, df_opi, home_page_url):
                     sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))  # Intentando humanizar mis acciones...
 
                     # SI LAS OPINIONES SON NUEVAS (pues ≠ publicaciones pueden tener = opiniones)
-                    if crawler.are_opinions_new(l_prim_opiniones):
+                    # if crawler.are_opinions_new(l_prim_opiniones):
+                    if crawler.are_opinions_new(df_opi):
 
                         pagina_extraida = 1  # Cambio su valor a 1 pues pude extraer datos de la pub (param de corte 1)
 
@@ -165,11 +155,12 @@ def data_extractor(df_alt, df_opi, home_page_url):
                         crawler.ScrollDown()
 
                         # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
-                        d_opiniones_alternativa = crawler.get_publication_opinions_data(id_alternativa)
-                        l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la
-                        # publicacion para poder hacer la verificacion de opiniones nuevas
-                        df_opi = add_lines_to_dataframe(d_opiniones_alternativa, df_opi)
-                        # print(df_opi)
+                        df_opi_new_alt = crawler.get_publication_opinions_data(id_alternativa)
+                        # l_prim_opiniones.append(d_opiniones_alternativa['opinion'][0])  # Guardo la primera opinion de la publicacion para poder hacer la verificacion de opiniones nuevas
+                        df_opi = pd.concat([df_opi, df_opi_new_alt], ignore_index=True)
+                        # df_opi = add_lines_to_dataframe(d_opiniones_alternativa, df_opi)
+                        print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
+
 
                     # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
                     else:
@@ -186,10 +177,10 @@ def data_extractor(df_alt, df_opi, home_page_url):
                     print("PUBLICACION SIN OPINIONES")
 
 
-                # VERIFICO PARAMETRO DE CORTE
-                historico_paginas.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
+                # VERIFICO PARAMETRO DE CORTE 1
+                l_historial_pag.append(pagina_extraida)  # Agrego un boolean segun si extraje o no la publicacion
                 # Si las ultimas publicaciones tienen muy pocos datos
-                if ultimas_pub_sin_data(historico_paginas, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
+                if ultimas_pub_sin_data(l_historial_pag, PORC_MIN_ULT_PUB_EXTRAIDAS, CANT_ULT_PUB):
                     # corto la extraccion de datos (parametro de corte 1)
                     ult_pub_sin_data = True  # parametro de corte 1 (corta si las ultimas publicaciones no tienen datos)
                     break
@@ -220,7 +211,6 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
     # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
     explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
-
     return df_alt, df_opi
 
 
@@ -251,50 +241,201 @@ def inicialize_driver():
 def select_relevant_attributes(d_attr_frec):
     """
     Selecciono los atributos mas relevantes de todos los atributos posibles del producto
-    # Recomendacion: Tener a mano publicaciones del producto para ver que valor toma cada atributo y asi entender de que se trata el atributo
-    :param d_attr_frec: Diccionario cuyas keys son cada atributo del producto y sus values son la frecuencia (segun
-    frecuencia de aparicion en publicacionse del producto en mercado libre) del respectivo atributo.
-    :return: Lista de atributos mas relevantes
+    Recomendacion: Tener a mano publicaciones del producto para ver que valor toma cada atributo y asi entender de que
+    se trata el atributo
+    :param d_attr_frec: Diccionario. Key: atributo del producto. Value: frecuencia (cantidad de publicaciones de Mercado
+    Libre en que aparece el atributo)
+    :return: Lista. Atributos mas relevantes del producto
     """
-    # Defino variables
-    frecuencias = list(d_attr_frec.values())
-    porc_frec_min = 0.2  # al menos en el 30% de las publicaciones
-    l_atributos = []
-    print("Los {} atributos y su frecuencia: {}".format(len(frecuencias), d_attr_frec))
+    # DEFINO VARIABLES
+    l_frecuencias = list(d_attr_frec.values())  # Lista de frecuencias de todos los atributos
+    PORC_FREC_MIN = 0.2  # atributos en al menos el x% de las publicaciones
+    l_atributos = []  # Lista de atributos a retornar
+    print("Los {} atributos y su frecuencia: {}".format(len(l_frecuencias), d_attr_frec))
 
-    # Por atributo
+    # POR ATRIBUTO
     for atributo in d_attr_frec.keys():
 
-        # Obtengo porcentaje de frecuencia
-        porc_frec = d_attr_frec[atributo] / max(frecuencias)
+        # OBTENGO SU PORCENTAJE DE FRECUENCIA
+        porc_frec = d_attr_frec[atributo] / max(l_frecuencias)
 
-        # Si su porcentaje de frecuencia es mayor al minimo
-        if porc_frec > porc_frec_min:
+        # SI EL ATRIBUTO ES LO SUFICIENTIMENTE FRECUENTE
+        if porc_frec > PORC_FREC_MIN:
 
+            # SOLICITO A ADMINISTRADOR SI SELECCIONAR EL ATRIBUTO O NO
+            # Mientras que la carga sea invalida
             while True:
-
+                # Si la carga es un numero
                 try:
-                    # Solicito al administrador si tendra en cuena o no el atributo
+                    # Solicito al administrador si tendra en cuenta o no el atributo
                     input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
-
+                    # Si cargo un "1"
                     if input_admin == 1:
                         # Guardo atributo
                         l_atributos.append(atributo)
-                        break
-                    else:
-                        break
-
-                except: # si no cargo un numero
+                    # La carga es valida
+                    break
+                # si la carga no es un numero
+                except:
                     pass
 
-    # Resumo los resultados de la extraccion de atributos
+    # Imprimo atributos seleeccionados
     print('Los {} atributos mas relevantes: {}'.format(len(l_atributos), l_atributos))
-
     return l_atributos
 
 
 # UTILIZADA EN DATA_EXTRACTOR()
-def is_alternative_new(df_alt, d_new_alt):  # creo que funciona mas lento que la nueva...
+def is_alternative_new(df_alt, df_new_pub):  # PRUEBA
+
+    # puntos rojos son para chequear funcionamiento
+    id_alt = df_new_pub.loc[0, 'id_alternativa']
+    modelo_new_alt = df_new_pub.loc[0, 'Modelo']
+
+    if id_alt in df_alt['id_alternativa'].values:
+        print("ALTERNATIVA REPETIDA. Mismo id")
+        return False
+
+    # Si modelo ya lo extraje
+    elif modelo_new_alt in df_alt["Modelo"].unique():
+        print("Modelo nueva alternativa: {}".format(modelo_new_alt))
+
+        # Busco alternativas del modelo
+        df_alt_same_mod = df_alt[df_alt['Modelo'] == modelo_new_alt]  # Alternativas del mismo modelo
+        print("Modelos ya extraidos: {}".format(df_alt_same_mod.shape))
+
+        # Agrego nuevo modelo
+        df_alt_same_mod_with_new_alt = pd.concat([df_alt_same_mod.copy(), df_new_pub])
+        print("Modelos con el nuevo: {}".format(df_alt_same_mod_with_new_alt.shape))
+
+        # Elimino modelos duplicados
+        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.dropna(axis=1)  # elimino columnas con valores NaN para evitar diferencias por NaN
+        print("Modelos con el nuevo y sin col nan: {}".format(df_alt_same_mod_with_new_alt.shape))
+        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.drop_duplicates(subset=list(df_alt_same_mod_with_new_alt.columns)[2:])  # elimino filas duplicadas (sin considerar id ni precio)
+        print("Modelos con el nuevo, sin col nan y drop_duplicates: {}".format(df_alt_same_mod_with_new_alt.shape))
+
+        # Si la alternativa nueva es repetida
+        if len(df_alt_same_mod_with_new_alt) == len(df_alt_same_mod):
+            print("ALTERNATIVA REPETIDA. Mismos atributos")
+            return False
+
+        '''
+        # Busco alternativas del modelo
+        df_alt_same_mod = df_alt[df_alt['Modelo'] == modelo_new_alt]  # Alternativas del mismo modelo
+        df_alt_same_mod = df_alt_same_mod.dropna(axis=1)  # elimino columnas con valores NaN para evitar diferencias por NaN
+        # print("Alternativas ya extraidas del modelo: \n", df_alt_mismo_mod)
+
+        # Agrego alternativa nueva
+        df_alt_same_mod_with_new_alt = pd.concat([df_alt_same_mod.copy(), df_new_pub])  # df_new_pub tiene todas las col...
+
+        # Drop duplicates
+        df_alt_mismo_mod_filt = df_alt_same_mod_with_new_alt.drop_duplicates(subset=list(df_alt_mismo_mod.columns)[2:])
+        # print(df_alt_mismo_mod_filt)
+        '''
+    print("La alternativa es nueva!")
+    return True
+
+
+''' INTENTO VIGENTE DE IS_ALT_NEW()
+def is_alternative_new(df_alt, df_new_pub):
+    """
+    Verifica si una nueva publicacion se refiere a una alternativa nueva o no (Recordar que una alternativa podria tener
+    mas de una publicacion pues podria cambiar el vendedor, o podria tener mismo vendedor pero diferente precio, etc)
+    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto . Columnas: id_alternativa, precio y campos
+    especificos del producto.
+    :param df_new_pub: Dataframe. Unidad de analisis: Publicacion. Columnas: id_alternativa, precio y campos
+    especificos del producto.
+    :return: True si la publicacion se refiere a una nueva alternativa, de lo contrario, False.
+    """
+    # Defino variables
+    id_new_alt = df_new_pub['id_alternativa'].values[0]  # id de la nueva alternativa
+    modelo_new_alt = df_new_pub['Modelo'].values[0]  # Modelo de nueva alternativa
+    print("\t ID={} \t Modelo: {}".format(id_new_alt, modelo_new_alt))
+
+    # SI EL MODELO YA FUE EXTRAIDO
+    if modelo_new_alt in list(df_alt['Modelo'].unique()):
+
+        # OBTENGO ALTERNATIVAS YA EXTRAIDAS QUE SON EL MISMO MODELO
+        df_alts_mismo_mod = df_alt[df_alt['Modelo'] == modelo_new_alt]
+
+        l_atrib_new = df_new_pub.loc[0].values[2:]  # Indice 0 pues es una sola nueva alternativa. [2:] pues selecciono sus atributos sin tener en cuenta id y precio
+
+        # SI YA EXTRAJE EL ID
+        if id_new_alt in df_alts_mismo_mod['id_alternativa'].values:
+            # RETORNO QUE LA ALTERNATIVA ES REPETIDA
+            print("\t ALTERNATIVA REPETIDA. Mismo id")
+            return False
+
+        # POR ALTERNATIVA
+        for i in df_alts_mismo_mod.index:  # --> El index de df_alts_mismo_mod parece resetearse...
+
+            # Defino variables
+            l_atrib_alt = df_alts_mismo_mod.loc[i].values[2:]  # valores de atributos de la alternativa (excluyo id y precio)
+
+            # SI TIENEN DIFERENTE ID PERO MISMOS VALORES DE SUS ATRIBUTOS
+            # Por atributo
+            for j in range(len(l_atrib_alt)):  # lista == lista falla --> "ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()"
+                # Si tienen mismo valor
+                if l_atrib_alt[j] == l_atrib_new[j]:
+                    # Si recorri todos los atributos y tienen mismos valores
+                    if j == len(l_atrib_alt):
+                        # RETORNO QUE LA ALTERNATIVA ES REPETIDA
+                        print("\t ALTERNATIVA REPETIDA. Distinto id pero mismo modelo")
+                        print("\t Atributos:", l_atrib_new, l_atrib_alt)
+                        return False
+                # Si tienen distinto valor
+                else:
+                    # No tienen mismo id ni mismos atributos, retorno que la alternativa es nueva
+                    break
+
+    # SI EL MODELO ES NUEVO, O BIEN, NO ES NUEVO PERO TIENE DISTINTO ID Y AL MENOS 1 ATRIBUTO DISTINTO
+    print("\t La alternativa es nueva! Se cargara al df_alt")
+    return True
+'''
+
+''' # Le pasaba nueva alternaitva en diccionario en vez de dataframe
+def is_alternative_new(df_alt, d_new_alt): # PODRIA COMPARAR POR MODELOS, + eficiente
+
+    # Defino variables
+    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
+    new_alt_modelo = d_new_alt['Modelo']  # Modelo de nueva alternativa
+    print("Nuevo modelo: ", new_alt_modelo)
+
+    # SI EL MODELO ES REPETIDO
+    if new_alt_modelo in list(df_alt['Modelo'].unique()):
+
+        # Obtengo alternativas que son el mismo modelo que la nueva
+        df_alts_mismo_mod = df_alt[df_alt['Modelo'] == new_alt_modelo]
+        print(df_alts_mismo_mod)
+        print(df_alts_mismo_mod.index)
+
+        # COMPARO NUEVA ALTERNATIVA CON LOS MISMOS MODELOS YA EXTRAIDOS EN LOS OTROS ATRIBUTOS
+        # Por alternativa
+        # for i in list(df_alts_mismo_mod.index):  --> El index de df_alts_mismo_mod parece resetearse...
+        for i in range(len(df_alts_mismo_mod)):
+
+            # Defino variables
+            id_alt = df_alts_mismo_mod.loc[i, "id_alternativa"]  # id de alternativa
+            l_atrib_alt = list(df_alts_mismo_mod.iloc[i, 2:])  # valores de atributos de la alternativa (excluyo id y precio)
+            l_atrib_new = list(d_new_alt.values())[2:]
+
+            # SI TIENE MISMO ID O ATRIBUTOS QUE LA ALTERNATIVA NUEVA
+            if id_alt_new == id_alt:
+                print("La alternativa se repite con una ya extraida. Mismo id")
+                print("IDS:",id_alt_new, id_alt)
+                return False
+
+
+            elif l_atrib_new == l_atrib_alt:
+                print("La alternativa se repite con una ya extraida. Distinto id pero mismo modelo")
+                print("Atributos:", l_atrib_new, l_atrib_alt)
+                return False
+
+    # Si la alternativa nueva no se repite
+    return True
+'''
+
+'''
+def is_alternative_new(df_alt, d_new_alt):  # creo que funciona mas lento que la nueva...  PODRIA COMPARAR POR MODELOS
 
     # Defino variables
     id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
@@ -316,7 +457,9 @@ def is_alternative_new(df_alt, d_new_alt):  # creo que funciona mas lento que la
 
     # Si la alternativa nueva no se repite
     return True
+'''
 
+''' # La sacaria pues no es necesario una funcion para concatenar dos df...
 def add_lines_to_dataframe(d_data, df):
     """
     Agrega filas a un DataFrame
@@ -335,6 +478,7 @@ def add_lines_to_dataframe(d_data, df):
     df = pd.concat([df, new_df])
 
     return df
+'''
 
 def ultimas_pub_sin_data(historico_paginas, porc_min_ult_pub_extraidas, cant_ult_pub):
     """
@@ -397,6 +541,35 @@ def explicacion_corte(pag_num, pag_max, ult_pub_sin_data):
         # Imprimo mensaje
         print("Corto por no haber mas paginas. Se recorrieron {} paginas".format(pag_num))
 
+
+
+''' # para correr pruebas en archivo independientemente de main.py
+main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
+'''
+
+
+
+''' NO HACE FALTA LA FUNCION...
+def create_dataframe_alternativas(atributos):
+    """
+    Inicializo Dataframe alternativas a partir de los atributos del producto.
+    :param campos_especificos: Lista atributos de un producto. Por ejemplo, "tamano de pantalla" para el producto
+    "celulares". El largo de la lista dependera de cada producto.
+    :return: Dataframe "alternativas" con los nombres de las columnas correspondientes y sin filas (vacio)
+    """
+    # INICIALIZO LISTA CON CAMPOS A EXTRAER CON CAMPOS "ID_ALTERNATIVA" Y "PRECIO" (INDEPENDIENTES DEL PRODUCTO)
+    campos_a_extraer = ['id_alternativa', 'precio']
+
+    # AGREGO COMPOS ESPECIFICOS DEL PRODUCTO A CAMPOS A EXTRAER
+    # Por campo especifico
+    for atributo in atributos:
+        # Lo agrego a lista de campos a extraer
+        campos_a_extraer.append(atributo)
+
+    return pd.DataFrame(columns=campos_a_extraer)
+'''
+
+'''
 def main(home_page_url):
     # (1) Obtengo atributos del producto
     print("Buscando atributos del producto...".center(120))
@@ -414,88 +587,8 @@ def main(home_page_url):
     df_alternativas, df_opiniones = data_extractor(df_alternativas, df_opiniones, home_page_url)
 
     return df_alternativas, df_opiniones
-
-
-''' # para correr pruebas en archivo independientemente de main.py
-main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
 '''
 
-
-"""
-def is_alternative_new_orig(df_alt, d_new_alt):  # creo que funciona mas lento que la nueva...
-    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
-    new_atrib = list(d_new_alt.values())[2:]
-
-    # Por alternativa
-    for i in range(len(df_alt)):
-
-        # Defino variables
-        id_alt = df_alt.iloc[i, 0]  # id de alternativa
-        atrib_alt = list(df_alt.iloc[i, 2:])  # valores de atributos de la alternativa (excluyo id y precio)
-
-        # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
-        if id_alt_new == id_alt:
-            print("La alternativa tiene el mismo id que una alternativa ya extraida")
-            print(id_alt_new, id_alt)
-            return False
-
-        # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
-        if new_atrib == atrib_alt:
-            print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
-            print(new_atrib, atrib_alt)
-            return False
-
-    # Si la alternativa nueva no se repite
-    return True
-
-"""
-
-'''
-def is_alternative_new(df_alt, d_new_alt):
-    """
-    Verifica si una nueva alternativa se repite o no con otra alternativa ya extraida
-    :param df_alt: Dataframe alternativas
-    :param d_new_alt: Diccionario con las colummas del dataframe alternativas como keys y sus respectivos valores como
-    values.
-    :return: True si la nueva alternativa es nueva, de lo contrario, False.
-    """
-    # Defino variables
-    id_alt_new = d_new_alt['id_alternativa']  # id de la nueva alternativa
-    df_alt_with_new_alt = df_alt.copy()
-    df_alt_with_new_alt.loc[len(df_alt_with_new_alt)] = d_new_alt.values()
-    largo_new_df = len(df_alt_with_new_alt.drop_duplicates(subset=df_alt.columns[2:]))  # elimino duplicados (sin incluir ni id ni precio)
-    largo_df = len(df_alt)
-
-    # Si el id de la nueva alternativa es igual al de la alternativa ya cargada
-    if id_alt_new in df_alt['id_alternativa']:
-        print("La alternativa tiene el mismo id que una alternativa ya extraida")
-        bool = False
-
-    # Si los atributos de la nueva alternativa son iguales al de la alternativa ya cargada
-    elif largo_df == largo_new_df:
-        print("La alternativa tiene los mismos valores de los atributos que una alternativa ya extraida")
-        bool = False
-
-    else:
-        bool = True
-
-    return bool
-'''
-
-
-"""    # PARA PROBAR SI FUNCIONA LA FUNCION:
-largo_orig = len(df_alt)
-
-df_prueba = df_alt.iloc[:, 2:]
-df_prueba.loc[len(df_prueba)] = l_atrib_new  # agrego nueva alternativa
-print(df_prueba)
-df_prueba = df_prueba.drop_duplicates()
-print(df_prueba)
-largo_new = len(df_prueba)
-if (largo_orig + 1) != largo_new:
-    print("LA FUNCION IS_ALTERNATIVE_NEW NO FUNCIONA COMO DESEO :(")
-
-"""
 
 
 

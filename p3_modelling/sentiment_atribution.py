@@ -57,6 +57,14 @@ def to_customer_needs(df_opi, l_customer_needs_one_word, d_pal_rel, d_avoid_fp):
             cont += 1
             print("FRASE Nº{}: {}".format(cont, frase)), print("\t Sentiment de la frase: {:.2f}".format(sent_frase))
 
+
+            # PRUEBA
+            palabras_comp = [' anterior ', ' comparad']
+            for pal in palabras_comp:
+                if pal in frase:
+                    print("Evitaria esta frase!, palabra presente: {} ".format(pal))
+
+
             # SI MENCIONA AL MENOS 2 CUSTOMER NEEDS Y EL SENTIMENT NO ES CATEGORICO
             if (n_cust_need_ment >= 2) and (sent_frase < 0.4 and sent_frase > -0.4):
 
@@ -424,6 +432,7 @@ def clean_text(text):
 
     # Reemplazo comas por espacios
     text = text.replace(",", " ")
+    text = text.replace("!", " ")
 
     return text
 
@@ -622,7 +631,7 @@ def standardize_sentiment(df):
 
 
 
-
+'''
 # Correr solo to_attributes()
 producto = "celulares"
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
@@ -635,7 +644,7 @@ df_attr_values_sent, df_alts_sent = to_attribute(df_alt_cleaned, df_cust_need_se
 
 df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 df_alts_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-
+'''
 
 
 
