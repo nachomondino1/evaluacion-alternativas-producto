@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 # from data_preparation.utils import preparacion_texto
-from p2_data_preparation.format_data import string_column_to_numeric_column
+from p2_data_preparation.clean_data import drop_alternatives_with_wrong_values
 import re
 
 
@@ -14,8 +14,10 @@ print(l)
 '''
 
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_alt.xlsx')
+df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned_to_client.xlsx')
 df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_opi.xlsx')
-string_column_to_numeric_column(df_alt)
+drop_alternatives_with_wrong_values(df_alt, df_alt_to_client, df_opi)
+# drop_alternatives_with_wrong_values2(df_alt, df_alt_to_client, df_opi)
 
 
 

@@ -7,11 +7,13 @@ from p3_modelling.sentiment_atribution import contains_word_type
 def most_frequent_ngrams(df_opi_tokenizado, n_ngram, QUANT_NGRAMS): # acordate que no se puede probar individualmente porque se levanta mal el df_opi_tokenizado (en vez de lista lo entinede como string)
     """
     Obtiene lista de los ngrams mas frecuentes utilizados en las opiniones de un producto
-    :param QUANT_NGRAMS: Parametro de cuantas palabras mas frecuentes buscar
-    :param df_opi_tokenizado: Dataframe cuya unidad de analisis es la opinion de un producto. Cada opinion debe estar
-    tokenizada, es decir, debe ser una lista cuyos elementos son sus palabras
-    :return: Lista de palabras mas frecuentes en opiniones y relevantes
+    :param QUANT_NGRAMS: Integer. Numero de ngrams frecuentes que extraer
+    :param df_opi_tokenizado: Dataframe. Unidad de analisis: opinion de un producto. Columnas: id_alternativa y opinion.
+     Los valores de la columna opinion debe estar tokenizados, es decir, cada opinion debe ser una lista cuyos elementos
+     son sus palabras
+    :return: Lista. N-grams mas frecuentes en opiniones ordenados por frecuencia de mayor a menor.
     """
+    # DEFINO VARIABLES
     d = {}
     idx_token = df_opi_tokenizado.columns.get_loc("opinion")  # agrega flexibilidad pues puedo pasarle el df_opiniones enterro e igual usa solo "opiniones"
 
@@ -28,21 +30,26 @@ def most_frequent_ngrams(df_opi_tokenizado, n_ngram, QUANT_NGRAMS): # acordate q
             # Sumo 1 a su frecuencia
             d[ngram] = d[ngram]+1 if ngram in d.keys() else 1
 
-    # OBTENGO LISTA DE LOS 3-GRAMS MAS FRECUENTES
+    # OBTENGO LISTA DE LOS N-GRAMS MAS FRECUENTES
     l_freq_ngrams = most_frequent_dict_key(d, QUANT_NGRAMS)
     print("{} frases de {} palabra mas frecuentes: {}".format(QUANT_NGRAMS, n_ngram, l_freq_ngrams))
 
     # Exporto dataframe de palabras mas frecuentes (momentaneamente lo pongo aca)
-    if n_ngram == 1:
-        df = pd.DataFrame(data=d.values(), columns=['frecuencia'], index=d.keys())
-        df = df.sort_values(by='frecuencia', ascending=False)  # sorted() no es para dataframes
-        df.to_excel('/Users/nachomondino/Desktop/df_most_freq_words.xlsx')
+    #if n_ngram == 1:
+    #    df = pd.DataFrame(data=d.values(), columns=['frecuencia'], index=d.keys())
+    #    df = df.sort_values(by='frecuencia', ascending=False)  # sorted() no es para dataframes
+    #    df.to_excel('/Users/nachomondino/Desktop/df_most_freq_words.xlsx')
 
     return l_freq_ngrams
 
-def filter_most_frequent_words(l_freq_words, d_rel_words):
-    # Filtro lista de palabras mas frecuentes!
-
+def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORABLE..
+    """
+    Filtra palabras mas frecuentes segun relevancia, tipo de palabra y palabra relacionadas
+    :param l_freq_words: Lista. Palabras mas frecuentes en opiniones ordenadas por frecuencia de mayor a menor.
+    :param d_rel_words: Diccionario. Keys: Palabra. Values: Palabras relacionadas a key.
+    :return: Lista. Palabras mas frecuentes en opiniones ordenadas por frecuencia de mayor a menor. Solo palabras
+    relevantes, sustantivos y evitando repeticion de palabras relacionadas
+    """
     # DEFINO VARIABLES
     l_freq_words_filt = []
     l_pal_irrel = ['android', 'año', 'años', 'amazon',
@@ -59,8 +66,9 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):
                  'tiempo', 'tipo', 'tv',
                  'uso',
                  'verdad',
-                 'semana', 'super',
+                 'semana', 'super', 'samsung',
                  'youtube',
+                   'xiomi',
                  'whatsapp', 'windows']
 
     # Por palabra frecuente
@@ -79,6 +87,7 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):
 
     l_freq_words_filt_copy = l_freq_words_filt
     # ELIMINO PALABRAS RELACIONADAS
+    # Por palabra
     for palabra in l_freq_words_filt:
 
         # SI TIENE, ELIMINO SUS PALABRAS RELACIONADAS DE LISTA
@@ -105,9 +114,10 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):
 def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
     """
     Selecciona las customer needs de un producto a partir de las frases mas frecuentes en las opiniones del producto
-    :param most_freq_words: Lista de palabras mas frecuentes en opiniones y relevantes
-    :param possible_customer_needs: Lista de frases de 3 palabras mas frecuentes en opiniones
-    :return: Lista de customer needs como frases de 3 palabras, lista de customer needs como frase de 1 sola palabra
+    :param l_most_freq_words: Lista. Palabras mas frecuentes en opiniones y relevantes
+    :param l_possible_customer_needs: Lista. Frases de 3 palabras mas frecuentes en opiniones
+    :return: Dataframe. Unidad de analisis: customer need del producto. Columnas: Customer needs de 1 palabra (index)
+    y customer needs de 3 palabras
     """
     # Defino variables
     df_cust_needs = pd.DataFrame(columns=["cust_needs_three_words"])  # Dataframe a retornar
@@ -147,17 +157,6 @@ def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
                 except ValueError:  # si el input no es un numero entero
                     pass
 
-                # df_cust_needs.loc[freq_word] = possible_customer_need
-
-                # print("{:^40s}\t{:^40}".format(possible_customer_need, i))
-
-                #else:
-                #    print("La customer need '{}' fue descartada por no contener ADJ ni ADV".format(possible_customer_need))
-
-    # ELIMINO CUSTOMER NEEDS NO DESEADAS
-    print("Seleccionar customer needs:")  # Evito repeticion como "calidad fotos videos" y "tiene buena camara", customer needs quee no tienen atributos para relacionar como "tiene buen sonido"
-    df_cust_needs = discard_unwanted_cust_needs(df_cust_needs)
-
     # Imprimo resultados
     print("Customer needs seleccionadas:")
     print(df_cust_needs)
@@ -167,10 +166,10 @@ def create_relation_matrix(l_atributos, l_cust_needs):
     """
     Crea matriz de relaciones entre customer needs y atributos del producto. Para ello, pide al usuario por terminal
     la relacion entre cada uno.
-    :param l_atributos: Lista de atributos o campos especificos de un producto
-    :param l_cust_needs: Lista de customer needs (de 1 sola palabra) de un producto
-    :return: Dataframe con atributos como columnas y customer needs como filas. Celda indica relacion entre customer
-    need  i y atributo j
+    :param l_atributos: Lista. Atributos o campos especificos de un producto (solo los utiles para el analisis)
+    :param l_cust_needs: Lista. Customer needs (las de 1 sola palabra) de un producto
+    :return: Dataframe. Filas: customer need de producto. Columnas: atributos o campos especificos del producto. Celdas:
+    indica relacion entre customer need  i y atributo j
     """
     # DEFINO VARIABLES
     print("Los atributos son: ", l_atributos)
@@ -210,7 +209,7 @@ def create_relation_matrix(l_atributos, l_cust_needs):
         for cust_need in df_relation_matrix.index:
             print("{:^40s}\t{:^40}".format(cust_need, sum(df_relation_matrix.loc[cust_need].dropna())))
 
-    # Si el atributo no tiene relacion con ninguna customer need
+    # SI LA CUSTOMER NEED NO TIENE RELACION CON NINGUN ATRIBUTO
     # Por customer need
     for customer_need in l_cust_needs:
 
@@ -220,7 +219,7 @@ def create_relation_matrix(l_atributos, l_cust_needs):
             # Creo atributo con el cual relacionarla
             df_relation_matrix[customer_need] = 0
 
-            # Asigno relacion de 9 con atributo creado
+            # Asigno relacion de 1 con atributo creado
             df_relation_matrix.loc[customer_need, customer_need] = 1
 
     return df_relation_matrix
@@ -263,23 +262,15 @@ def generate_n_grams(text, ngram):
     ans = [' '.join(ngram) for ngram in temp]
     return ans
 
-
-def palabras_plural(palabra): # falta doc y ver si la dejo
-    """
-    Obtiene la palabra en plural
-    :param palabra: String. Cadena de texto. Una sola palabra
-    :return: Lista de posibles palabras en plural de palabra pasada como parametro
-    """
-    plurales = ["s", 'es']
-    palabra_en_plural = []
-
-    for i in range(len(plurales)):
-        palabra_en_plural.append(palabra+plurales[i])
-    return palabra_en_plural
-
-
 # UTILIZADA EN SELECT_CUSTOMER_NEEDS()
 def freq_word_in_cust_need(possible_customer_need, l_most_freq_words):
+    """
+    Obtengo lista de palabras mas frecuentes (si hay) en posible customer need.
+    :param l_most_freq_words: Lista. Palabras mas frecuentes en opiniones y relevantes
+    :param possible_customer_needs: String. Frase de 3 palabras que puede ser customer need.
+    :return: Lista. Palabras mas frecuentes en posible customer need
+    """
+    # Defino variables
     l_freq_words_in_cust_need = []
 
     # POR CADA PALABRA DE ESTA
@@ -288,90 +279,9 @@ def freq_word_in_cust_need(possible_customer_need, l_most_freq_words):
         # SI LA PALABRA ES DE LA MAS FRECUENTES
         if palabra in l_most_freq_words:
             l_freq_words_in_cust_need.append(palabra)
-
     return l_freq_words_in_cust_need
 
-def is_possible_customer_need_wanted(possible_customer_need, most_freq_words):  # en desuso temporalmente
-    """
-    Evita seleccionar una posible customer need que contenga un numero, una palabra irrelevante o dos o mas palabras
-    de las mas frecuentes
-    :param possible_customer_need: Frase de 3 palabras que contiene al menos 1 palabra relevante
-    :param most_freq_words: Lista de palabras mas frecuentes
-    :return: True si la customer need es deseada, o en caso contrario, False
-    """
-    # Defino variable
-    n = 0
-    # pal_irrel = ['android', 'auriculares', 'notebook', 'producto', 'tele', 'telefono', 'televisor', 'tv', 'samsung', 'windows']
-
-    # Si la customer need contiene al menos un adjetivo
-    if contains_adjective(possible_customer_need):
-
-        # POR CADA PALABRA DE LA POSIBLE CUSTOMER NEED
-        for palabra in possible_customer_need.split():
-
-            # SI LA PALABRA ES DE LAS MAS FRECUENTES
-            if palabra in most_freq_words:
-
-                # sumo uno a cantidad de palabras mas frecuentes de la frase
-                n += 1
-
-            # SI LA PALABRA ES UN NUMERO O ES IRRELEVANTE
-            elif palabra.isnumeric(): #or palabra in pal_irrel:
-                # Descarto la posible customer need
-                return False
-
-            else:
-                pass
-
-        # Si tiene solo una palabra de las mas frecuentes
-        if n == 1:
-            # Selecciono posible customer need como customer need
-            return True
-        # Si tiene mas de una palabra de las mas frecuentes
-        else:
-            # Descarto la posible customer need
-            return False
-
-    # Si la customer need no contiene al menos un adjetivo
-    else:
-        print("La customer need '{}' es descartada por no contener adjetivos".format(possible_customer_need))
-        return False
-
-def discard_unwanted_cust_needs(df_cust_needs):
-    """
-    Permite seleccionar customer needs mas relvantes a traves de terminal
-    :param df_cust_needs: Dataframe con customer needs de 3 palabras en columna y con customer needs de 1 palabra en
-    index
-    :return: Dataframe pasado por parametro sin customer needs irrelevantes
-    """
-    # Defino variable
-    l_cust_needs_remove = []  # lista de customer needs a remover
-
-    # Por customer need
-    for customer_need in df_cust_needs.index:
-
-        # Mientras la carga sea invalida
-        while True:
-            try:
-                # Solicito 0 o 1 para determinar si customer need sera considerada o no
-                bool = int(input("Tendra en cuenta la customer need '{}' (0 o 1): ".format(customer_need.upper())))
-
-                # Si la carga es valida
-                if bool == 0 or bool == 1:
-
-                    # Si la customer need se refiere a lo mismo que otra customer need, o bien, no tiene atributo con el que relacionarse
-                    if bool == 0:
-                        # Elimino customer need
-                        l_cust_needs_remove.append(customer_need)
-                    break
-
-            except ValueError:  # si el input no es un numero entero
-                pass
-
-    # ELIMINO CUSTOMER NEEDS NO RELEVANTES DE DATAFRAME DE CUSTOMER NEEDS
-    df_cust_needs = df_cust_needs.drop(l_cust_needs_remove, axis=0)
-    return df_cust_needs
-
+'''
 def main(df_alt_cleaned, df_opi_tokenizado):
     print("Obtengo palabras mas frecuentes en opiniones...".center(120))
     l_most_freq_words = most_frequent_words(df_opi_tokenizado)
@@ -393,7 +303,6 @@ def main(df_alt_cleaned, df_opi_tokenizado):
 
     return df_alt_cleaned, df_cust_needs, df_relation_matrix
 
-'''
 # para correr pruebas en archivo independientemente de main.py
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
 df_opi_tokenizado = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_opi_cleaned.xlsx', index_col=0)

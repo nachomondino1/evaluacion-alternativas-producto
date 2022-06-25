@@ -238,16 +238,18 @@ def main():
 
         st.write('### Tabla 1: Numero de alternativas por grupo')
         st.write(" A continuacion vemos la cantidad de alternativas dentro de cada uno de estos grupos.")
-        st.bar_chart(df_alt_per_clust)
+        # st.bar_chart(df_alt_per_clust)
+        image_5 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/cant_alt_{}.png'.format(product))
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_5, use_column_width=True)
 
         st.write('### Tabla 2: Numero de alternativas por grupo y marca')
         st.write(df_brand_per_cluster)
 
         st.write('Para visualizarlo mejor, tenemos el siguiente grafico:')
-        image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/grupos_por_marca_{}.png'.format(product))
+        image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/brand_{}.png'.format(product))
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_4, use_column_width=True)
-
 
         st.write('### Tabla 3: Ejemplo tipico de cada grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
         st.write(df_centroids_values)
@@ -274,8 +276,12 @@ def set_weigths(df_cust_needs, product):
     d = {"No es importante": -4, 'Poco importante': 1, 'Algo importante': 4, 'Importante': 7, 'Muy importante': 12}  # antes: -10, -2.5, 0, 2.5, 10 --> no esta bien que neutral sea 0
 
     d_usos = get_usos(product)  # Usos del producto
-    col1, col2 = st.columns([2, 0.6])
-    perfil_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso',  ['Ninguno'] + list(d_usos.keys()))
+
+    if d_usos is not None:
+        col1, col2 = st.columns([2, 0.6])
+        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso', ['Ninguno'] + list(d_usos.keys()))
+    else:
+        uso_selected = 'Ninguno'
 
     # Si no eligio perfil de cliente
     for i in range(len(l_cust_needs_three_words)):
@@ -283,12 +289,15 @@ def set_weigths(df_cust_needs, product):
         label = '{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper())
         help = get_help_button(l_cust_needs_one_word[i], product)
 
-        if perfil_selected == "Ninguno":
+        # Si no se asigno un uso
+        if uso_selected == "Ninguno":
+            # Seteo peso en "Algo importante"
             peso = st.select_slider(label=label, options=temp_options, value="Algo importante", help=help)  # puedo agregarle help y sus palabras relacionadas por ej
-
+        # Si se asigno uso
         else:
-            perfil = d_usos[perfil_selected]
-            peso = st.select_slider(label=label, options=temp_options, value=perfil[l_cust_needs_one_word[i]], help=help)  # puedo agregarle help y sus palabras relacionadas por ej
+            # Setea pesos de uso
+            uso = d_usos[uso_selected]
+            peso = st.select_slider(label=label, options=temp_options, value=uso[l_cust_needs_one_word[i]], help=help)  # puedo agregarle help y sus palabras relacionadas por ej
 
         # Guardo peso numerico
         df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d[peso]
@@ -345,6 +354,7 @@ def get_help_button(cust_need, producto):
 def get_usos(product):
     # Pasar a funcion aparte?
     # INTENTO AGREGAR PERFILES DE CLIENTES --> QUE SETEEN PESOS PREDETERMINADOS
+
     d_usos = {
         'celulares': {'Jugar': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Poco importante',
                                 'pantalla': 'Importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
@@ -352,22 +362,27 @@ def get_usos(product):
                                 'sistema': 'Poco importante'},
                       'Trabajar': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
                                    'pantalla': 'Algo importante', 'memoria': 'Importante', 'tamaño': 'Poco importante',
-                                   'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'Poco importante',
+                                   'velocidad': 'Muy importante', 'sonido': 'Poco importante', 'diseño': 'Algo importante',
                                    'sistema': 'Poco importante'},
                       'Redes': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Muy importante',
                                 'pantalla': 'Algo importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
-                                'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'Importante',
+                                'velocidad': 'Importante', 'sonido': 'Poco importante', 'diseño': 'Algo importante',
                                 'sistema': 'Poco importante'},
-                      'Comunicacion': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
-                                       'pantalla': 'Algo importante', 'memoria': 'Importante', 'tamaño': 'Muy importante',
-                                       'velocidad': 'Algo importante', 'sonido': 'Muy importante', 'diseño': 'Algo importante',
-                                       'sistema': 'Muy importante'},
-                      },
-        'tv': {'monitor': {'precio': 'Importante', 'imagen': 'Muy importante', 'sonido': 'Importante',
-                           'sistema': 'Poco importante', 'control': 'Poco importante', 'tamaño': 'No es importante',
-                           'velocidad': 'Algo importante', 'diseño': 'Algo importante', 'conexion': 'Importante'}},
-        'smartband': {} # deporte # Complemento del celular
+                      'Comunicacion': {'precio': 'Muy importante', 'bateria': 'No es importante', 'camara': 'Poco importante',
+                                       'pantalla': 'Poco importante', 'memoria': 'No es importante', 'tamaño': 'Importante',
+                                       'velocidad': 'No es importante', 'sonido': 'Importante', 'diseño': 'Poco importante',
+                                       'sistema': 'Importante'},
+                      }
     }
+
+    #'tv': {'monitor': {'precio': 'Importante', 'imagen': 'Muy importante', 'sonido': 'Importante',
+    #                   'sistema': 'Poco importante', 'control': 'Poco importante', 'tamaño': 'No es importante',
+    #                   'velocidad': 'Algo importante', 'diseño': 'Algo importante', 'conexion': 'Importante'}},
+    #'smartband': {} # deporte # Complemento del celular
+
+    # Si el producto no tiene usos definidos
+    if product not in d_usos.keys():
+        return None
 
     return d_usos[product]
 
