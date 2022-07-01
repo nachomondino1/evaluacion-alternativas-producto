@@ -1,34 +1,15 @@
 import pandas as pd
 import numpy as np
 # from data_preparation.utils import preparacion_texto
-from p2_data_preparation.clean_data import drop_alternatives_with_wrong_values
 import re
 
-
-'''
-from p2_data_preparation.construct_data import most_frequent_ngrams, filter_most_frequent_words
-
-df_opi_tokenizado = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_opi_cleaned.xlsx')
-l = most_frequent_ngrams(df_opi_tokenizado, 3, 200)
-print(l)
-'''
-
+''' # IMPORTO ARCHIVOS PARA PRUEBAS
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_alt.xlsx')
 df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned_to_client.xlsx')
 df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_opi.xlsx')
-drop_alternatives_with_wrong_values(df_alt, df_alt_to_client, df_opi)
-# drop_alternatives_with_wrong_values2(df_alt, df_alt_to_client, df_opi)
-
-
-
-#valores = ['720px x 1600px', '720px - 1600px']
-#for valor in valores:
-#    print(re.split(',| x | - ', valor))
-
-'''
-from p2_data_preparation.clean_data import disaggregate_columns_with_lists
-df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/tv/df_alt.xlsx')
-df_alt = disaggregate_columns_with_lists(df_alt)
+df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
+df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/celulares/df_attr_values_sent.xlsx')
+df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/celulares/df_attr_alt_sent.xlsx')
 '''
 
 '''
@@ -77,34 +58,12 @@ for pal in palabras:
 '''
 
 
-'''
-df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt.xlsx')
-df_opiniones = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_opi.xlsx')
-
-print(df_alternativas.head())
-print(df_opiniones.head())
-j = 0
-for id_pub in df_opiniones['id_alternativa'].unique():
-    if id_pub not in list(df_alternativas['id_alternativa']):
-        j += 1
-        print(j)
-'''
-
 ''' Series
 l = [1, 2, 3, 4]
 l_series = pd.Series(l)
 print(l_series)
 a = list(l_series.values)
 print(a[2])
-'''
-
-
-''' drop duplicates
-df_alternativas = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt.xlsx')
-print(df_alternativas)
-df_alternativas = df_alternativas.drop_duplicates(subset=list(df_alternativas.columns[2:]), ignore_index=True)
-print(df_alternativas)
-df_alternativas.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/df_alt_cleaned_{}.xlsx'.format('celulares'), 'Hoja de datos', index=False)
 '''
 
 ''' Diccionario
@@ -116,7 +75,7 @@ if 'c' in d.keys():
 print(list(d.values()))
 '''
 
-
+'''
 # Dataframe
 df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
 idx = [1,3]
@@ -132,6 +91,7 @@ print(df.loc[idx])
 
 # df = pd.concat([df, new_fila], axis=1)
 # print(df)
+'''
 
 
 '''
@@ -232,19 +192,21 @@ for frase in nltk.tokenize.sent_tokenize(text):
     print(frase)
 '''
 
-'''
+
 # 4. Modelling - Atribucion to customer needs
 from pysentimiento import create_analyzer
 
 analyzer = create_analyzer(task="sentiment", lang="es")
 text = "Por fin un teléfono práctico !!!. Basta de andar con ladrillos en la mano con cara de no saber donde ponerlo !!!. Funcionamiento excelente. La batería dura un montón. No calienta para nada. El que diga lo contrario está mintiendo descaradamente. Lo mejor de todo: es súper portable, entra en el bolsillo y no te das cuenta de que lo tenés encima. Si lo que buscas es un teléfono de excelentes prestaciones y no te interesa andar mostrándolo a todo el mundo para mandarte la parte este es el teléfono ideal. Algo más: la pantallita de notificaciones exterior es bárbara !!!!, te indica lo necesario !!!!. A partir de este teléfono el resto no existe !!!!."
 sent_frase = analyzer.predict(text)  # Predigo sentiment de frase
+score = sent_frase.probas['POS'] - sent_frase.probas['NEG']
+print(score)
 
-print(sent_frase)
-print(type(sent_frase))
-print(sent_frase.probas)
-print(sent_frase.probas.keys())
-'''
+# print(sent_frase)
+# print(type(sent_frase))
+# print(sent_frase.probas)
+# print(sent_frase.probas.keys())
+
 
 
 '''

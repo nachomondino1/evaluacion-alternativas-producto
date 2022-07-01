@@ -9,7 +9,7 @@ def select_attributes(df_alt):
     """
     # Defino variables
     l_attr_remove = []
-    l_attr_not_remove = ['id_alternativa', 'precio', 'Marca', 'Modelo']  # Atributos que no hay que eliminar
+    l_attr_not_remove = ['id_alternativa', 'precio', 'Marca']  # Atributos que no hay que eliminar
 
     # POR ATRIBUTO
     for atributo in df_alt.columns:

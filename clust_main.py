@@ -57,7 +57,7 @@ def get_home_page_url(producto):
     return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
 
 def main():
-
+    '''
     # Escogo producto
     print(" (1) ELECCION DE PRODUCTO ".center(120, '#'))
     producto, home_page_url = select_product()
@@ -83,7 +83,7 @@ def main():
 
     df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
     df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
-
+    '''
 
     '''
     # Levanto df para hacer 2 y 3 independientemente
@@ -222,7 +222,7 @@ def main():
     df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
     df_attr_alt_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
     '''
-    """
+
     # Levanto df para hacer modelling independientemente
     producto = 'tv'
     df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(producto))
@@ -268,7 +268,7 @@ def main():
     df_centroids_values.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(producto))
     df_brand_per_cluster.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(producto))
     df_best_brand_per_cust_need.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_best_brand_per_cust_need.xlsx'.format(producto))
-    """
+
 
 if __name__ == '__main__':
     main()

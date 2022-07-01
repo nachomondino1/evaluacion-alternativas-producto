@@ -150,7 +150,7 @@ def get_dict_avoid(producto):
           # Pantalla
           'pantalla': ['tamaño', 'protector', 'huella', ' fondo', 'pantalla completa', 'todo pantalla', ' grande ', ' chica ',
                        'pequeñ', 'gigante', 'sucia ', 'borde', ' curva', ' plana ', 'cayo', ' caida', 'rompio',' raya',
-                       'funda', ' film ', ' rompe ', ' negra ', 'gorila glass', 'gorilla glass', ' gesto', ' consum', ' edge '], # (se puso la pantalla negra...), # huella  #Cuando... (cuenta historia de que se pone negra/azul la pantalla)
+                       'funda', ' film ', ' rompe ', ' negra ', ' negro ', 'gorila glass', 'gorilla glass', ' gesto', ' consum', ' edge '], # (se puso la pantalla negra...), # huella  #Cuando... (cuenta historia de que se pone negra/azul la pantalla)
           'resolucion': ['camara', 'fotos'],
           'imagen': ['fotos', ' camara'],
 

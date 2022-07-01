@@ -86,19 +86,13 @@ def data_extractor(df_alt, df_opi, home_page_url):
     no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
     # Defino otras variables
     SLEEP_MIN, SLEEP_MAX = 1, 2  # tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    # l_prim_opiniones = []  # lista que guardara las primeras opiniones de cada pub. Ayudara a no extraer opi repetidas
     l_historial_pag = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
     # a parametro de corte 2
     crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
 
-    # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO
-    crawler.driver.get(home_page_url)  # hasta que no se carga toda la pagina, no sigue...
-
-
-    # Prueba: Filtro para ingresar a publicaciones con Condicion=Nuevo (Evito publicaciones con condicion usado)
-    sleep(3)
-    home_page_url_filt_condition_new = crawler.get_home_page_url_condition_new()
-    crawler.driver.get(home_page_url_filt_condition_new)
+    # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO Y SELECCIONO CONDICION="NUEVO"
+    crawler.driver.get(home_page_url), sleep(3)  # hasta que no se carga toda la pagina, no sigue...
+    crawler.driver.get(crawler.get_home_page_url_condition_new())  # Filtro para ingresar a publicaciones con Condicion=Nuevo (Evito publicaciones con condicion usado)
 
     # POR PAGINA DE PAGINACION
     while (ult_pub_sin_data == 0) and (pag_num < PAG_MAX) and (no_mas_paginas == 0):  # Hasta que los param de corte lo indiquen...
@@ -156,7 +150,6 @@ def data_extractor(df_alt, df_opi, home_page_url):
                         # df_opi = add_lines_to_dataframe(d_opiniones_alternativa, df_opi)
                         print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
 
-
                     # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
                     else:
                         # ENTONCES NO EXTRAIGO OPINIONES
@@ -205,7 +198,6 @@ def data_extractor(df_alt, df_opi, home_page_url):
     # EXPLICO POR QUE CORTO LA EXTRACCION DE DATOS
     explicacion_corte(pag_num, PAG_MAX, ult_pub_sin_data)
     return df_alt, df_opi
-
 
 
 ################################################ FUNCIONES SECUNDARIAS ################################################
@@ -278,39 +270,44 @@ def select_relevant_attributes(d_attr_frec):
 
 
 # UTILIZADA EN DATA_EXTRACTOR()
-def is_alternative_new(df_alt, df_new_pub):  # PRUEBA
+def is_alternative_new(df_alt, df_new_pub):  # Probar con celulares a ver si funciona
+    """
+    Verifica si la publicacion proxima a extraer corresponde a una nueva alternativa o no
+    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa y atributos del
+    producto.
+    :param df_new_pub: Dataframe. Unidad de analisis: publicacion del producto. Columnas: id_alternativa y atributos del
+    producto.
+    :return: True si la publicacion corresponde a una nueva alternativa, de lo contrario, False.
+    """
+    # Defino variables
+    l_attr_modelo_unico = ['Modelo'] # En celulares: , 'Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
+    id_new_alt = df_new_pub.loc[0, 'id_alternativa']  # id y modelo de nueva publicacion
+    l_val_attr_new_alt = []  # Valores de atributos de nueva publicacion para identificar modelo unico (en miniscula)
+    for attr in l_attr_modelo_unico:
+        l_val_attr_new_alt.append(str(df_new_pub.loc[0, attr]).lower())
 
-    # puntos rojos son para chequear funcionamiento
-    id_alt = df_new_pub.loc[0, 'id_alternativa']
-    modelo_new_alt = df_new_pub.loc[0, 'Modelo']
+    # POR ALTERNATIVA EXTRAIDA
+    for i in df_alt.index:
 
-    if id_alt in df_alt['id_alternativa'].values:
-        print("ALTERNATIVA REPETIDA. Mismo id")
-        return False
+        # Defino variables
+        id_alt = df_alt.loc[i, 'id_alternativa']  # Id de alternativa extraida
+        l_val_attr_alt = []  # Valores de atributos de alternativa extraida para identificar modelo unico (en miniscula)
+        for attr in l_attr_modelo_unico:
+            l_val_attr_alt.append(str(df_alt.loc[i, attr]).lower())
 
-    # Si modelo ya lo extraje
-    elif modelo_new_alt in df_alt["Modelo"].unique():
-        print("Modelo nueva alternativa: {}".format(modelo_new_alt))
-
-        # Busco alternativas del modelo
-        df_alt_same_mod = df_alt[df_alt['Modelo'] == modelo_new_alt]  # Alternativas del mismo modelo
-        print("Modelos ya extraidos: {}".format(df_alt_same_mod.shape))
-
-        # Agrego nuevo modelo
-        df_alt_same_mod_with_new_alt = pd.concat([df_alt_same_mod.copy(), df_new_pub])
-        print("Modelos con el nuevo: {}".format(df_alt_same_mod_with_new_alt.shape))
-
-        # Elimino modelos duplicados
-        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.dropna(axis=1)  # elimino columnas con valores NaN para evitar diferencias por NaN
-        print("Modelos con el nuevo y sin col nan: {}".format(df_alt_same_mod_with_new_alt.shape))
-        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.drop_duplicates(subset=list(df_alt_same_mod_with_new_alt.columns)[2:])  # elimino filas duplicadas (sin considerar id ni precio)
-        print("Modelos con el nuevo, sin col nan y drop_duplicates: {}".format(df_alt_same_mod_with_new_alt.shape))
-
-        # Si la alternativa nueva es repetida
-        if len(df_alt_same_mod_with_new_alt) == len(df_alt_same_mod):
-            print("ALTERNATIVA REPETIDA. Mismos atributos")
+        # SI EL ID COINCIDE CON EL DE LA NUEVA PUBLICACION
+        if id_new_alt == id_alt:
+            print("ALTERNATIVA REPETIDA. Mismo id")
+            print(l_val_attr_alt, l_val_attr_new_alt)
             return False
 
+        # SI EL MODELO COINCIDE CON EL DE LA NUEVA PUBLICACION
+        elif l_val_attr_new_alt == l_val_attr_alt:
+            print("ALTERNATIVA REPETIDA. Mismo modelo")
+            print(l_val_attr_alt, l_val_attr_new_alt)
+            return False
+
+    # Si el id y el modelo es nuevo
     print("La alternativa es nueva!")
     return True
 
@@ -378,4 +375,96 @@ def explicacion_corte(pag_num, pag_max, ult_pub_sin_data):
 
 ''' # para correr pruebas en archivo independientemente de main.py
 main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
+'''
+
+''' Simplifique eliminacion de alternativas repetidas siendo mas estricto en esta funcion eliminando por modelo!
+def is_alternative_new(df_alt, df_new_pub):
+
+    # puntos rojos son para chequear funcionamiento
+    id_alt = df_new_pub.loc[0, 'id_alternativa']
+    modelo_new_alt = df_new_pub.loc[0, 'Modelo']
+
+    if id_alt in df_alt['id_alternativa'].values:
+        print("ALTERNATIVA REPETIDA. Mismo id")
+        return False
+
+    # Si modelo ya lo extraje
+    elif modelo_new_alt in df_alt["Modelo"].unique():
+        print("Modelo nueva alternativa: {}".format(modelo_new_alt))
+
+        # Busco alternativas del modelo
+        df_alt_same_mod = df_alt[df_alt['Modelo'] == modelo_new_alt]  # Alternativas del mismo modelo
+        print("Modelos ya extraidos: {}".format(df_alt_same_mod.shape))
+
+        # Agrego nuevo modelo
+        df_alt_same_mod_with_new_alt = pd.concat([df_alt_same_mod.copy(), df_new_pub])
+        print("Modelos con el nuevo: {}".format(df_alt_same_mod_with_new_alt.shape))
+
+        # Elimino modelos duplicados
+        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.dropna(axis=1)  # elimino columnas con valores NaN para evitar diferencias por NaN
+        print("Modelos con el nuevo y sin col nan: {}".format(df_alt_same_mod_with_new_alt.shape))
+        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.drop_duplicates(subset=list(df_alt_same_mod_with_new_alt.columns)[2:])  # elimino filas duplicadas (sin considerar id ni precio)
+        print("Modelos con el nuevo, sin col nan y drop_duplicates: {}".format(df_alt_same_mod_with_new_alt.shape))
+
+        # Si la alternativa nueva es repetida
+        if len(df_alt_same_mod_with_new_alt) == len(df_alt_same_mod):
+            print("ALTERNATIVA REPETIDA. Mismos atributos")
+            return False
+
+    print("La alternativa es nueva!")
+    return True
+'''
+
+''' Elimina por modelo pero no es flexible para el caso de celulares donde borra por modelo, ram y mem interna
+def is_alternative_new_vigente(df_alt, df_new_pub):  # PRUEBA, DOCUMENTAR
+    """
+    Verifica si la publicacion proxima a extraer corresponde a una nueva alternativa o no
+    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa y atributos del
+    producto.
+    :param df_new_pub: Dataframe. Unidad de analisis: publicacion del producto. Columnas: id_alternativa y atributos del
+    producto.
+    :return: True si la publicacion corresponde a una nueva alternativa, de lo contrario, False.
+    """
+    # Defino variables
+    l_col_excepcion = ['Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
+    id_alt = df_new_pub.loc[0, 'id_alternativa']  # id de nueva publicacion
+    modelo_new_alt = str(df_new_pub.loc[0, 'Modelo']).lower()  # modelo de nueva publicacion (en miniscula)
+
+    # Obtengo modelos extraidos (en miniscula)
+    l_modelos_extraidos_lower = []
+    for modelo in df_alt["Modelo"].unique():
+        l_modelos_extraidos_lower.append(modelo.lower())
+
+    # Si el id se repite con el de una alternativa ya extraida
+    if id_alt in df_alt['id_alternativa'].values:
+        print("ALTERNATIVA REPETIDA. Mismo id")
+        return False
+
+    # Si el modelo se repite con el de una alternativa ya extraida
+    elif modelo_new_alt in l_modelos_extraidos_lower:
+
+        """
+        df_alt_same_mod = df_alt[df_alt['Modelo'] == modelo_new_alt]  # Alternativas del mismo modelo
+        print("Modelos ya extraidos: {}".format(df_alt_same_mod.shape))
+
+        # Agrego nuevo modelo
+        df_alt_same_mod_with_new_alt = pd.concat([df_alt_same_mod.copy(), df_new_pub])
+        print("Modelos con el nuevo: {}".format(df_alt_same_mod_with_new_alt.shape))
+
+        # Elimino modelos duplicados
+        print("Modelos con el nuevo y sin col nan: {}".format(df_alt_same_mod_with_new_alt.shape))
+        df_alt_same_mod_with_new_alt = df_alt_same_mod_with_new_alt.drop_duplicates(subset=['Modelo'] + l_col_excepcion)   # elimino filas duplicadas (sin considerar id ni precio)
+        print("Modelos con el nuevo, sin col nan y drop_duplicates: {}".format(df_alt_same_mod_with_new_alt.shape))
+
+        # Si la alternativa nueva es repetida
+        if len(df_alt_same_mod_with_new_alt) == len(df_alt_same_mod):
+            print("ALTERNATIVA REPETIDA. Mismo modelo")
+            return False
+        """
+        print("ALTERNATIVA REPETIDA. Mismo modelo")
+        return False
+
+    # Si el id y el modelo es nuevo
+    print("La alternativa es nueva!")
+    return True
 '''
