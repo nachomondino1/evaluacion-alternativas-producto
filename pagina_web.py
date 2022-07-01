@@ -20,9 +20,9 @@ def main():
                  "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
                  "una reseña, entre otros.")
 
-        image_1 = Image.open('//evaluacion-compra-automatica/p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_1, use_column_width=True)
+        # image_1 = Image.open('//evaluacion-compra-automatica/p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+        # col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        # col2.image(image_1, use_column_width=True)
 
         st.write("Hoy en dia, cada vez hay mas alternativas lo que hace que la eleccion de una sola sea un proceso "
                  "extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y encima no "
@@ -44,13 +44,13 @@ def main():
         if product != '':
             # IMPORTO ARCHIVOS
             # Archivos de (2) Data preparation
-            df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))  # df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(product))  # correct_price
-            df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
-            df_cust_needs = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+            df_alt_to_client = pd.read_excel('//evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))
+            df_alt_cleaned = pd.read_excel('//evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+            df_cust_needs = pd.read_excel("//evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
             # Archivos de (3) Modelling
-            df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
-            df_value_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
-            df_relation_matrix = pd.read_excel("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+            df_attr_alt_sent = pd.read_excel('//evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
+            df_value_sent = pd.read_excel('//evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
+            df_relation_matrix = pd.read_excel("//evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
 
             # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
             # Imprimo titulo
