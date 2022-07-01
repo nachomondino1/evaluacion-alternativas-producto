@@ -20,17 +20,17 @@ def main():
                  "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
                  "una reseña, entre otros.")
 
-        image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_1, use_column_width=True)
+        # image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+        # col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        # col2.image(image_1, use_column_width=True)
 
         st.write("Hoy en dia, cada vez hay mas alternativas lo que hace que la eleccion de una sola sea un proceso "
                  "extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y encima no "
                  "terminemos escogiendo la alternativa ideal para nosotros.")
 
-        image_2 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/alternativas_posibles.png')
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_2, use_column_width=True)
+        # image_2 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/alternativas_posibles.png')
+        # col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        # col2.image(image_2, use_column_width=True)
 
         st.write("Afortundamente, podras facilitar este proceso utilizando la siguiente herramienta pensada para "
                  "encontrar **la mejor alternativa para vos** en solo 3 pasos")
@@ -106,9 +106,9 @@ def main():
         st.write('- ¿La marca ofrece calidad al menor precio posible?')
         st.write('- ¿Que marcas estan mejor posicionadas?')
 
-        image_3 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/posicion_mercado.jpeg')
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_3, use_column_width=True)
+        # image_3 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/posicion_mercado.jpeg')
+        # col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        # col2.image(image_3, use_column_width=True)
 
         st.write('En dos simples pasos, podras conocer el posicionamiento en el mercado de las marcas. de seleccionas un producto y te mostramos el posicionamiento de las marcas de este.')
 
@@ -151,9 +151,9 @@ def main():
             # Numero de alternativas por grupo
             st.write('##### Cantidad de alternativas por grupo')  # st.write('##### Tabla 1: Número de alternativas por grupo')
             st.write("Podemos ver la cantidad de alternativas dentro de cada uno de estos grupos.")
-            image_5 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
-            col1, col2, col3 = st.columns([0.2, 5, 0.2])
-            col2.image(image_5, use_column_width=True)
+            # image_5 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
+            # col1, col2, col3 = st.columns([0.2, 5, 0.2])
+            # col2.image(image_5, use_column_width=True)
 
             # Ejemplo tipico de cada grupo
             st.write('##### Alternativa tipica por grupo')  # st.write('##### Tabla 2: Ejemplo típico de cada grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
@@ -175,9 +175,9 @@ def main():
 
             st.write('Un grafico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
                      'grafico')
-            image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/brand_{}.png'.format(product))
-            col1, col2, col3 = st.columns([0.2, 5, 0.2])
-            col2.image(image_4, use_column_width=True)
+            # image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/brand_{}.png'.format(product))
+            # col1, col2, col3 = st.columns([0.2, 5, 0.2])
+            # col2.image(image_4, use_column_width=True)
 
             with st.expander("Ayuda en interpretacion del grafico", expanded=False):
                 st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relacion precio-calidad')
