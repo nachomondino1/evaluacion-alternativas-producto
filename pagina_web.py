@@ -44,13 +44,13 @@ def main():
         if product != '':
             # IMPORTO ARCHIVOS
             # Archivos de (2) Data preparation
-            df_alt_to_client = pd.read_excel('//data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))
-            df_alt_cleaned = pd.read_excel('//data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
-            df_cust_needs = pd.read_excel("//data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+            df_alt_to_client = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))
+            df_alt_cleaned = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+            df_cust_needs = pd.read_excel("./data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
             # Archivos de (3) Modelling
-            df_attr_alt_sent = pd.read_excel('//data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
-            df_value_sent = pd.read_excel('//data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
-            df_relation_matrix = pd.read_excel("//data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+            df_attr_alt_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
+            df_value_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
+            df_relation_matrix = pd.read_excel("./data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
 
             # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
             # Imprimo titulo
@@ -120,11 +120,11 @@ def main():
         # SI SELECCIONO UN PRODUCTO
         if product != '':
             # IMPORTO ARCHIVOS DE CLUSTERING
-            df_alt_to_client_clust = pd.read_excel('//data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
-            df_alt_per_clust = pd.read_excel('//data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
-            df_centroids_values = pd.read_excel('//data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
-            df_brand_per_cluster = pd.read_excel('//data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
-            df_best_cluster_per_cust_need = pd.read_excel('//data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(product),index_col=0)
+            df_alt_to_client_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
+            df_alt_per_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
+            df_centroids_values = pd.read_excel('./data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
+            df_brand_per_cluster = pd.read_excel('./data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
+            df_best_cluster_per_cust_need = pd.read_excel('./data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(product),index_col=0)
 
             # (3) MUESTRO RESULTADOS
             # Numero de grupos y sus nombres
