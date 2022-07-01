@@ -20,9 +20,9 @@ def main():
                  "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
                  "una reseña, entre otros.")
 
-        # image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
-        # col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        # col2.image(image_1, use_column_width=True)
+        image_1 = Image.open('//evaluacion-compra-automatica/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_1, use_column_width=True)
 
         st.write("Hoy en dia, cada vez hay mas alternativas lo que hace que la eleccion de una sola sea un proceso "
                  "extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y encima no "
@@ -120,13 +120,11 @@ def main():
         # SI SELECCIONO UN PRODUCTO
         if product != '':
             # IMPORTO ARCHIVOS DE CLUSTERING
-            df_alt_to_client_clust = pd.read_excel('//data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
-            df_alt_to_client_clust = pd.read_excel('evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
-            df_alt_to_client_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
-            df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
-            df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
-            df_brand_per_cluster = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
-            df_best_cluster_per_cust_need = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(product),index_col=0)
+            df_alt_to_client_clust = pd.read_excel('//evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
+            df_alt_per_clust = pd.read_excel('//evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
+            df_centroids_values = pd.read_excel('//evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
+            df_brand_per_cluster = pd.read_excel('//evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
+            df_best_cluster_per_cust_need = pd.read_excel('//evaluacion-compra-automatica/data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(product),index_col=0)
 
             # (3) MUESTRO RESULTADOS
             # Numero de grupos y sus nombres
