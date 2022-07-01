@@ -20,7 +20,7 @@ def main():
                  "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
                  "una reseña, entre otros.")
 
-        image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+        image_1 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_1, use_column_width=True)
 
@@ -28,7 +28,7 @@ def main():
                  "extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y encima no "
                  "terminemos escogiendo la alternativa ideal para nosotros.")
 
-        image_2 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/alternativas_posibles.png')
+        image_2 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/alternativas_posibles.png')
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_2, use_column_width=True)
 
@@ -106,7 +106,7 @@ def main():
         st.write('- ¿La marca ofrece calidad al menor precio posible?')
         st.write('- ¿Que marcas estan mejor posicionadas?')
 
-        image_3 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/posicion_mercado.jpeg')
+        image_3 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/posicion_mercado.jpeg')
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_3, use_column_width=True)
 
@@ -151,7 +151,7 @@ def main():
             # Numero de alternativas por grupo
             st.write('##### Cantidad de alternativas por grupo')  # st.write('##### Tabla 1: Número de alternativas por grupo')
             st.write("Podemos ver la cantidad de alternativas dentro de cada uno de estos grupos.")
-            image_5 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
+            image_5 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
             col1, col2, col3 = st.columns([0.2, 5, 0.2])
             col2.image(image_5, use_column_width=True)
 
@@ -175,7 +175,7 @@ def main():
 
             st.write('Un grafico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
                      'grafico')
-            image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/brand_{}.png'.format(product))
+            image_4 = Image.open('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/brand_{}.png'.format(product))
             col1, col2, col3 = st.columns([0.2, 5, 0.2])
             col2.image(image_4, use_column_width=True)
 
