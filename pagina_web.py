@@ -20,7 +20,7 @@ def main():
                  "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
                  "una reseña, entre otros.")
 
-        image_1 = Image.open('//evaluacion-compra-automatica/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+        image_1 = Image.open('//evaluacion-compra-automatica/p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_1, use_column_width=True)
 
