@@ -367,14 +367,164 @@ def create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster):
         print("El producto no tiene atributo 'Marca'")
     return df_brand_per_cluster
 
-def create_table_best_brands_per_customer_need(df_alt, df_input_clustering, df_relation_matrix):
-    """
 
-    :param df_alt:
-    :param df_input_clustering:
+def create_table_best_clusters_per_customer_need(df_centroids_sent, df_relation_matrix, df_alt_clust):  # Temporalmente recibe nombre de clusters de df_alt_clust
+    """
+    :param df_centroids_sent:
     :param df_relation_matrix:
     :return:
     """
+    # Defino varibles
+    df_centroids_sent.index = df_alt_clust['label'].unique()
+    df_brand_per_cust = pd.DataFrame(index=df_centroids_sent.index, columns=df_relation_matrix.index)
+
+    # POR CUSTOMER NEED
+    for customer_need in df_relation_matrix.index:
+        print('Customer need: ', customer_need)
+
+        # Defino variables
+        sum_relaciones = sum(df_relation_matrix.loc[customer_need].values)  # BUSCO ATRIBUTOS CON QUE TIENE RELACION
+
+        # POR GRUPO
+        for grupo in df_centroids_sent.index:
+            print('\t Grupo: ', grupo)
+
+            # Defino variable
+            sent_grupo_cust_need = 0  # Sentiment de grupo en customer need
+
+            # POR ATRIBUTO
+            for atributo in df_relation_matrix.columns:
+
+                # Defino variable
+                relacion = df_relation_matrix.loc[customer_need, atributo]  # Peso de relacion entre atributo y customer need
+
+                # SI TIENE RELACION CON CUSTOMER NEED:
+                if relacion > 0:
+                    print('\t\t Atributo: ', atributo)
+
+                    # Obtengo sentiment del atributo en el grupo
+                    sent_grupo_atrib = df_centroids_sent.loc[grupo, atributo]
+                    print("\t\t\t Sentiment {}".format(sent_grupo_atrib))
+
+                    sent_grupo_cust_need += relacion * sent_grupo_atrib / sum_relaciones
+
+            # GUARDO SENTIMENT DEL GRUPO EN LA CUSTOMER NEED
+            df_brand_per_cust.loc[grupo, customer_need] = sent_grupo_cust_need
+            print(df_brand_per_cust)
+
+        # Traducir sentiments en una posicion
+        df_brand_per_cust_copia = df_brand_per_cust.copy()
+        l_grupos_left = list(df_brand_per_cust.index)
+        # Por cantidad de grupos
+        for i in range(len(df_centroids_sent.index)):
+
+            # Defino variable
+            sent_max = -10  # Mejor sentiment de los grupos en customer need
+
+            # Por grupo
+            for grupo in df_brand_per_cust_copia.index:
+
+                # Defino variables
+                sent = df_brand_per_cust.loc[grupo, customer_need]  # Sentiment de grupo en customer need
+
+                # Si su sentiment es el mejor
+                if sent > sent_max:
+
+                    # Guardo grupo del mejor sentiment
+                    grupo_max = grupo
+                    sent_max = sent
+
+            # Elimino grupo con mejor sentiment
+            print(df_brand_per_cust_copia)
+            print(grupo_max)
+            l_grupos_left.remove(grupo_max)
+            print(l_grupos_left)
+            df_brand_per_cust_copia = df_brand_per_cust.loc[l_grupos_left]  # df_brand_per_cust_copia.drop([grupo_max], axis=0)
+
+            # Reemplazo sentiment por posicion
+            df_brand_per_cust.loc[grupo_max, customer_need] = i + 1
+        print(df_brand_per_cust)
+    return df_brand_per_cust
+
+''' Hice al reves el df_brand_per_cust en columnas y filas
+def create_table_best_clusters_per_customer_need(df_centroids_sent, df_relation_matrix):
+    """
+    :param df_centroids_sent:
+    :param df_relation_matrix:
+    :return:
+    """
+    # Defino varibles
+    df_brand_per_cust = pd.DataFrame(index=df_relation_matrix.index)
+
+    # POR CUSTOMER NEED
+    for customer_need in df_relation_matrix.index:
+        print('Customer need: ', customer_need)
+
+        # Defino variables
+        sum_relaciones = sum(df_relation_matrix.loc[customer_need].values)  #   # BUSCO ATRIBUTOS CON QUE TIENE RELACION
+
+        # POR GRUPO
+        for grupo in df_centroids_sent.index:
+            print('\t Grupo: ', grupo)
+
+            # Defino variable
+            sent_grupo_cust_need = 0  # Sentiment de grupo en customer need
+
+            # POR ATRIBUTO
+            for atributo in df_relation_matrix.columns:
+
+                # Defino variable
+                relacion = df_relation_matrix.loc[customer_need, atributo]  # Peso de relacion entre atributo y customer need
+
+                # SI TIENE RELACION CON CUSTOMER NEED:
+                if relacion > 0:
+                    print('\t\t Atributo: ', atributo)
+
+                    # Obtengo sentiment del atributo en el grupo
+                    sent_grupo_atrib = df_centroids_sent.loc[grupo, atributo]
+                    print("\t\t\t Sentiment {}".format(sent_grupo_atrib))
+
+                    sent_grupo_cust_need += relacion * sent_grupo_atrib / sum_relaciones
+
+            # GUARDO SENTIMENT DEL GRUPO EN LA CUSTOMER NEED
+            df_brand_per_cust.loc[customer_need, grupo] = sent_grupo_cust_need
+            print(df_brand_per_cust)
+
+        # Traducir sentiments en una posicion
+        df_brand_per_cust_copia = df_brand_per_cust.copy()
+        # Por cantidad de grupos
+        for i in range(len(df_centroids_sent.index)):
+
+            # Defino variable
+            sent_max = int()  # Mejor sentiment de los grupos en customer need
+
+            # Por grupo
+            for grupo in df_brand_per_cust_copia.columns:
+
+                # Defino variables
+                sent = df_brand_per_cust_copia.loc[customer_need, grupo]  # Sentiment de grupo en customer need
+
+                # Si su sentiment es el mejor
+                if sent > sent_max:
+
+                    # Guardo grupo del mejor sentiment
+                    grupo_max = grupo
+                    sent_max = sent
+
+            # Elimino grupo con mejor sentiment
+            df_brand_per_cust_copia = df_brand_per_cust_copia.drop([grupo_max], axis=0)
+
+            # Reemplazo sentiment por posicion
+            df_brand_per_cust.loc[customer_need, grupo_max] = i + 1
+        print(df_brand_per_cust)
+
+    return df_brand_per_cust
+'''
+
+
+'''  # en desuso pues es por marca y no por cluster. No tiene porque estar en clustering pues no usa nada de la informacion de los clusters.
+La reemplazo por create_table_best_clusters_per_customer_need()
+def create_table_best_brands_per_customer_need(df_alt, df_input_clustering, df_relation_matrix):
     # Defino varibles
     l_marcas = df_alt['Marca'].unique()
     df_brand_per_cust = pd.DataFrame(index=df_relation_matrix.index, columns=['Marca Nº1','Marca Nº2', 'Marca Nº3'])
@@ -428,7 +578,7 @@ def create_table_best_brands_per_customer_need(df_alt, df_input_clustering, df_r
         df_brand_per_cust.loc[customer_need, ['Marca Nº1','Marca Nº2', 'Marca Nº3']] = l_marcas_selected
         print(df_brand_per_cust)
     return df_brand_per_cust
-
+'''
 
 ''' # Para correr prueba independiente de main.py. IMPORTO ARCHIVOS
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_formated.xlsx'.format("celulares")  #index_col=0
@@ -436,149 +586,4 @@ df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-
 df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format("celulares"), index_col=0)
 print(df_alt), print(df_alt_cleaned), print(df_attr_values)
 main(df_alt, df_alt_cleaned, df_attr_values_sent)
-'''
-
-
-'''
-def main(df_alt, df_alt_cleaned, df_attr_values_sent):
-
-    # (1) CREO EL DATAFRAME PARA CLUSTERING
-    print(" 4.2.1 Creando el dataframe para clustering...")
-    df_input_clustering = create_clustering_dataframe(df_alt_cleaned, df_attr_values_sent)
-    print(df_input_clustering)
-
-    # (2) APLICO CLUSTERING
-    print(" 4.2.2 Aplicando clustering...")
-    df_alt_cleaned_cluster = pd.concat([df_input_clustering['id_alternativa'], k_means(df_input_clustering.iloc[:, 1:])], axis=1)
-
-    # (3) DEFINO NOMBRES DE CLUSTERS
-    print(" 4.2.3 Definiendo nombre de clusters...")
-    # Creo tabla de centroides de clusters de alternativas segun sentiment
-    df_centroids_sent = create_table_cluster_centroids_sent(df_alt_cleaned_cluster)  # tabla 0 pues el cliente no la ve, es solo para mi y asi poder definir nombres de clusters
-    df_centroids_sent.to_excel('/Users/nachomondino/Desktop/df_centroids_sent.xlsx')
-    print("Se exporto Dataframe con los centroides de cada cluster para poder darle nombre a clusters")
-    # Obtengo nombre de clusters
-    d_labels_names = cluster_names(df_alt_cleaned_cluster)
-    # Reemplazo labels por nombre de labels
-    df_alt_cleaned_cluster = replace_labels_with_names(df_alt_cleaned_cluster, d_labels_names)
-
-    # (4) OBTENGO DATAFRAME ALTERNATIVAS CON CLUSTER
-    print(" 4.2.4 Obteniendo dataframe alternativas para mostrar al cliente con los nombres de clusters correspondientes...")
-    # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
-    print(df_alt)
-    df_alt = drop_alternatives_unwanted(df_alt, df_alt_cleaned_cluster)
-    print(df_alt)
-
-    # (5) CREO TABLA DE NUMERO DE ALTERNATIVAS POR CLUSTER
-    print(" 4.2.5 Obteniendo tabla de numero de alternativas por cluster...")
-    df_alt_per_clust = create_table_num_alt_per_cluster(df_alt_cleaned_cluster)
-    print(df_alt_per_clust)
-
-    # (6) CREO TABLA DE CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
-    print(" 4.2.6 Obteniendo tabla de centroides segun valores de atributos...")
-    df_centroids_values = create_table_cluster_centroids_values(df_alt, df_alt_cleaned_cluster)
-    print(df_centroids_values)
-
-    # (7) CREO TABLA DE NUMERO DE MARCAS POR CLUSTER
-    print(" 4.2.7 Obteniendo tabla de numero de marcas por cluster...")
-    df_brand_per_cluster = create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster)
-    print(df_brand_per_cluster)
-
-    return df_alt, df_alt_per_clust, df_centroids_values, df_brand_per_cluster
-'''
-
-''' Las simplique en una sola funcion replace_labels_with_names()
-def cluster_names(df_clust):
-    """
-    Permite darle nombre a cada cluster mediante la terminal
-    :param df_clust: Dataframe. Unidad de análisis: alternativa del producto. Columnas: id_alternativa, una por atributo
-    del producto y la columna "label" con el cluster al que pertenece. Celdas: sentiment que toma el atributo
-    :return: Diccionario. Key: label del cluster. Values: Nombre del cluster
-    """
-    # Defino variable
-    d = {}
-
-    # Por cluster
-    for cluster in df_clust['label'].unique():
-        print("CLUSTER LABEL: ", cluster)
-
-        # Solicito nombre del cluster por terminal
-        nombre_cluster = input(str("Ingrese nombre del cluster: "))
-
-        # Guardo relacion entre label y nombre
-        d[cluster] = nombre_cluster
-
-    print("Label de clusters y su nombre: ", d)
-    return d
-
-def replace_labels_with_names(df_alt_clust, d):
-    """
-    Reemplaza label del cluster de cada alternativa del producto por el nombre del cluster correspondiente
-    :param df_alt_clust:
-    :param d: Diccionario cuyas keys... y cuyos values..
-    :return:
-    """
-    # Defino variable
-    df_copia = pd.DataFrame(columns=df_alt_clust.columns)
-
-    # Por cluster
-    for label in df_alt_clust['label'].unique():
-
-        # Selecciono alternativas de un cluster
-        df_clust_filt_cluster = df_alt_clust[df_alt_clust['label'] == label]
-
-        # Reemplazo label por nombre del label
-        df_clust_filt_cluster = df_clust_filt_cluster.drop(['label'], axis=1)  # borro columna label
-        df_clust_filt_cluster = df_clust_filt_cluster.assign(label=d[label])  # creo nueva columna label con nombre de label
-
-        # Guardo
-        df_copia = pd.concat([df_copia, df_clust_filt_cluster])
-
-    return df_copia
-'''
-
-''' Si bien busca el atributo 'Marca' bajo otro nombre, es muy poco entendible lo que hace.
-def create_table_brand_per_cluster(df_alt, df_alt_cleaned_cluster):
-    """
-    Obtiene distribucion de las marcas en los diferentes clusters
-    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto (solo las que seran mostradas al cliente).
-    Columnas: id_alternativa, una por atributo del producto y label con el nombre del cluster al que pertenece
-    :param df_alt_cleaned_cluster: Dataframe. Unidad de análisis: alternativa del producto. Columnas: id_alternativa,
-    una por atributo del producto y la columna "label" con el nombre del cluster al que pertenece. Celdas: sentiment que
-    toma el atributo
-    :return: Dataframe. Unidad de analisis: cluster de alternativas (index). Columnas: una por Marca del producto.
-    Celdas: Numero de modelos de marca en cluster.
-    """
-    
-    # Si el atributo se llama "Marca"
-    if 'Marca' in list(df_alt.columns):
-        atrib_marca = 'Marca'
-    else:
-        for atributo in list(df_alt.columns):
-            if 'marca' in atributo.lower():
-                atrib_marca = atributo
-                break
-                
-    # Defino variable
-    l_marcas = []
-    for marca in df_alt[atrib_marca].dropna().unique():
-        if len(df_alt[df_alt[atrib_marca]==marca]) > 5:
-            l_marcas.append(marca)
-    df_brand_per_cluster = pd.DataFrame(index=df_alt_cleaned_cluster['label'].unique(), columns=l_marcas)
-    print(l_marcas)
-    
-        # POR CLUSTER
-    for cluster in df_alt_cleaned_cluster['label'].unique():
-        # print("CLUSTER LABEL: ", cluster)
-
-        # SELECCIONO ALTERNATIVAS DE CLUSTER EN DATAFRAME ALTERNATIVAS
-        ids_cluster = df_alt_cleaned_cluster[df_alt_cleaned_cluster['label'] == cluster]['id_alternativa']  # ids de alternativa en un cluster
-        df_alt_cleaned_one_cluster = df_alt[df_alt.id_alternativa.isin(ids_cluster)]  # alternativas de un cluster
-
-        # GUARDO MARCAS Y SUS FRECUENCIAS
-        for marca in l_marcas_filt:
-            frec = len(df_alt_cleaned_one_cluster[df_alt_cleaned_one_cluster[atrib_marca] == marca])
-            df_brand_per_cluster.loc[cluster, marca] = frec
-            
-    return df_brand_per_cluster
 '''

@@ -282,27 +282,6 @@ def freq_word_in_cust_need(possible_customer_need, l_most_freq_words):
     return l_freq_words_in_cust_need
 
 '''
-def main(df_alt_cleaned, df_opi_tokenizado):
-    print("Obtengo palabras mas frecuentes en opiniones...".center(120))
-    l_most_freq_words = most_frequent_words(df_opi_tokenizado)
-    print()
-
-    print("Obtengo frases de 3 palabras mas frecuentes en opiniones...".center(120))
-    l_possible_customer_needs = most_frequent_phrases(df_opi_tokenizado)
-    print()
-
-    print("Selecciono customer needs del producto...".center(120))
-    df_cust_needs = select_customer_needs(l_most_freq_words, l_possible_customer_needs)
-    print()
-
-    print("Selecciono atributos y customer needs del producto que se relacionaran entre si...".center(120))
-    df_alt_cleaned = select_attributes(df_alt_cleaned)
-
-    print("Obtengo matriz de relaciones...".center(120))
-    df_relation_matrix = create_relation_matrix(list(df_alt_cleaned.columns[1:]), list(df_cust_needs.index))
-
-    return df_alt_cleaned, df_cust_needs, df_relation_matrix
-
 # para correr pruebas en archivo independientemente de main.py
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
 df_opi_tokenizado = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_opi_cleaned.xlsx', index_col=0)
