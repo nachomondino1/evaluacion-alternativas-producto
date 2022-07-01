@@ -120,6 +120,8 @@ def main():
         # SI SELECCIONO UN PRODUCTO
         if product != '':
             # IMPORTO ARCHIVOS DE CLUSTERING
+            df_alt_to_client_clust = pd.read_excel('//data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
+            df_alt_to_client_clust = pd.read_excel('evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
             df_alt_to_client_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
             df_alt_per_clust = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
             df_centroids_values = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
