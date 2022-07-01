@@ -192,10 +192,10 @@ def main():
     df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
     print(df_alt_cleaned, df_opi, df_relation_matrix)
     df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto), index_col=0)  # cuando corra tod@ junto pongo product.nombre
-
+    """
     d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(producto)
     d_avoid_fp = diccionario_palabras_relacionadas.get_dict_avoid(producto)
-    """
+
 
     print(" (4) MODELLING ".center(120, "#"))
     print(" (4.1) ATRIBUCION ".center(120))
@@ -214,7 +214,7 @@ def main():
     # Levanto df para hacer modelling independientemente
     producto = 'tv'
     df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(producto))
-    df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
+    df_alt_cleaned_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
     df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto))
     df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
     df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto))
@@ -234,18 +234,18 @@ def main():
     df_alt_cleaned_cluster = clustering.replace_labels_with_names(df_alt_cleaned_cluster)
 
     print(" d) Obteniendo dataframe alternativas para mostrar al cliente con los nombres de clusters correspondientes...")
-    df_alt_to_client_clust = clustering.add_clust_label(df_alt_to_client, df_alt_cleaned_cluster)  # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
+    df_alt_to_client_clust = clustering.add_clust_label(df_alt_cleaned_to_client, df_alt_cleaned_cluster)  # Elimino alternativas desechadas durante procesamiento y agrego columna label a dataframe alternativas
 
     print(" e) Obteniendo tabla de numero de alternativas por cluster...")
     df_alt_per_clust = clustering.create_table_num_alt_per_cluster(df_alt_cleaned_cluster)
     print(df_alt_per_clust)
 
     print(" f) Obteniendo tabla de centroides segun valores de atributos...")
-    df_centroids_values = clustering.create_table_cluster_centroids_values(df_alt_to_client, df_alt_cleaned_cluster)
+    df_centroids_values = clustering.create_table_cluster_centroids_values(df_alt_cleaned_to_client, df_alt_cleaned_cluster)
     print(df_centroids_values)
 
     print(" g) Obteniendo tabla de numero de marcas por cluster...")
-    df_brand_per_cluster = clustering.create_table_brand_per_cluster(df_alt_to_client, df_alt_cleaned_cluster)
+    df_brand_per_cluster = clustering.create_table_brand_per_cluster(df_alt_cleaned_to_client, df_alt_cleaned_cluster)
     print(df_brand_per_cluster)
 
     print(" h) Obteniendo tabla de mejor cluster por customer need...")
