@@ -1,6 +1,6 @@
 # Importo librerias
 import pandas as pd
-from p1_data_understanding.utils.web_scraping.crawler import Crawler
+from p1_data_understanding.collect_data.crawler import Crawler
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

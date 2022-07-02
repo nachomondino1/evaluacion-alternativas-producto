@@ -91,6 +91,9 @@ def main():
                 st.dataframe(df_top_ten)
                 st.balloons()
 
+                # Disclaimer de ultima actualizacion de datos (ppalmente por precio)
+                st.write("*Fecha de ultima actualización de los datos: 29 de Junio de 2022*")
+
                 # Listado de todas las alternativas tenidas en cuenta en el analisis
                 with st.expander("Ver todas las alternativas tenidas en cuenta en el analisis"):
                     st.write("Aquí, podra ver todas las alternativas que con las que trabajo la herramienta. Así, puede "
