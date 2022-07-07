@@ -1,16 +1,49 @@
 import pandas as pd
 import numpy as np
-# from data_preparation.utils import preparacion_texto
+from p2_data_preparation import clean_data, select_data, format_data
 import re
 
-''' # IMPORTO ARCHIVOS PARA PRUEBAS
-df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_alt.xlsx')
-df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned_to_client.xlsx')
-df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/celulares/df_opi.xlsx')
-df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/celulares/df_alt_cleaned.xlsx')
-df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/celulares/df_attr_values_sent.xlsx')
-df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/celulares/df_attr_alt_sent.xlsx')
+# IMPORTO ARCHIVOS PARA PRUEBAS
+producto = 'celulares'
+df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
+df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(producto))
+df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
+df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
+df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto))
+df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto))
+
 '''
+print(" # CLEAN DATA: Limpieza de alternativas")
+print("Cantidad de alternativas antes de limpieza:", df_alt.shape[0])
+# print(" ## Por precio=NaN")
+# df_alt_without_price_nan = df_alt.dropna(subset=['precio']).reset_index(drop=True)  # clean_data.drop_alternatives_without_price(df_alt_cleaned)  # Incluir 'Modelo' luego lo quito
+# print("Cantidad de alternativas luego de limpieza:", df_alt_without_price_nan.shape[0])
+print("## Por cantidad de NaN values")  # Por tener muchos valores NaN
+df_alt_without_price_nan_and_most_nan = drop_alternatives_with_most_na(df_alt, df_opi)
+print("Cantidad de alternativas luego de limpieza:", df_alt_without_price_nan_and_most_nan.shape[0])
+'''
+
+print("3.2. ATRIBUTOS")
+print(" # CLEAN DATA: Descarto atributos extriados exclusivamente para ser mostrados a cliente")
+df_alt_cleaned_2 = df_alt.loc[:, df_alt_cleaned.columns]
+
+print("# FORMAT DATA: Tipos de datos de Columnas ")
+print(" ## Columnas de strings con numeros a columnas numericas")  # Convierto columnas inherentemente numericas a numericas
+df_alt_cleaned_2 = format_data.string_column_to_numeric_column(df_alt_cleaned_2)
+print("## Convierto columnas SI-NO a 1-0")  # Columnas si-no a 1-0
+df_alt_cleaned_2 = format_data.yes_no_column_to_one_zero_column(df_alt_cleaned_2)
+
+print(" # CLEAN DATA: Limpieza de alternativas")
+print(" ## Por precio=NaN")
+df_alt_cleaned_2 = df_alt_cleaned_2.dropna(subset=['precio']).reset_index(drop=True)  # clean_data.drop_alternatives_without_price(df_alt_cleaned)  # Incluir 'Modelo' luego lo quito
+print("Cantidad de alternativas luego de limpieza:", df_alt_cleaned.shape[0])
+print("## Por cantidad de NaN values")  # Por tener muchos valores NaN
+df_alt_cleaned_2 = clean_data.drop_alternatives_with_most_na(df_alt_cleaned_2, df_opi)
+
+df_alt = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned_2, df_opi)
+print("Cantidad de alternativas despues de limpieza:", df_alt.shape[0])
+
+
 
 '''
 # CONVERSOR DE UNIDADES
@@ -192,7 +225,7 @@ for frase in nltk.tokenize.sent_tokenize(text):
     print(frase)
 '''
 
-
+'''
 # 4. Modelling - Atribucion to customer needs
 from pysentimiento import create_analyzer
 
@@ -206,7 +239,7 @@ print(score)
 # print(type(sent_frase))
 # print(sent_frase.probas)
 # print(sent_frase.probas.keys())
-
+'''
 
 
 '''

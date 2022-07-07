@@ -97,16 +97,15 @@ def drop_alternatives_with_most_na(df_alt, df_opi):
     df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
     return df_alt
 
-def drop_alternatives_with_wrong_values(df_alt, df_alt_to_client, df_opi):
+def drop_alternatives_with_wrong_values(df_alt):
     """
     Elimina alternativas que tengan al menos un valor cargado incorrectamente en la publicacion de Mercado Libre. Solo
     tiene en cuenta valores de atributos numericos.
-    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto.  Columnas: id_alternativa, precio y campos
-    especificos segun el producto. Filas: Alternativas que seran tenidas en cuenta en el analisis
-    :param df_alt_to_client: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa, precio
-    y camposespecificos segun el producto. Filas: Alternativas que seran mostradas al cliente
-    :param df_opi: Dataframe. Unidad de analisis: opinion del producto. Columnas: id_alternativa y opinion.
-    :return: Dataframes pasados como parametro (cuya unidad de analisis es la alternativa) sin alternativas con valores
+    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa, precio y campos
+    especificos segun el producto.
+    :return: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa, precio y campos
+    especificos segun el producto. Valores outliers pero bien cargados reemplazados por NaN para no afectar
+    categorizacion y valores outliers pero mal cargados eliminados
     erroneos
     """
     # DEFINO VARIABLE
@@ -154,52 +153,31 @@ def drop_alternatives_with_wrong_values(df_alt, df_alt_to_client, df_opi):
                 print("\t LIMITES: \t outlier_inf = {:.1f}  outlier_sup = {:.1f} \t mal_cargado_inf = {:.1f} mal_cargado_sup = {:.1f}".format(lim_inf, lim_sup, lim_inf_mala_carga, lim_sup_mala_carga))
 
             # Defino variables
-            l_val_erroneos = [valor for valor in l_unique_values if valor > lim_sup or valor < lim_inf]
+            l_val_outliers = [valor for valor in l_unique_values if valor > lim_sup or valor < lim_inf]
 
             # POR VALOR ERRONEO
-            for valor in l_val_erroneos:
+            for valor in l_val_outliers:
 
                 # Defino variables
                 l_idxs = [i for i in range(len(df_alt[columna])) if df_alt.loc[i, columna] == valor]  # Indices de alternativas cuyo atributo toma el valor outlier # no es el mismo index que en df_alt_to_client
                 print("\tValor: {} \tFrecuencia: {}.".format(valor, len(l_idxs)), end=" ")
 
-                # SI EL VALOR ERRONEO ES UN VALOR "MAL CARGADO"
+                # SI EL VALOR OUTLIER ES UN VALOR "MAL CARGADO"
                 if valor > lim_sup_mala_carga or valor < lim_inf_mala_carga:
                     print("El valor {} es un valor MAL CARGADO".format(valor))
 
                     # POR CADA ALTERNATIVA CUYO VALOR ES UN DATO MAL CARGADO (MAL CARGADO POR EL VENDEDOR)
                     for idx in l_idxs:
-                        # print("\t\t Alternativa Nº{}: ".format(i + 1), end=" ")
-                        id_alt = df_alt.loc[idx, 'id_alternativa']  # Id de alternativa
 
-                        # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR TIENE OPINIONES
-                        if id_alt in list(df_opi['id_alternativa'].unique()):
+                        # INDEPENDIENTEMENTE DE SI TIENE OPINIONES, ELIMINO ALTERNATIVA CON VALOR MAL CARGADO
+                        l_idx_alt_a_borrar.add(idx)
+                        print("\t\t Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
 
-                            # REEMPLAZO OUTLIER POR NAN
-                            df_alt.loc[idx, columna] = None
-                            print("\t\t Dado que la alternativa tiene opiniones asociadas, reemplazo el valor por NaN")
-
-                        # SI LA ALTERNATIVA A LA QUE PERTENECE EL VALOR NO TIENE OPINIONES
-                        else:
-                            # GUARDO INDICE ALTERNATIVA QUE TIENE VALOR MAL CARGADO
-                            l_idx_alt_a_borrar.add(idx)
-                            print("\t\t Dado que la alternativa no tiene opiniones asociadas, elimino la alternativa")
-
-                        # ELIMINO ALTERNATIVA DE DF_ALT_TO_CLIENT (VALOR MAL CARGADO
-                        # eliminar directamente segun ids_to_client o ids pues son iguales
-                        try:
-                            idx_client = df_alt_to_client[df_alt_to_client['id_alternativa'] == id_alt].index[0]
-                            df_alt_to_client = df_alt_to_client.drop([idx_client], axis=0)
-                            print("\t\t Elimino alternativa del dataframe que le mostrare al cliente. No le puedo mostrar "
-                              "una alternativa con este valor mal cargado")
-                        except:  # Si ya borre la alternativa por un valor erroneo en otra columna
-                            pass
-
-                # SI EL VALOR ERRONEO ES UN VALOR "OUTLIER" (ESTA BIEN CARGADO)
+                # SI EL VALOR OUTLIER ES UN VALOR BIEN CARGADO
                 else:
-                    print("Es un valor OUTLIER")
+                    print("Es un valor bien cargado")
 
-                    # POR CADA ALTERNATIVA CUYO VALOR ES UN OUTLIER
+                    # POR CADA ALTERNATIVA CUYO VALOR ES UN OUTLIER PERO BIEN CARGADO
                     for idx in l_idxs:
 
                         # INDEPENDIENTEMENTE DE SI TIENE OPINIONES, REEMPLAZO OUTLIER POR NAN
@@ -241,11 +219,10 @@ def drop_alternatives_with_wrong_values(df_alt, df_alt_to_client, df_opi):
 
     # Reinicio indices
     df_alt = df_alt.reset_index(drop=True)  # el dropna me borra una fila y los indices quedan mal...
-    df_alt_to_client = df_alt_to_client.reset_index(drop=True)
 
     print("Cantidad de alternativas eliminadas: {}".format(len(l_idx_alt_a_borrar)))
     print("Cantidad de alterantivas restantes: {}\n".format(df_alt.shape[0]))
-    return df_alt, df_alt_to_client
+    return df_alt
 
 def categorize_numeric_columns(df):
     """

@@ -80,12 +80,13 @@ def main():
     df_alt.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto), index=False)
     df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto), index=False)
 
-    """
+
+
     # Levanto df para hacer 2 y 3 independientemente
     producto = 'celulares'
     df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
-    """
+
     df_alt_cleaned_to_client = df_alt.copy()  # parece boludo el copy() pero sino el nuevo df sufre los mismos cambios que df_alt por mas que lo cambie de nombre a df_alt_cleaned...
 
     print(" (2.2) DESCRIBE DATA ".center(120))
@@ -114,7 +115,6 @@ def main():
     # INICIALIZO DICCIONARIO DE PALABRAS RELACIONADAS (lo tengo que inicializar antes de construct data... (pues lo uso) ?)
     d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(producto)
 
-
     # df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/tv/df_cust_needs.xlsx',index_col=0)
     print("3.1. CUSTOMER NEEDS")  # La eleccion de customer needs en independiente de la eleccion de atributos. Toda customer need sera tenida en cuenta independientemente de si tiene o no al menos un atributo con el cual relacionarse
     print(" # CLEAN DATA: Limpieza de opiniones  ")
@@ -125,48 +125,40 @@ def main():
     df_opi = clean_data.delete_date_of_issue_from_opinion(df_opi)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
     df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_without_date.xlsx'.format(producto))
     df_opi_tokenizado = clean_data.clean_opinions(df_opi)  # Preparo las opiniones
-
-    print("# CONSTRUCT DATA: Selecciono customer needs del producto")
+    print("# CONSTRUCT DATA: Descubrimiento customer needs del producto")
     print("## Obtengo palabras mas frecuentes en opiniones")  # Obtengo palabras mas frecuentes en opiniones
     l_most_freq_words = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_tokenizado, n_ngram=1, QUANT_NGRAMS=200)
-
     print("### Filtro palabras mas frecuentes")  # Obtengo palabras mas frecuentes en opiniones
     l_most_freq_words_filt = construct_data.filter_most_frequent_words(l_most_freq_words, d_rel_words)  # NUEVO!
-
     print("## Obtengo frases de 3 palabras mas frecuentes en opiniones")  # Obtengo frases mas frecuentes en opiniones
     l_possible_customer_needs = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_tokenizado, n_ngram=3, QUANT_NGRAMS=4000)
-
     print("## Selecciono customer needs del producto propiamente")  # Selecciono frases mas frecuentes como customer needs
     df_cust_needs = construct_data.select_customer_needs(l_most_freq_words_filt, l_possible_customer_needs)
-
+    
 
     print("3.2. ATRIBUTOS")
-    print("# FORMAT DATA: Convierto columnas de strings con numeros a columnas numericas")  # Convierto columnas inherentemente numericas a numericas
-    df_alt_cleaned = format_data.string_column_to_numeric_column(df_alt)
-    print("# FORMAT DATA: Convierto columnas SI-NO a 1-0")  # Columnas si-no a 1-0
-    df_alt_cleaned = format_data.yes_no_column_to_one_zero_column(df_alt_cleaned)
     print(" # CLEAN DATA: Descarto atributos extriados exclusivamente para ser mostrados a cliente")
-    df_alt_cleaned = select_data.select_attributes(df_alt_cleaned)  # debo desagregar columnas antes...
+    df_alt_cleaned = select_data.select_attributes(df_alt)  # debo desagregar columnas antes...
+
+    print("# FORMAT DATA: Tipos de datos de Columnas ")
+    print(" ## Columnas de strings con numeros a columnas numericas")  # Convierto columnas inherentemente numericas a numericas
+    df_alt_cleaned = format_data.string_column_to_numeric_column(df_alt_cleaned)
+    print("## Convierto columnas SI-NO a 1-0")  # Columnas si-no a 1-0
+    df_alt_cleaned = format_data.yes_no_column_to_one_zero_column(df_alt_cleaned)
+
     print(" # CLEAN DATA: Limpieza de alternativas")
     print(" ## Por precio=NaN")
     df_alt_cleaned =  df_alt_cleaned.dropna(subset=['precio']).reset_index(drop=True)  # clean_data.drop_alternatives_without_price(df_alt_cleaned)  # Incluir 'Modelo' luego lo quito
     print("Cantidad de alternativas luego de limpieza:", df_alt_cleaned.shape[0])
     print("## Por cantidad de NaN values")  # Por tener muchos valores NaN
     df_alt_cleaned = clean_data.drop_alternatives_with_most_na(df_alt_cleaned, df_opi)
-
-    # Borro alternativas que elimine de analisis (ademas de no usarlas en analisis tampoco seran mostradas al cliente)
-    ids_cleaned = df_alt_cleaned["id_alternativa"].unique()
-    df_alt_cleaned_to_client = df_alt_cleaned_to_client[df_alt_cleaned_to_client.id_alternativa.isin(ids_cleaned)].reset_index(drop=True)  # Elimino alternativas
-
     print("## Por valores erroneos en publicaciones")  # Por tener valores erroneos
-    df_alt_cleaned, df_alt_cleaned_to_client  = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned, df_alt_cleaned_to_client, df_opi)  # debe ser despues de convertir a numerica las columnas
-    df_alt_cleaned_to_client.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-    print(df_alt_cleaned), print(df_alt_cleaned_to_client)  # Deberia tener menos alternativas pues elimina tmb las alt que tienen opis y al menos un valor mal cargado (en cambio en analisis la dejo pues me da opiniones)
+    df_alt_cleaned, df_alt_cleaned_to_client  = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned)  # debe ser despues de convertir a numerica las columnas
 
-    print(" # CLEAN DATA: Limpieza de atributos de alternativas")
-    print(" ## Descarto atributos con un solo valor unico")
+    print(" # CLEAN DATA: Descarte de atributos constantes")
     df_alt_cleaned = clean_data.delete_attr_x_values(df_alt_cleaned) # despues de la eliminacion de alternativas tal vez quedo un solo valor
-    print("## Categorizo columnas numericas continuas")  # CATEGORIZO COLUMNAS NUMERICAS CONTINUAS EN DATAFRAME ALTERNATIVAS
+
+    print(" # CLEAN DATA: Categorizacion de atributos numericos continuos")
     df_alt_cleaned.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alt_cleaned.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
     # Debo eliminar alt antes...
 

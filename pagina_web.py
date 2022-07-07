@@ -44,8 +44,9 @@ def main():
         if product != '':
             # IMPORTO ARCHIVOS
             # Archivos de (2) Data preparation
-            df_alt_to_client = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(product))
+            df_alt = pd.read_excel('./data/collect_initial_data/{}/df_alt.xlsx'.format(product))
             df_alt_cleaned = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+            df_alt_to_client = df_alt[df_alt.id_alternativa.isin(df_alt_cleaned["id_alternativa"].unique())].reset_index(drop=True)  # Borro alternativas que elimine de analisis (ademas de no usarlas en analisis tampoco seran mostradas al cliente)
             df_cust_needs = pd.read_excel("./data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
             # Archivos de (3) Modelling
             df_attr_alt_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
