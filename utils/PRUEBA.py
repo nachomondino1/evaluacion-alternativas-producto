@@ -1,31 +1,46 @@
 import pandas as pd
 import numpy as np
-from p2_data_preparation import clean_data, select_data, format_data
+from p2_data_preparation import clean_data, select_data, format_data, construct_data
+from p3_modelling import diccionario_palabras_relacionadas
 import re
 
 # IMPORTO ARCHIVOS PARA PRUEBAS
 producto = 'celulares'
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
-df_alt_to_client = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned_to_client.xlsx'.format(producto))
 df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
 df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto))
 df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto))
+d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(producto)
+
+
+print(" # CLEAN DATA: Limpieza de opiniones  ")
+print("## Elimino opiniones repetidas y opiniones NaN")  # Elimino opiniones repetidas y NaN
+df_opi = df_opi.dropna(subset='opinion')  # no documentado... creia que no habia opiniones nan
+df_opi = df_opi.drop_duplicates(subset='opinion', ignore_index=True).reset_index(drop=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
+print("## Stop word removal, puntuaction, tokenization")  # Limpio opiniones
+df_opi = clean_data.delete_date_of_issue_from_opinion(df_opi)  # Elimino fecha de emision al final de la opinion (por ej, "Hace x meses")
+df_opi_tokenizado = clean_data.clean_opinions(df_opi)  # Preparo las opiniones
+
+print("# CONSTRUCT DATA: Descubrimiento customer needs del producto")
+print("## Obtengo frases de 3 palabras mas frecuentes en opiniones")  # Obtengo frases mas frecuentes en opiniones
+l_possible_customer_needs = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_tokenizado, n_ngram=3, QUANT_NGRAMS=2000)
+
+print("## Obtengo palabras mas frecuentes en opiniones")  # Obtengo palabras mas frecuentes en opiniones
+l_most_freq_words = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_tokenizado, n_ngram=1, QUANT_NGRAMS=200)
+print("### Filtro palabras mas frecuentes")  # Obtengo palabras mas frecuentes en opiniones
+l_most_freq_words_filt = construct_data.filter_most_frequent_words(l_most_freq_words, d_rel_words)  # NUEVO!
+
+print("## Selecciono customer needs del producto propiamente")  # Selecciono frases mas frecuentes como customer needs
+df_cust_needs = construct_data.select_possible_customer_needs(l_most_freq_words_filt, l_possible_customer_needs)
+
+df_cust_needs = construct_data.manually_select_customer_needs(df_cust_needs)
+
 
 '''
-print(" # CLEAN DATA: Limpieza de alternativas")
-print("Cantidad de alternativas antes de limpieza:", df_alt.shape[0])
-# print(" ## Por precio=NaN")
-# df_alt_without_price_nan = df_alt.dropna(subset=['precio']).reset_index(drop=True)  # clean_data.drop_alternatives_without_price(df_alt_cleaned)  # Incluir 'Modelo' luego lo quito
-# print("Cantidad de alternativas luego de limpieza:", df_alt_without_price_nan.shape[0])
-print("## Por cantidad de NaN values")  # Por tener muchos valores NaN
-df_alt_without_price_nan_and_most_nan = drop_alternatives_with_most_na(df_alt, df_opi)
-print("Cantidad de alternativas luego de limpieza:", df_alt_without_price_nan_and_most_nan.shape[0])
-'''
-
 print("3.2. ATRIBUTOS")
 print(" # CLEAN DATA: Descarto atributos extriados exclusivamente para ser mostrados a cliente")
-df_alt_cleaned_2 = df_alt.loc[:, df_alt_cleaned.columns]
+df_alt_cleaned_2 = df_alt.loc[:, list(df_alt_cleaned.columns) + ['Cantidad de cámaras frontales']]
 
 print("# FORMAT DATA: Tipos de datos de Columnas ")
 print(" ## Columnas de strings con numeros a columnas numericas")  # Convierto columnas inherentemente numericas a numericas
@@ -40,9 +55,16 @@ print("Cantidad de alternativas luego de limpieza:", df_alt_cleaned.shape[0])
 print("## Por cantidad de NaN values")  # Por tener muchos valores NaN
 df_alt_cleaned_2 = clean_data.drop_alternatives_with_most_na(df_alt_cleaned_2, df_opi)
 
-df_alt = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned_2, df_opi)
-print("Cantidad de alternativas despues de limpieza:", df_alt.shape[0])
+df_alt_cleaned_2 = clean_data.drop_alternatives_with_wrong_values(df_alt_cleaned_2)
+print("Cantidad de alternativas despues de limpieza:", df_alt_cleaned_2.shape[0])
 
+print(" # CLEAN DATA: Descarte de atributos constantes")
+df_alt_cleaned_2 = clean_data.delete_attr_x_values(df_alt_cleaned_2)  # despues de la eliminacion de alternativas tal vez quedo un solo valor
+
+print(" # CLEAN DATA: Categorizacion de atributos numericos continuos")
+df_alt_cleaned_2.iloc[:, 1:] = clean_data.categorize_numeric_columns(df_alt_cleaned_2.iloc[:, 1:])  # categorizo columnas numericas con valores continuos, no le paso columna id pues la categorizaria.
+print(df_alt_cleaned_2['Cantidad de cámaras frontales'].value_counts())
+'''
 
 
 '''

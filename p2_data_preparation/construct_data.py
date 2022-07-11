@@ -39,7 +39,6 @@ def most_frequent_ngrams(df_opi_tokenizado, n_ngram, QUANT_NGRAMS): # acordate q
     #    df = pd.DataFrame(data=d.values(), columns=['frecuencia'], index=d.keys())
     #    df = df.sort_values(by='frecuencia', ascending=False)  # sorted() no es para dataframes
     #    df.to_excel('/Users/nachomondino/Desktop/df_most_freq_words.xlsx')
-
     return l_freq_ngrams
 
 def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORABLE..
@@ -52,24 +51,27 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORA
     """
     # DEFINO VARIABLES
     l_freq_words_filt = []
-    l_pal_irrel = ['android', 'año', 'años', 'amazon',
-                 'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado',
-                 'descripcion', 'disney',
-                 'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
-                 'funcion', 'flow',
-                 'gama', 'gusto', 'gracias', 'general', 'google', 'gb',
-                 'hora', 'horas', 'hs',
-                 'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo',
-                 'netflix', 'nota',
-                 'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena',
-                 'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto',
-                 'tiempo', 'tipo', 'tv',
-                 'uso',
-                 'verdad',
-                 'semana', 'super', 'samsung',
-                 'youtube',
-                   'xiomi',
-                 'whatsapp', 'windows']
+    l_pal_irrel = ['android', 'año', 'años', 'amazon', 'aparato',
+                   'band', 'baja',
+                   'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado', 'camaras', 'celulares',
+                   'descripcion', 'disney', 'diferencia',
+                   'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
+                   'funcion', 'flow', 'falta',
+                   'gama', 'gusto', 'gracias', 'general', 'google', 'gb', 'gente',
+                    'hora', 'horas', 'hs',
+                   'iphone',
+                   'luz',
+                    'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo', 'motorola', 'moto', 'mercado',
+                    'netflix', 'nota',
+                    'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena', 'pulsera',
+                    'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto', 'reloj', 'relojes',
+                    'tiempo', 'tipo', 'tv', 'tele', 'televisor', 'trabajo', # 'telefono',
+                    'uso',
+                    'verdad', 'videos',
+                    'semana', 'super', 'samsung', 'smart', 'smartwatch',
+                    'youtube',
+                    'xiaomi',
+                    'whatsapp', 'windows', 'watch']
 
     # Por palabra frecuente
     for palabra in l_freq_words:
@@ -111,7 +113,7 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORA
     print("{} palabras restantes: {}".format(len(l_freq_words_filt), l_freq_words_filt))
     return l_freq_words_filt
 
-def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
+def select_possible_customer_needs(l_most_freq_words, l_possible_customer_needs):
     """
     Selecciona las customer needs de un producto a partir de las frases mas frecuentes en las opiniones del producto
     :param l_most_freq_words: Lista. Palabras mas frecuentes en opiniones y relevantes
@@ -122,7 +124,7 @@ def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
     # Defino variables
     df_cust_needs = pd.DataFrame(columns=["cust_needs_three_words"])  # Dataframe a retornar
     i = 0
-    print("{:^40s}\t{:^40}".format("Posible customer need", "Posicion en frecuencia "))
+    print("{:^40s}\t{:^40}\t{:^40}".format("Palabra frecuente", "Posible customer need", "Posicion en frecuencia "))
 
     # POR POSIBLE CUSTOMER NEED
     for possible_customer_need in l_possible_customer_needs:
@@ -140,25 +142,44 @@ def select_customer_needs(l_most_freq_words, l_possible_customer_needs):
             # y si aun no extraje una customer need para dicha palabra
             if freq_word not in df_cust_needs.index:
 
-                # y si ademas contiene al menos un adjetivo o adverbio:
-                # if contains_word_type(text=possible_customer_need, word_type=['ADJ', 'ADV']) or possible_customer_need == 'relacion precio calidad':
+                # Guardo customer need
+                df_cust_needs.loc[freq_word] = possible_customer_need
+                print("{:^40s}\t{:^40}\t{:^40}".format(freq_word, possible_customer_need, i))
+    return df_cust_needs
 
-                # Pregunto a administrador
-                # Mientras la carga sea invalida
-                try:
-                    # Solicito 0 o 1 para determinar si customer need sera considerada o no
-                    bool = input("Ingrese 'y' si tendra en cuenta la customer need '{} de posicion {}': ".format(possible_customer_need.upper(), i))
+def manually_select_customer_needs(df_cust_needs):
+    """
+    Permite seleccionar manualmente las necesidades del cliente dentro de las posibles.
+    :param df_cust_needs: Dataframe. Unidad de analisis: posible customer need del producto. Columnas: Customer needs
+    de 1 palabra (index) y customer needs de 3 palabras
+    :return: Dataframe. Unidad de analisis: customer need del producto. Columnas: Customer needs de 1 palabra (index)
+    y customer needs de 3 palabras.
+    """
+    # POR POSIBLE CUSTOMER NEED
+    for word in df_cust_needs.index:
 
-                    if bool == "y":
-                        # Guardo customer need
-                        df_cust_needs.loc[freq_word] = possible_customer_need
-                        print("{:^40s}\t{:^40}".format(possible_customer_need, i))
+        # Defino variable
+        possible_customer_need = df_cust_needs.loc[word, 'cust_needs_three_words']  # Frase posible customer need
 
-                except ValueError:  # si el input no es un numero entero
-                    pass
+        # Pregunto a administrador
+        # Mientras la carga sea invalida
+        try:
+            # Solicito 0 o 1 para determinar si customer need sera considerada o no
+            bool = input("Ingrese 'd' para eliminar, 'c' para cambiar el nombre u otra letra para guardar sin cambiar el nombre'{}': ".format(possible_customer_need.upper()))
 
-    # Imprimo resultados
-    print("Customer needs seleccionadas:")
+            if bool == "c":
+                # Guardo customer need
+                cust_need_rename = input('\t Renombre la customer need:')
+                df_cust_needs.loc[word, 'cust_needs_three_words'] = cust_need_rename
+                print("\t Se cambio el nombre de la frase '{}'".format(possible_customer_need))
+
+            elif bool == "d":
+                # Guardo customer need
+                df_cust_needs = df_cust_needs.drop([word])
+                print("\t Se elimino la frase '{}'".format(possible_customer_need))
+
+        except ValueError:  # si el input no es un numero entero
+            pass
     print(df_cust_needs)
     return df_cust_needs
 

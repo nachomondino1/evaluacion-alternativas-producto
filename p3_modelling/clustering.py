@@ -223,34 +223,6 @@ def replace_labels_with_names(df_alt_clust):
         df_alt_clust_copy.loc[df_alt_one_clust.index, 'label'] = nombre_cluster
     return df_alt_clust_copy
 
-def add_clust_label(df_alt_to_client, df_alt_clust):
-    """
-    Agrega columna label a Dataframe alternativas que sera mostrado al cliente
-    :param df_alt_to_client: Dataframe. Unidad de analisis: alternativa del producto (solo las que seran mostradas al
-    cliente). Columnas: id_alternativa y una por atributo del producto.
-    :param df_alt_clust: Dataframe. Unidad de análisis: alternativa del producto. Columnas: id_alternativa, una por
-    atributo del producto y la columna "label" con el nombre del cluster al que pertenece. Celdas: sentiment que toma el
-    atributo
-    :return: Dataframe. Unidad de analisis: alternativa del producto (solo las que seran mostradas al cliente).
-    Columnas: id_alternativa, una por atributo del producto y label con el nombre del cluster al que pertenece
-    """
-    # Creo columna label
-    df_alt_to_client['label'] = None
-
-    # Por alternativa
-    for i in range(len(df_alt_to_client)):
-
-        # Obtengo su id
-        id_alt = df_alt_to_client.loc[i, 'id_alternativa']
-
-        # Busco su label
-        label = df_alt_clust[df_alt_clust['id_alternativa']==id_alt]['label'].values[0]
-
-        # Agrego label a alternativa
-        df_alt_to_client.loc[i, 'label'] = label
-
-    return df_alt_to_client
-
 def create_table_num_alt_per_cluster(df_alt_clust):
     """
     Obtiene el numero de alternativas por cada cluster
@@ -445,6 +417,36 @@ def create_table_best_clusters_per_customer_need(df_centroids_sent, df_relation_
             df_brand_per_cust.loc[grupo_max, customer_need] = i + 1
         print(df_brand_per_cust)
     return df_brand_per_cust
+
+''' EN DESUSO PUES YA NO TENGO DF_ALT Y DF_ALT_TO_CLIENT
+def add_clust_label(df_alt, df_alt_clust):
+    """
+    Agrega columna label a Dataframe alternativas que sera mostrado al cliente
+    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa y una por atributo 
+    del producto.
+    :param df_alt_clust: Dataframe. Unidad de análisis: alternativa del producto. Columnas: id_alternativa, una por
+    atributo del producto y la columna "label" con el nombre del cluster al que pertenece. Celdas: sentiment que toma el
+    atributo
+    :return: Dataframe. Unidad de analisis: alternativa del producto (solo las que seran mostradas al cliente).
+    Columnas: id_alternativa, una por atributo del producto y label con el nombre del cluster al que pertenece
+    """
+    # Creo columna label
+    df_alt_to_client['label'] = None
+
+    # Por alternativa
+    for i in range(len(df_alt_to_client)):
+
+        # Obtengo su id
+        id_alt = df_alt_to_client.loc[i, 'id_alternativa']
+
+        # Busco su label
+        label = df_alt_clust[df_alt_clust['id_alternativa']==id_alt]['label'].values[0]
+
+        # Agrego label a alternativa
+        df_alt_to_client.loc[i, 'label'] = label
+
+    return df_alt_to_client
+'''
 
 ''' Hice al reves el df_brand_per_cust en columnas y filas
 def create_table_best_clusters_per_customer_need(df_centroids_sent, df_relation_matrix):

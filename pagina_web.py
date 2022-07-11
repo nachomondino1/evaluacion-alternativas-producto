@@ -71,11 +71,12 @@ def main():
 
                 # (4) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
                 d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
-                # print(d_attrs_tech_imp) # st.write("Verifico (3): ",d_attrs_tech_imp)
+                df_prueba = pd.DataFrame([[key, d_attrs_tech_imp[key]] for key in d_attrs_tech_imp.keys()], columns=['Atributo', 'Importancia'])
+                st.dataframe(df_prueba) # st.write("Verifico (3): ",d_attrs_tech_imp)
 
                 # (5) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
                 df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_attr_alt_sent, df_value_sent, d_attrs_tech_imp)
-                # st.write("Verifico (4): ", df_alts_val_fin)
+                st.write("Verifico (4): ", df_alts_val_fin)
 
                 # (6) MUESTRO RESULTADOS
                 # Tabla de recomendacion
@@ -124,7 +125,7 @@ def main():
         # SI SELECCIONO UN PRODUCTO
         if product != '':
             # IMPORTO ARCHIVOS DE CLUSTERING
-            df_alt_to_client_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_to_client_clust.xlsx'.format(product), index_col=0)
+            df_alt_cleaned_cluster = pd.read_excel('./data/modelling/clustering/{}/df_alt_cleaned_cluster.xlsx'.format(product), index_col=0)
             df_alt_per_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
             df_centroids_values = pd.read_excel('./data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
             df_brand_per_cluster = pd.read_excel('./data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
@@ -192,7 +193,7 @@ def main():
             with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
                 st.write("Aquí, podra ver todas las alternativas que con las que trabajo la herramienta. Así, puede "
                          "verificar que no falta ninguna alternativa")
-                st.dataframe(df_alt_to_client_clust.iloc[:, 1:])
+                st.dataframe(df_alt_cleaned_cluster.iloc[:, 1:])
 
 def set_customer_needs_weigths(df_cust_needs, product):
     """
@@ -276,7 +277,7 @@ def get_help_button(cust_need, producto):
               'velocidad': help_vel
               },
          # TV
-         'tv':{ 'control': "Sencillez y calidad del control remoto (facilidad de uso, teclado numerico en "
+         'tv': {'control': "Sencillez y calidad del control remoto (facilidad de uso, teclado numerico en "
                            "control, integrado con comando por voz, etcetera)",
                 'conexion': "Estabilidad en las distintas conexiones (internet, ethernet y bluetooth) y cantidad de "
                             "entradas/puertos",
@@ -289,11 +290,9 @@ def get_help_button(cust_need, producto):
                 'tamaño': help_tam,
                 'velocidad': help_vel},
          # SMARTBAND
-         'smartband':{'conecta': 'Alcance del bluetooth y sincronización de datos con celular',
+         'smartband': {'bluetooth': 'Alcance del bluetooth y sincronización de datos con celular',
                       'bateria': help_bateria,
                       'diseño': help_dis,
-                      'facil': 'Facilidad de uso del dispositivo y nivel de personalización (fondos de pantalla, '
-                               'accesos rapidos a aplicaciones, etcetera)',
                       'funciones': 'Cantidad y calidad de funciones (cuenta pasos, estres, etcetera)',
                       'pantalla': 'Calidad de imagen de la pantalla y tamaño de ésta',
                       'precio': help_precio}

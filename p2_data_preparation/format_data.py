@@ -82,7 +82,7 @@ def yes_no_column_to_one_zero_column(df):
         print("{}".format(columna.upper()))
 
         # SI LA COLUMNA ES DEL TIPO SI-NO
-        if 'Sí' in df[columna].unique() and 'No' in df[columna].unique():  # FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+        if 'Sí' in df[columna].unique() and 'No' in df[columna].unique(): # if ['Sí', 'No'] == df[columna].dropna().unique() arroja error ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()  #  # FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
             print("\t LA COLUMNA ES DEL TIPO SI-NO!")
 
             # Defino variables

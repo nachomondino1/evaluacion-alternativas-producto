@@ -117,11 +117,10 @@ def get_dict_related_words(producto):
     # NOTEBOOK
 
     # SMARTBAND
-    d4 = {'conecta': ['conect', 'conexion', 'sincroniz', 'vincul', ' alcance '],  # No incluiria: (1) Pocas mencionas: emparejar, enlazar, asociar (2) Otros significados: bluetooth (duracion de bat x tenerlo prendido)
+    d4 = {'bluetooth': ['conect', 'conexion', 'sincroniz', 'vincul', ' alcance '],  # No incluiria: (1) Pocas mencionas: emparejar, enlazar, asociar (2) Otros significados: bluetooth (duracion de bat x tenerlo prendido)
           'bateria': ['bateria', ' dura ', 'autonomia'],
         'diseño': ['diseño', ' malla', ' agua ', ' sumerg', 'estetic', ' terminacion', 'material', 'resisten', 'elegante',
                    'plastico ', ' facher', ' correa',  ' fragil', 'construc'], # No incluiria: (1) Pocas menciones: grueso, delgad, acabado, robust
-        'facil': [' facil ', 'configurar', 'configuracion', 'intuitiv', 'personaliz'] + l_sistemas_operativos,  # opciones (se ref a cant de opciones)
         'funciones': ['funciones', 'pasos', 'notificacion', 'sueño',' gps ', 'presion', 'mensajes', 'musica', 'oxigeno',
                       'cardiac', 'llamada', 'pulsacion', 'medicion', ' mide ', 'precis', 'caloria', 'sensor', 'actividad',
                       'entrenamiento', 'ejercicio', 'deporte', 'deportiv', ' sangre ', 'funcionalidad'],  # ritmo?, No incluiria: opciones
@@ -219,10 +218,7 @@ def get_dict_avoid(producto):
           'barato': [' mas '],
 
           # Bluetooth
-          'conect': ['cargador', ' conectado '],
-
-          # Facil
-          'facil': ['sincron', 'conecta', ' leer '],
+          'bluetooth': ['cargador', ' conectado '],
 
           # Funciones
           'funciones': [' cumple', ' uso ', 'activ'],  # No incluiria: 'carga', 'bateria', dura (con activa y aevito FP con bateria)
