@@ -5,25 +5,22 @@ from PIL import Image
 
 def main():
     # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
-    st.header('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
-
     st.sidebar.write('# Tipo de analisis')  # titulo 1 de sidebar
     l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marca']  # Usuario define si es empresa o usuario final
     # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
     client = st.sidebar.radio(label='¿Que tipo de analisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
+    # st.sidebar.write('# Cambiar tipo de cliente')  # titulo 1 de sidebar
+    # l_client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
+    # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
+    # client = st.sidebar.radio(label='¿Que tipo de cliente sos?', options=l_client_options, help=client_help)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
 
-    '''
-    st.sidebar.write('# Cambiar tipo de cliente')  # titulo 1 de sidebar
-    l_client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
-    client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
-    client = st.sidebar.radio(label='¿Que tipo de cliente sos?', options=l_client_options, help=client_help)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
-    '''
     product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
 
     # SI EL CLIENTE ES UN USUARIO FINAL
     if client == 'Evaluacion de alternativas':
     # if client == 'Usuario final':
 
+        st.header('EVALUACION DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
         # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
         st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
                  "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
@@ -113,6 +110,7 @@ def main():
 
     # SI EL CLIENTE ES UNA EMPRESA
     else:
+        st.header('POSICIONAMIENTO DE MARCAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
         # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
         st.write('La herramienta tiene como objetivo identificar el **posicionamiento en el mercado de las marcas de un '
                  'producto**. Al final del analisis podras contestar preguntas como:')
