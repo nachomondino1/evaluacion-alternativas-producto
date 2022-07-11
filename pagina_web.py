@@ -224,7 +224,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
     # Si el producto no tiene usos especificados
     else:
         # No coloco container para que el cliente pueda seleccionar un uso
-        uso_selected = ' '
+        uso_selected = 'Reestablecer'
 
     # POR CUSTOMER NEED
     for i in range(len(l_cust_needs_three_words)):
