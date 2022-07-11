@@ -61,6 +61,8 @@ def main():
                      "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas)".format(product))
             st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
                      "la importancia que tiene ésta para vos")
+            st.write("Y si todavia no tenes claro como hacer, podes usar el sector 'Ayuda' donde fijamos las importancias"
+                     "segun uso del producto")
             st.write("Una vez que hayas asignado lo importante para vos, clikea el boton 'Procesar' abajo de todo.")
 
             # Solicito pesos al cliente
@@ -218,7 +220,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
     if d_usos is not None:
         # Coloco container para que el cliente pueda seleccionar un uso
         col1, col2 = st.columns([2, 0.6])
-        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso del producto', [' '] + list(d_usos.keys()))
+        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso del producto', ['Reestablecer'] + list(d_usos.keys()))
     # Si el producto no tiene usos especificados
     else:
         # No coloco container para que el cliente pueda seleccionar un uso
@@ -232,7 +234,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
         # SI EL CLIENTE NO SELECCIONO UN USO, O BIEN, EL PRODUCTO NO LOS TIENE ESPECIFICADOS
-        if uso_selected == " ":
+        if uso_selected == "Reestablecer":
             # SETEO SLIDER (INICIALMENTE EN PESO "ALGO IMPORTANTE")
             peso = st.select_slider(label=label, options=l_categorias, value="Algo importante", help=help)  # puedo agregarle help y sus palabras relacionadas por ej
         # SI EL CLIENTE SELECCIONO UN USO
@@ -309,19 +311,19 @@ def get_usos(product):
     """
     # INTENTO AGREGAR PERFILES DE CLIENTES --> QUE SETEEN PESOS PREDETERMINADOS
     d_usos = {
-        'celulares': {'Jugar': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Poco importante',
+        'celulares': {'Para jugar': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Poco importante',
                                 'pantalla': 'Importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
                                 'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'No es importante',
                                 'sistema': 'Poco importante'},
-                      'Trabajar': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
+                      'Para trabajar': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
                                    'pantalla': 'Algo importante', 'memoria': 'Importante', 'tamaño': 'Poco importante',
                                    'velocidad': 'Muy importante', 'sonido': 'Poco importante', 'diseño': 'Algo importante',
                                    'sistema': 'Poco importante'},
-                      'Redes': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Muy importante',
+                      'Para redes sociales': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Muy importante',
                                 'pantalla': 'Algo importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
                                 'velocidad': 'Importante', 'sonido': 'Poco importante', 'diseño': 'Algo importante',
                                 'sistema': 'Poco importante'},
-                      'Comunicacion': {'precio': 'Muy importante', 'bateria': 'No es importante', 'camara': 'Poco importante',
+                      'Para comunicación': {'precio': 'Muy importante', 'bateria': 'No es importante', 'camara': 'Poco importante',
                                        'pantalla': 'Poco importante', 'memoria': 'No es importante', 'tamaño': 'Importante',
                                        'velocidad': 'No es importante', 'sonido': 'Importante', 'diseño': 'Poco importante',
                                        'sistema': 'Importante'},
