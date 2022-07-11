@@ -84,10 +84,10 @@ def main():
                 # Tabla de recomendacion
                 st.write('### PASO 3 DE 3: ELECCION DE ALTERNATIVA')
                 st.write('Llegaste al último paso! Acá te presentamos las 10 alternativas que mejor se ajustan a lo que '
-                         'buscas, solo tendrás que elegir entre alguna de las 10. Y quedate tranquil@, analizamos toooodas '
-                         'las alternativas (y si... podes decir que lo hiciste todo vos!).')
+                         'buscas, solo tendrás que elegir una. Y quedate tranquil@, analizamos toooodas '
+                         'las alternativas (¡Y si!... podes decir que lo hiciste todo vos!).')
                 # st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para vos')
-                st.write('#### Las 10 alternativas que mas te recomendamos')
+                st.write('#### Las 10 alternativas que más te recomendamos')
                 # Calculo porcentaje de recomendacion de cada alternativa
                 df_alts_recommend = create_recomendation_table(df_alt_to_client, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
                 # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
@@ -100,15 +100,15 @@ def main():
 
                 # Listado de todas las alternativas tenidas en cuenta en el analisis
                 with st.expander("Ver todas las alternativas tenidas en cuenta en el analisis"):
-                    st.write("Aquí, podra ver todas las alternativas que con las que trabajo la herramienta. Así, puede "
-                             "verificar que no falta ninguna alternativa")
+                    st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
+                             "verificar que no falta ninguna")
                     st.dataframe(df_alts_recommend.iloc[:, 1:])
 
     # SI EL CLIENTE ES UNA EMPRESA
     else:
         # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
         st.write('La herramienta tiene como objetivo identificar el **posicionamiento en el mercado de las marcas de un '
-                 'producto**. Al final del analisis podras contestar pregunta como:')
+                 'producto**. Al final del analisis podras contestar preguntas como:')
         st.write('- ¿Que necesidades del cliente prioriza la marca?')
         st.write('- ¿La marca ofrece calidad al menor precio posible?')
         st.write('- ¿Que marcas estan mejor posicionadas?')
@@ -117,7 +117,7 @@ def main():
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_3, use_column_width=True)
 
-        st.write('En dos simples pasos, podras conocer el posicionamiento en el mercado de las marcas. de seleccionas un producto y te mostramos el posicionamiento de las marcas de este.')
+        st.write('En dos simples pasos, podras conocer el posicionamiento en el mercado de las marcas. Seleccionas un producto y te mostramos el posicionamiento de las marcas de este.')
 
         # (2) SOLICITO PRODUCTO
         st.write('### PASO 1: ELEGI TU PRODUCTO')
