@@ -237,11 +237,13 @@ def set_customer_needs_weigths(df_cust_needs, product):
         if uso_selected == "Reestablecer":
             # SETEO SLIDER (INICIALMENTE EN PESO "ALGO IMPORTANTE")
             peso = st.select_slider(label=label, options=l_categorias, value="Algo importante", help=help)  # puedo agregarle help y sus palabras relacionadas por ej
+            st.write(" ")
         # SI EL CLIENTE SELECCIONO UN USO
         else:
             # SETEO SLIDER CON PESO PREDETERMINADO DEL USO
             uso = d_usos[uso_selected]
             peso = st.select_slider(label=label, options=l_categorias, value=uso[l_cust_needs_one_word[i]], help=help)  # puedo agregarle help y sus palabras relacionadas por ej
+            st.write(" ")
 
         # GUARDO PESO NUMERICO
         df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d_categorias_peso[peso]
