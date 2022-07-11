@@ -73,12 +73,12 @@ def main():
 
                 # (4) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
                 d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
-                df_prueba = pd.DataFrame([[key, d_attrs_tech_imp[key]] for key in d_attrs_tech_imp.keys()], columns=['Atributo', 'Importancia'])
-                st.dataframe(df_prueba) # st.write("Verifico (3): ",d_attrs_tech_imp)
+                # df_prueba = pd.DataFrame([[key, d_attrs_tech_imp[key]] for key in d_attrs_tech_imp.keys()], columns=['Atributo', 'Importancia'])
+                # st.dataframe(df_prueba) # st.write("Verifico (3): ",d_attrs_tech_imp)
 
                 # (5) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
                 df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_attr_alt_sent, df_value_sent, d_attrs_tech_imp)
-                st.write("Verifico (4): ", df_alts_val_fin)
+                # st.write("Verifico (4): ", df_alts_val_fin)
 
                 # (6) MUESTRO RESULTADOS
                 # Tabla de recomendacion
