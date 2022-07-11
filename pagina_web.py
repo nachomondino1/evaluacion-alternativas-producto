@@ -230,7 +230,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
     for i in range(len(l_cust_needs_three_words)):
 
         # Defino variables
-        label = '{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper())  # titulo de cada slider
+        label = '*{}) {}:*'.format(i + 1, l_cust_needs_three_words[i].upper())  # titulo de cada slider
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
         # SI EL CLIENTE NO SELECCIONO UN USO, O BIEN, EL PRODUCTO NO LOS TIENE ESPECIFICADOS
@@ -238,12 +238,16 @@ def set_customer_needs_weigths(df_cust_needs, product):
             # SETEO SLIDER (INICIALMENTE EN PESO "ALGO IMPORTANTE")
             peso = st.select_slider(label=label, options=l_categorias, value="Algo importante", help=help)  # puedo agregarle help y sus palabras relacionadas por ej
             st.write(" ")
+            st.write(" ")
+
         # SI EL CLIENTE SELECCIONO UN USO
         else:
             # SETEO SLIDER CON PESO PREDETERMINADO DEL USO
             uso = d_usos[uso_selected]
             peso = st.select_slider(label=label, options=l_categorias, value=uso[l_cust_needs_one_word[i]], help=help)  # puedo agregarle help y sus palabras relacionadas por ej
             st.write(" ")
+            st.write(" ")
+
 
         # GUARDO PESO NUMERICO
         df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d_categorias_peso[peso]
