@@ -83,9 +83,9 @@ def main():
                 # (6) MUESTRO RESULTADOS
                 # Tabla de recomendacion
                 st.write('### PASO 3 DE 3: ELECCION DE ALTERNATIVA')
-                st.write('Llegaste al ultimo paso! Aca te presentamos las 10 alternativas que mejor se ajustan a lo que '
-                         'buscas, solo tendras que elegir entre alguna de las 10. Y quedate tranquil@, analizamos todas '
-                         'las alternativas posibles (y si, podes decir que lo hiciste todo vos!).')
+                st.write('Llegaste al último paso! Acá te presentamos las 10 alternativas que mejor se ajustan a lo que '
+                         'buscas, solo tendrás que elegir entre alguna de las 10. Y quedate tranquil@, analizamos toooodas '
+                         'las alternativas (y si... podes decir que lo hiciste todo vos!).')
                 # st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para vos')
                 st.write('#### Las 10 alternativas que mas te recomendamos')
                 # Calculo porcentaje de recomendacion de cada alternativa
