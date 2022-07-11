@@ -218,7 +218,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
     if d_usos is not None:
         # Coloco container para que el cliente pueda seleccionar un uso
         col1, col2 = st.columns([2, 0.6])
-        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso del producto', ['Ninguno'] + list(d_usos.keys()))
+        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso del producto', [' '] + list(d_usos.keys()))
     # Si el producto no tiene usos especificados
     else:
         # No coloco container para que el cliente pueda seleccionar un uso
