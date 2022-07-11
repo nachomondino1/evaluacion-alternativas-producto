@@ -17,22 +17,22 @@ def main():
 
         # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
         st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
-                 "Tipicamente buscamos informacion en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
+                 "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
                  "una reseña, entre otros.")
 
         image_1 = Image.open('./p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_1, use_column_width=True)
 
-        st.write("Hoy en dia, cada vez hay mas alternativas lo que hace que la eleccion de una sola sea un proceso "
-                 "extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y encima no "
-                 "terminemos escogiendo la alternativa ideal para nosotros.")
+        st.write("Hoy en día, cada vez hay mas alternativas lo que hace que la elección de una sola de ellas, sea un "
+                 "proceso extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y "
+                 "encima no terminemos escogiendo la alternativa ideal para nosotros.")
 
         image_2 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_2, use_column_width=True)
 
-        st.write("Afortundamente, podras facilitar este proceso utilizando la siguiente herramienta pensada para "
+        st.write("Afortundamente, podrás facilitar este proceso utilizando la siguiente herramienta pensada para "
                  "encontrar **la mejor alternativa para vos** en solo 3 pasos")
 
         # (2) SOLICITO PRODUCTO
@@ -56,12 +56,12 @@ def main():
             # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
             # Imprimo titulo
             st.write('### PASO 2 DE 3: IMPORTANCIA DE CADA NECESIDAD DEL CLIENTE'.format(product))
-            st.write('Ya elegiste el producto! Ya estas en el paso 2 de 3, yo le diria a Usain Bolt que se empiece a preocupar!')
-            st.write("Ahora, tenes que asignar la importancia para vos de cada necesidad del cliente tipica de {}. Bueno, "
-                     "seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas)".format(product))
-            st.write("Es muy sencillo! A continuacion, habra una barra por cada necesidad del cliente del producto. "
-                     "Podes cambiar el valor de cada barra segun la importancia que tiene para vos cada necesidad del cliente!")
-            st.write("Una vez que hayas asignado los pesos, clikea el boton 'Procesar' abajo de todo.")
+            st.write('Ya elegiste el producto! Estás en el paso 2 de 3, yo le diría a Usain Bolt que se empiece a preocupar!')
+            st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente típica de {}. "
+                     "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas)".format(product))
+            st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
+                     "la importancia que tiene ésta para vos")
+            st.write("Una vez que hayas asignado lo importante para vos, clikea el boton 'Procesar' abajo de todo.")
 
             # Solicito pesos al cliente
             df_cust_needs_with_weight = set_customer_needs_weigths(df_cust_needs, product)
@@ -218,11 +218,11 @@ def set_customer_needs_weigths(df_cust_needs, product):
     if d_usos is not None:
         # Coloco container para que el cliente pueda seleccionar un uso
         col1, col2 = st.columns([2, 0.6])
-        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso', ['Ninguno'] + list(d_usos.keys()))
+        uso_selected = col2.selectbox('AYUDA: Orientacion de importancias segun uso del producto', ['Ninguno'] + list(d_usos.keys()))
     # Si el producto no tiene usos especificados
     else:
         # No coloco container para que el cliente pueda seleccionar un uso
-        uso_selected = 'Ninguno'
+        uso_selected = ' '
 
     # POR CUSTOMER NEED
     for i in range(len(l_cust_needs_three_words)):
@@ -232,7 +232,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
         # SI EL CLIENTE NO SELECCIONO UN USO, O BIEN, EL PRODUCTO NO LOS TIENE ESPECIFICADOS
-        if uso_selected == "Ninguno":
+        if uso_selected == " ":
             # SETEO SLIDER (INICIALMENTE EN PESO "ALGO IMPORTANTE")
             peso = st.select_slider(label=label, options=l_categorias, value="Algo importante", help=help)  # puedo agregarle help y sus palabras relacionadas por ej
         # SI EL CLIENTE SELECCIONO UN USO
