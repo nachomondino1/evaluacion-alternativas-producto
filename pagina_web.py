@@ -4,6 +4,7 @@ import streamlit as st
 from PIL import Image
 
 def main():
+    st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="collapsed",menu_items=None)
     # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
     st.sidebar.write('# Tipo de análisis')  # titulo 1 de sidebar
     l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
@@ -69,6 +70,7 @@ def main():
 
             # SI EL CLIENTE DA CLICK A BOTON "PROCESAR"
             if st.button('Procesar'):  # Para que no calcule tabla de recomendacion ante cada cambio de los pesos
+                # st.write("Aguarde un momento que ya sera atendido... Chiste pero igual danos un tiempo para procesar los datos ")
 
                 # (4) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
                 d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
