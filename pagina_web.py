@@ -232,7 +232,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
 
         # Defino variables
         st.write('#### {}) {}'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider  # st.subheader('{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider
-        label = 'Ingrese la importancia para vos de {}:'.format(l_cust_needs_three_words[i].upper())  # titulo de cada slider
+        label = 'Ingrese que importancia tiene para vos "{}":'.format(l_cust_needs_three_words[i].upper())  # titulo de cada slider
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
         # SI EL CLIENTE NO SELECCIONO UN USO, O BIEN, EL PRODUCTO NO LOS TIENE ESPECIFICADOS
