@@ -4,7 +4,7 @@ import streamlit as st
 from PIL import Image
 
 def main():
-    st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="collapsed",menu_items=None)
+    st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
     # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
     st.sidebar.write('# Tipo de análisis')  # titulo 1 de sidebar
     l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
