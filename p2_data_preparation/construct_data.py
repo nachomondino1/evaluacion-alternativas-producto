@@ -65,7 +65,7 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORA
                     'netflix', 'nota',
                     'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena', 'pulsera',
                     'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto', 'reloj', 'relojes',
-                    'tiempo', 'tipo', 'tv', 'tele', 'televisor', 'trabajo', # 'telefono',
+                    'tiempo', 'tipo', 'tv', 'tele', 'televisor', 'trabajo', 'telefono',
                     'uso',
                     'verdad', 'videos',
                     'semana', 'super', 'samsung', 'smart', 'smartwatch',

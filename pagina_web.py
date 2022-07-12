@@ -5,18 +5,13 @@ from PIL import Image
 
 def main():
     # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
-    st.sidebar.write('# Tipo de analisis')  # titulo 1 de sidebar
-    l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marca']  # Usuario define si es empresa o usuario final
+    st.sidebar.write('# Tipo de análisis')  # titulo 1 de sidebar
+    l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
     # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
-    client = st.sidebar.radio(label='¿Que tipo de analisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
-    # st.sidebar.write('# Cambiar tipo de cliente')  # titulo 1 de sidebar
-    # l_client_options = ['Usuario final', 'Empresa']  # Usuario define si es empresa o usuario final
-    # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
-    # client = st.sidebar.radio(label='¿Que tipo de cliente sos?', options=l_client_options, help=client_help)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
-
+    client = st.sidebar.radio(label='¿Que tipo de análisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
     product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
 
-    # SI EL CLIENTE ES UN USUARIO FINAL
+    # SI EL ANALISIS ES LA EVALUACION DE ALTERNATIVAS
     if client == 'Evaluacion de alternativas':
     # if client == 'Usuario final':
 
@@ -108,7 +103,7 @@ def main():
                              "verificar que no falta ninguna")
                     st.dataframe(df_alts_recommend.iloc[:, 1:])
 
-    # SI EL CLIENTE ES UNA EMPRESA
+    # SI EL ANALISIS ES EL POSICIONAMIENTO DE LA MARCA
     else:
         st.header('POSICIONAMIENTO DE MARCAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
         # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
@@ -198,8 +193,8 @@ def main():
 
             # Listado de todas las alternativas tenidas en cuenta en el analisis
             with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
-                st.write("Aquí, podra ver todas las alternativas que con las que trabajo la herramienta. Así, puede "
-                         "verificar que no falta ninguna alternativa")
+                st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
+                         "verificar que no falta ninguna")
                 st.dataframe(df_alt_cleaned_cluster.iloc[:, 1:])
 
 def set_customer_needs_weigths(df_cust_needs, product):
@@ -236,8 +231,8 @@ def set_customer_needs_weigths(df_cust_needs, product):
     for i in range(len(l_cust_needs_three_words)):
 
         # Defino variables
-        st.subheader('{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider
-        label = '{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper())  # titulo de cada slider
+        st.write('#### {}) {}'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider  # st.subheader('{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider
+        label = 'Ingrese la importancia para vos de {}:'.format(i + 1, l_cust_needs_three_words[i].upper())  # titulo de cada slider
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
         # SI EL CLIENTE NO SELECCIONO UN USO, O BIEN, EL PRODUCTO NO LOS TIENE ESPECIFICADOS
