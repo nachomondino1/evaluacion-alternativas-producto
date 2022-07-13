@@ -3,18 +3,33 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
+
+
 def main():
     st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
-    # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
-    st.sidebar.write('# Tipo de análisis')  # titulo 1 de sidebar
+    st.cache()
+    load_css("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/style.css")
+
+    # Deefino variables
     l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
-    # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
-    client = st.sidebar.radio(label='¿Que tipo de análisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
     product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
+
+    # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
+    with st.sidebar:
+        st.subheader('Tipo de análisis')  # titulo 1 de sidebar
+        # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
+        client = st.sidebar.radio(label='¿Que tipo de análisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
+
+        st.subheader("Glosario")
+
+        st.subheader("Sobre")
+        st.info("GHoasf")
 
     # SI EL ANALISIS ES LA EVALUACION DE ALTERNATIVAS
     if client == 'Evaluacion de alternativas':
-    # if client == 'Usuario final':
 
         st.header('EVALUACION DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
         # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
@@ -89,8 +104,10 @@ def main():
                          'las alternativas (¡Y si!... podes decir que lo hiciste todo vos!).')
                 # st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para vos')
                 st.write('#### Las 10 alternativas que más te recomendamos')
+
                 # Calculo porcentaje de recomendacion de cada alternativa
                 df_alts_recommend = create_recomendation_table(df_alt_to_client, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
+
                 # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
                 df_top_ten = df_alts_recommend.iloc[0:10, 1:]  # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
                 st.dataframe(df_top_ten)
@@ -209,6 +226,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
     de 3 palabras y peso de la customer need.
     """
     # Defino variables
+    st.cache()
     l_cust_needs_one_word, l_cust_needs_three_words =  list(df_cust_needs.index), list(df_cust_needs['cust_needs_three_words'])
     df_cust_needs['Peso'] = None  # Inicializo columna peso de customer needs
     l_categorias = ["No es importante", 'Poco importante', 'Algo importante', 'Importante', 'Muy importante']
@@ -233,7 +251,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
     for i in range(len(l_cust_needs_three_words)):
 
         # Defino variables
-        st.write('#### {}) {}'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider  # st.subheader('{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider
+        st.write('##### {}) {}'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider  # st.subheader('{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider
         label = 'Ingrese que importancia tiene para vos "{}":'.format(l_cust_needs_three_words[i].upper())  # titulo de cada slider
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
