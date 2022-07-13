@@ -3,15 +3,14 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 
-def load_css(file_name):
-    with open(file_name) as f:
-        st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
-
+# def load_css(file_name):
+#    with open(file_name) as f:
+#        st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
+# load_css("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/style.css")
 
 def main():
     st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
     st.cache()
-    load_css("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/style.css")
 
     # Deefino variables
     l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
