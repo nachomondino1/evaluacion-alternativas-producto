@@ -9,23 +9,29 @@ from PIL import Image
 # load_css("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/style.css")
 
 def main():
+    # Defino variables
     st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
     st.cache()
-
-    # Deefino variables
     l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
     product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
 
-    # (1) SOLICITO TIPO DE CLIENTE EN SIDEBAR (por default 'usuario final')
+    # ELEMENTOS DEL SIDEBAR
     with st.sidebar:
+
+        # Tipo de analisis
         st.subheader('Tipo de análisis')  # titulo 1 de sidebar
         # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
         client = st.sidebar.radio(label='¿Que tipo de análisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
 
+        # Glosario
         st.subheader("Glosario")
+        st.write('- *Alternativas:* las distintas opciones que tiene el cliente a la hora de comprar un producto')
+        st.write('- *Necesidad del cliente:* las expresiones que los clientes utilizan para describir los productos y sus características deseables')
 
+        # Sobre
         st.subheader("Sobre")
-        st.info("GHoasf")
+        st.info("Este herramienta se enmarca en el proyecto final de carrera de quien les habla, Ignacio Mondino. Espero "
+                "que les sirva tanto como me sirvio a mi. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
 
     # SI EL ANALISIS ES LA EVALUACION DE ALTERNATIVAS
     if client == 'Evaluacion de alternativas':
