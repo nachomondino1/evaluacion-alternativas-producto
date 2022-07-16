@@ -3,224 +3,6 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 
-# def load_css(file_name):
-#    with open(file_name) as f:
-#        st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
-# load_css("/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p5_deployment/utils/style.css")
-
-def main():
-    # Defino variables
-    st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
-    st.cache()
-    l_client_options = ['Evaluacion de alternativas', 'Posicionamiento de marcas']  # Usuario define si es empresa o usuario final
-    product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
-
-    # ELEMENTOS DEL SIDEBAR
-    with st.sidebar:
-
-        # Tipo de analisis
-        st.subheader('Tipo de análisis')  # titulo 1 de sidebar
-        # client_help = "Si sos un consumidor final, como la gran mayoría, tu opcion es 'Usuario final'. Solo si sos empresario y queres conocer la posicion de tu empresa en el mercado, la opcion correcta es 'Empresa'"
-        client = st.sidebar.radio(label='¿Que tipo de análisis hacer?', options=l_client_options)  # client = st.sidebar.selectbox('1) ¿Que tipo de cliente eres?', client_options)
-
-        # Glosario
-        st.subheader("Glosario")
-        st.write('- *Alternativas:* las distintas opciones que tiene el cliente a la hora de comprar un producto')
-        st.write('- *Necesidad del cliente:* las expresiones que los clientes utilizan para describir los productos y sus características deseables')
-
-        # Sobre
-        st.subheader("Sobre")
-        st.info("Este herramienta se enmarca en el proyecto final de carrera de quien les habla, Ignacio Mondino. Espero "
-                "que les sirva tanto como me sirvio a mi. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
-
-    # SI EL ANALISIS ES LA EVALUACION DE ALTERNATIVAS
-    if client == 'Evaluacion de alternativas':
-
-        st.header('EVALUACION DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
-        # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
-        st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
-                 "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
-                 "una reseña, entre otros.")
-
-        image_1 = Image.open('./p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_1, use_column_width=True)
-
-        st.write("Hoy en día, cada vez hay mas alternativas lo que hace que la elección de una sola de ellas, sea un "
-                 "proceso extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y "
-                 "encima no terminemos escogiendo la alternativa ideal para nosotros.")
-
-        image_2 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_2, use_column_width=True)
-
-        st.write("Afortundamente, podrás facilitar este proceso utilizando la siguiente herramienta pensada para "
-                 "encontrar **la mejor alternativa para vos** en solo 3 pasos")
-
-        # (2) SOLICITO PRODUCTO
-        st.write('### PASO 1 DE 3: ELEGI TU PRODUCTO')
-        product = st.selectbox('¿Que producto desea evaluar?', product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
-        product = product.lower()
-
-        # SI SELECCIONO UN PRODUCTO
-        if product != '':
-            # IMPORTO ARCHIVOS
-            # Archivos de (2) Data preparation
-            df_alt = pd.read_excel('./data/collect_initial_data/{}/df_alt.xlsx'.format(product))
-            df_alt_cleaned = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
-            df_alt_to_client = df_alt[df_alt.id_alternativa.isin(df_alt_cleaned["id_alternativa"].unique())].reset_index(drop=True)  # Borro alternativas que elimine de analisis (ademas de no usarlas en analisis tampoco seran mostradas al cliente)
-            df_cust_needs = pd.read_excel("./data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
-            # Archivos de (3) Modelling
-            df_attr_alt_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
-            df_value_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
-            df_relation_matrix = pd.read_excel("./data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
-
-            # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
-            # Imprimo titulo
-            st.write('### PASO 2 DE 3: IMPORTANCIA DE CADA NECESIDAD DEL CLIENTE'.format(product))
-            st.write('Ya elegiste el producto! Estás en el paso 2 de 3, yo le diría a Usain Bolt que se empiece a preocupar!')
-            st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente típica de {}. "
-                     "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas)".format(product))
-            st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
-                     "la importancia que tiene ésta para vos")
-            st.write("Una vez que hayas asignado lo importante para vos, clikea el boton 'Procesar' abajo de todo.")
-
-            # Solicito pesos al cliente
-            df_cust_needs_with_weight = set_customer_needs_weigths(df_cust_needs, product)
-
-            # SI EL CLIENTE DA CLICK A BOTON "PROCESAR"
-            if st.button('Procesar'):  # Para que no calcule tabla de recomendacion ante cada cambio de los pesos
-                # st.write("Aguarde un momento que ya sera atendido... Chiste pero igual danos un tiempo para procesar los datos ")
-
-                # (4) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
-                d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
-                # df_prueba = pd.DataFrame([[key, d_attrs_tech_imp[key]] for key in d_attrs_tech_imp.keys()], columns=['Atributo', 'Importancia'])
-                # st.dataframe(df_prueba) # st.write("Verifico (3): ",d_attrs_tech_imp)
-
-                # (5) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
-                df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_attr_alt_sent, df_value_sent, d_attrs_tech_imp)
-                # st.write("Verifico (4): ", df_alts_val_fin)
-
-                # (6) MUESTRO RESULTADOS
-                # Tabla de recomendacion
-                st.write('### PASO 3 DE 3: ELECCION DE ALTERNATIVA')
-                st.write('Llegaste al último paso! Acá te presentamos las 10 alternativas que mejor se ajustan a lo que '
-                         'buscas, solo tendrás que elegir una. Y quedate tranquil@, analizamos toooodas '
-                         'las alternativas (¡Y si!... podes decir que lo hiciste todo vos!).')
-                # st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para vos')
-                st.write('#### Las 10 alternativas que más te recomendamos')
-
-                # Calculo porcentaje de recomendacion de cada alternativa
-                df_alts_recommend = create_recomendation_table(df_alt_to_client, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
-
-                # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
-                df_top_ten = df_alts_recommend.iloc[0:10, 1:]  # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
-                st.dataframe(df_top_ten)
-                st.balloons()
-
-                # Disclaimer de ultima actualizacion de datos (ppalmente por precio)
-                st.write("*Fecha de ultima actualización de los datos: 29 de Junio de 2022*")
-
-                # Listado de todas las alternativas tenidas en cuenta en el analisis
-                with st.expander("Ver todas las alternativas tenidas en cuenta en el analisis"):
-                    st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
-                             "verificar que no falta ninguna")
-                    st.dataframe(df_alts_recommend.iloc[:, 1:])
-
-    # SI EL ANALISIS ES EL POSICIONAMIENTO DE LA MARCA
-    else:
-        st.header('POSICIONAMIENTO DE MARCAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
-        # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
-        st.write('La herramienta tiene como objetivo identificar el **posicionamiento en el mercado de las marcas de un '
-                 'producto**. Al final del analisis podras contestar preguntas como:')
-        st.write('- ¿Que necesidades del cliente prioriza la marca?')
-        st.write('- ¿La marca ofrece calidad al menor precio posible?')
-        st.write('- ¿Que marcas estan mejor posicionadas?')
-
-        image_3 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
-        col1, col2, col3 = st.columns([0.2, 5, 0.2])
-        col2.image(image_3, use_column_width=True)
-
-        st.write('En dos simples pasos, podras conocer el posicionamiento en el mercado de las marcas. Seleccionas un producto y te mostramos el posicionamiento de las marcas de este.')
-
-        # (2) SOLICITO PRODUCTO
-        st.write('### PASO 1: ELEGI TU PRODUCTO')
-        product = st.selectbox('¿Que producto desea evaluar?', product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
-        product = product.lower()
-
-        # SI SELECCIONO UN PRODUCTO
-        if product != '':
-            # IMPORTO ARCHIVOS DE CLUSTERING
-            df_alt_cleaned_cluster = pd.read_excel('./data/modelling/clustering/{}/df_alt_cleaned_cluster.xlsx'.format(product), index_col=0)
-            df_alt_per_clust = pd.read_excel('./data/modelling/clustering/{}/df_alt_per_clust.xlsx'.format(product), index_col=0)
-            df_centroids_values = pd.read_excel('./data/modelling/clustering/{}/df_centroids_values.xlsx'.format(product), index_col=0)
-            df_brand_per_cluster = pd.read_excel('./data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product), index_col=0)
-            df_best_cluster_per_cust_need = pd.read_excel('./data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(product),index_col=0)
-
-            # (3) MUESTRO RESULTADOS
-            # Numero de grupos y sus nombres
-            st.write('### PASO 2: ANALISIS DE RESULTADOS')
-
-            st.write('Con el objetivo de posicionar las marcas en el mercado, llevamos a cabo un análisis en el que '
-                     'agrupamos las alternativas de un producto segun la similaridad de sus caracteristicas.')
-
-            st.write('El analsis se divide en dos etapas:')
-            st.write('1) Conocimiento de grupos')
-            st.write('2) Distribucion de marcas en grupos')
-
-            st.write("En la primera etapa, conocemos profundamente a cada grupo en terminos de que grupos hay, que nombres"
-                     "tienen, como es una alternativa tipica del grupo, como se posicion en cada necesidade del cliente."
-                     "En la segunda etapa, ")
-
-            st.write("#### 2.1. CONOCIMIENTO DE GRUPOS")
-            st.write('Conozcamos que hay dentro de cada uno de estos grupos!')
-
-            st.write('##### Cantidad de grupos y sus nombres')
-            st.write("* Nº GRUPOS: {}".format(len(df_alt_per_clust)))
-            st.write("* NOMBRES DE GRUPOS:  {}".format("  -  ".join(list(df_alt_per_clust.index))))
-
-            # Numero de alternativas por grupo
-            st.write('##### Cantidad de alternativas por grupo')  # st.write('##### Tabla 1: Número de alternativas por grupo')
-            st.write("Podemos ver la cantidad de alternativas dentro de cada uno de estos grupos.")
-            image_5 = Image.open('./p5_deployment/utils/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
-            col1, col2, col3 = st.columns([0.2, 5, 0.2])
-            col2.image(image_5, use_column_width=True)
-
-            # Ejemplo tipico de cada grupo
-            st.write('##### Alternativa tipica por grupo')  # st.write('##### Tabla 2: Ejemplo típico de cada grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
-            st.write('En la siguiente tabla, se responde a la pregunta "¿Como es la alternativa tipica de cada grupo?"')
-            st.write(df_centroids_values)
-
-            st.write('##### Posicion de cada grupo en las necesidades del cliente')  # st.write('##### Tabla 4: Mejores marcas por necesidad del cliente')
-            # Mejores marcas por necesidad del cliente
-            st.write("A continuación, podra ver las mejores marcas por necesidad del cliente")
-            st.dataframe(df_best_cluster_per_cust_need)
-
-
-            st.write("#### 2.2. DISTRIBUCION DE MARCAS EN GRUPOS")
-            # Distribucion de marcas en grupos
-            st.write("Tal como en la tabla 1, podemos ver cuantas alternativas hay por grupo. Pero ahora, le sumaremos "
-                     "la variable marca. Así, veremos como se distribuye cada marca en los distintos grupos")
-            st.write('En que grupo se ubica mi marca? ')
-            st.write(df_brand_per_cluster)
-
-            st.write('Un grafico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
-                     'grafico')
-            image_4 = Image.open('./p5_deployment/utils/brand_{}.png'.format(product))
-            col1, col2, col3 = st.columns([0.2, 5, 0.2])
-            col2.image(image_4, use_column_width=True)
-
-            with st.expander("Ayuda en interpretacion del grafico", expanded=False):
-                st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relacion precio-calidad')
-                st.write('* Marcas con mayor cantidad de amarillo - naranja -->  marcas con relacion precio-calidad media')
-                st.write('* Marcas con mayor cantidad de rojo -->  marcas con peor relacion precio-calidad')
-
-            # Listado de todas las alternativas tenidas en cuenta en el analisis
-            with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
-                st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
-                         "verificar que no falta ninguna")
-                st.dataframe(df_alt_cleaned_cluster.iloc[:, 1:])
-
 def set_customer_needs_weigths(df_cust_needs, product):
     """
     Obtengo peso (o importancia) de cada customer need para el cliente
@@ -274,7 +56,6 @@ def set_customer_needs_weigths(df_cust_needs, product):
             peso = st.select_slider(label=label, options=l_categorias, value=uso[l_cust_needs_one_word[i]], help=help)  # puedo agregarle help y sus palabras relacionadas por ej
             st.write(" ")
             st.write(" ")
-
 
         # GUARDO PESO NUMERICO
         df_cust_needs.loc[l_cust_needs_one_word[i], 'Peso'] = d_categorias_peso[peso]
@@ -506,24 +287,115 @@ def create_recomendation_table(df_alt, df_alt_val_final):
     df_alt.index = range(1, len(df_alt) + 1)  # df_alt = df_alt.set_index(range(1, len(df_alt)+1))     # df_alt = df_alt.reset_index(drop=True)
     return df_alt
 
+def main():
+    # Defino variables
+    st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
+    st.cache()
+    product_options = ['', 'Celulares', 'Smartband', 'TV']
+
+    # ELEMENTOS DEL SIDEBAR
+    with st.sidebar:
+        # Glosario
+        st.subheader("Glosario")
+        st.write('- *Alternativas:* las distintas opciones que tiene el cliente a la hora de comprar un producto')
+        st.write('- *Necesidad del cliente:* las expresiones que los clientes utilizan para describir los productos y '
+                 'sus características deseables')
+
+        # + Info
+        st.subheader("+ Info")
+        st.info("Esta herramienta se enmarca en el proyecto final de carrera de quien les habla, Ignacio Mondino. Espero "
+                "que les sirva tanto como me sirvió a mí. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
+
+    st.header('EVALUACION DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
+    # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
+    st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
+             "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
+             "una reseña, entre otros.")
+
+    image_1 = Image.open('./p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+    col1, col2, col3 = st.columns([0.2, 5, 0.2])
+    col2.image(image_1, use_column_width=True)
+
+    st.write("Hoy en día, cada vez hay mas alternativas lo que hace que la elección de una sola de ellas, sea un "
+             "proceso extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y "
+             "encima no terminemos escogiendo la alternativa ideal para nosotros.")
+
+    image_2 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
+    col1, col2, col3 = st.columns([0.2, 5, 0.2])
+    col2.image(image_2, use_column_width=True)
+
+    st.write("Afortundamente, podrás facilitar este proceso utilizando la siguiente herramienta pensada para "
+             "encontrar **la mejor alternativa para vos** en solo 3 pasos")
+
+    # (2) SOLICITO PRODUCTO
+    st.write('### PASO 1 DE 3: ELEGI TU PRODUCTO')
+    product = st.selectbox('¿Que producto desea evaluar?', product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
+    product = product.lower()
+
+    # SI SELECCIONO UN PRODUCTO
+    if product != '':
+        # IMPORTO ARCHIVOS
+        # Archivos de (2) Data preparation
+        df_alt = pd.read_excel('./data/collect_initial_data/{}/df_alt.xlsx'.format(product))
+        df_alt_cleaned = pd.read_excel('./data/data_preparation/{}/df_alt_cleaned.xlsx'.format(product))
+        df_alt_to_client = df_alt[df_alt.id_alternativa.isin(df_alt_cleaned["id_alternativa"].unique())].reset_index(drop=True)  # Borro alternativas que elimine de analisis (ademas de no usarlas en analisis tampoco seran mostradas al cliente)
+        df_cust_needs = pd.read_excel("./data/data_preparation/{}/df_cust_needs.xlsx".format(product), index_col=0)
+        # Archivos de (3) Modelling
+        df_attr_alt_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(product))
+        df_value_sent = pd.read_excel('./data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(product))
+        df_relation_matrix = pd.read_excel("./data/data_preparation/{}/df_relation_matrix.xlsx".format(product), index_col=0)
+
+        # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
+        # Imprimo titulo
+        st.write('### PASO 2 DE 3: IMPORTANCIA DE CADA NECESIDAD DEL CLIENTE'.format(product))
+        st.write('Ya elegiste el producto! Estás en el paso 2 de 3, yo le diría a Usain Bolt que se empiece a preocupar!')
+        st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente típica de {}. "
+                 "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas)".format(product))
+        st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
+                 "la importancia que tiene ésta para vos")
+        st.write("Una vez que hayas asignado lo importante para vos, clikea el boton 'Procesar' abajo de todo.")
+
+        # Solicito pesos al cliente
+        df_cust_needs_with_weight = set_customer_needs_weigths(df_cust_needs, product)
+
+        # SI EL CLIENTE DA CLICK A BOTON "PROCESAR"
+        if st.button('Procesar'):  # Para que no calcule tabla de recomendacion ante cada cambio de los pesos
+            # st.write("Aguarde un momento que ya sera atendido... Chiste pero igual danos un tiempo para procesar los datos ")
+
+            # (4) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
+            d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
+            # df_prueba = pd.DataFrame([[key, d_attrs_tech_imp[key]] for key in d_attrs_tech_imp.keys()], columns=['Atributo', 'Importancia'])
+            # st.dataframe(df_prueba) # st.write("Verifico (3): ",d_attrs_tech_imp)
+
+            # (5) CALCULO VALORACION FINAL DE CADA ALTERNATIVA
+            df_alts_val_fin = get_alts_final_value(df_alt_cleaned, df_attr_alt_sent, df_value_sent, d_attrs_tech_imp)
+            # st.write("Verifico (4): ", df_alts_val_fin)
+
+            # (6) MUESTRO RESULTADOS
+            # Tabla de recomendacion
+            st.write('### PASO 3 DE 3: ELECCION DE ALTERNATIVA')
+            st.write('Llegaste al último paso! Acá te presentamos las 10 alternativas que mejor se ajustan a lo que '
+                     'buscas, solo tendrás que elegir una. Y quedate tranquil@, analizamos toooodas '
+                     'las alternativas (¡Y si!... podes decir que lo hiciste todo vos!).')
+            # st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para vos')
+            st.write('#### Las 10 alternativas que más te recomendamos')
+
+            # Calculo porcentaje de recomendacion de cada alternativa
+            df_alts_recommend = create_recomendation_table(df_alt_to_client, df_alts_val_fin)   # OJO! DF_ALT TIENE ALTS QUE DF_ALT_CLEANED NO Y POR ENDE EL INDICE ES ≠
+
+            # Selecciono las 10 alternativas de mayor porcentaje de recomendacion
+            df_top_ten = df_alts_recommend.iloc[0:10, 1:]  # df_top_ten = pd.DataFrame(columns=['Marca', "Modelo", "precio", 'porcentaje_recomendacion'])
+            st.dataframe(df_top_ten)
+            st.balloons()
+
+            # Disclaimer de ultima actualizacion de datos (ppalmente por precio)
+            st.write("*Fecha de ultima actualización de los datos: 29 de Junio de 2022*")
+
+            # Listado de todas las alternativas tenidas en cuenta en el analisis
+            with st.expander("Ver todas las alternativas tenidas en cuenta en el analisis"):
+                st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
+                         "verificar que no falta ninguna")
+                st.dataframe(df_alts_recommend.iloc[:, 1:])
 
 if __name__ == '__main__':
     main()
-
-
-# col1, col2 = st.columns(2)
-# col1.metric(label="Posicion", value="1")
-# col2.metric(label="Alternativa", value=df_alt.loc[1])
-# col2.metric("Wind", "9 mph", "-8%")
-
-
-# st.write('En la **etapa 1**, **conoceremos a cada grupo de alternativas** del producto. Para ello, veremos: ')
-# st.write('- cuantos grupos hay y que nombres tienen')
-# st.write('- cuantas alternativas tiene cada uno')
-# st.write('- cual es la alternativa promedio de cada grupo')
-# st.write('- posicion de cada grupo en cada necesidad del cliente')
-
-# st.write('En la **etapa 2**, veremos la distribucion de cada marca entre los distintos grupos. Habiendo obtenido un profundo conocimiento de cada grupo en la etapa 1, podremos sacar conclusiones como:')
-# st.write('- ¿Que necesidades del cliente prioriza la marca?')
-# st.write('- ¿La marca ofrece calidad al menor precio posible?')
-# st.write('- ¿Que marcas estan mejor posicionadas?')
