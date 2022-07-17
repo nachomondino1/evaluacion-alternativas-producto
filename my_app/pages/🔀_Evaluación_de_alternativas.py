@@ -326,11 +326,15 @@ def main():
 
     st.write("Afortundamente, podrás facilitar este proceso utilizando la siguiente herramienta pensada para "
              "encontrar **la mejor alternativa para vos** en solo 3 pasos")
+    st.write(" ")
+    st.write(" ")
 
     # (2) SOLICITO PRODUCTO
     st.write('### PASO 1 DE 3: ELEGI TU PRODUCTO')
     product = st.selectbox('¿Que producto desea evaluar?', product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
     product = product.lower()
+    st.write(" ")
+    st.write(" ")
 
     # SI SELECCIONO UN PRODUCTO
     if product != '':
@@ -361,6 +365,8 @@ def main():
         # SI EL CLIENTE DA CLICK A BOTON "PROCESAR"
         if st.button('Procesar'):  # Para que no calcule tabla de recomendacion ante cada cambio de los pesos
             # st.write("Aguarde un momento que ya sera atendido... Chiste pero igual danos un tiempo para procesar los datos ")
+            st.write(" ")
+            st.write(" ")
 
             # (4) CALCULO IMPORTANCIA TECNICA DE CADA ATRIBUTO (SEGUN PESOS DE NECESIDADES DEL CLIENTE)
             d_attrs_tech_imp = get_attrs_technical_importance(df_cust_needs_with_weight, df_relation_matrix)
