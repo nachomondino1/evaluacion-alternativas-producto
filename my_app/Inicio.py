@@ -22,17 +22,17 @@ def main():
 
     st.write("Actualmente, disponemos de dos herramientas que facilitan la elección de una alternativa en la compra de "
              "un producto. Estas son:")
-    image_1 = Image.open('./p5_deployment/utils/alternativas_posibles.png') # Imagen de persona antes ≠ alternativas
-    image_2 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg') # Imagen de persona antes ≠ alternativas
+    image_1 = Image.open('./my_app/utils/alternativas_posibles.png') # Imagen de persona antes ≠ alternativas
+    image_2 = Image.open('./my_app/utils/posicion_mercado.jpeg') # Imagen de persona antes ≠ alternativas
     col1, col2, col3, col4, col5 = st.columns([0.2, 3.19, 0.2, 4, 0.2])
     col2.image(image_1, use_column_width=True, caption="Evaluación de alternativas")
     col4.image(image_2, use_column_width=True, caption="Posicionamiento de marcas")
     st.write(" ")
 
     st.write("A su vez, los productos relevados son:")
-    image_3 = Image.open('./p5_deployment/utils/producto_celulares.jpeg')  # Imagen de persona antes ≠ alternativas
-    image_4 = Image.open('./p5_deployment/utils/producto_smartband.jpeg')  # Imagen de persona antes ≠ alternativas
-    image_5 = Image.open('./p5_deployment/utils/producto_tv.webp')  # Imagen de persona antes ≠ alternativa
+    image_3 = Image.open('./my_app/utils/celular.jpeg')  # Imagen de persona antes ≠ alternativas
+    image_4 = Image.open('./my_app/utils/smartband.jpeg')  # Imagen de persona antes ≠ alternativas
+    image_5 = Image.open('./my_app/utils/tv.jpeg')  # Imagen de persona antes ≠ alternativa
     col1, col2, col3, col4, col5, col6, col7 = st.columns([0.2, 3, 0.2, 2, 0.2, 3.7, 0.2])
     col2.image(image_3, use_column_width=True, caption="Celular")
     col4.image(image_4, use_column_width=True, caption="Smartband")

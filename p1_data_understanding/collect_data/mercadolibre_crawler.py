@@ -1,19 +1,67 @@
 # Importo librerias
 import pandas as pd
-from p1_data_understanding.collect_data.crawler import Crawler
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import NoSuchElementException
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
+from time import sleep
+import random
 
-
-class MercadoLibreCrawler(Crawler):
+class MercadoLibreCrawler():
     """ A tool to extract data from Mercado Libre using Web Scraping """
 
-    def __init__(self, driver):
+    def __init__(self):
         """Initialize attributes of the parent class."""
-        super().__init__(driver)  # si dejase de ser hija de Crawler(), haria self.driver = driver
+        self.driver = self.inicialize_driver()  # super().__init__(driver)  # si fuese hija de Crawler()
+
+    def inicialize_driver(self):
+        """
+        Inicializa un chrome driver automatico
+        :return: Chrome driver automatico
+        """
+        # Defino opciones del webdriver
+        options = webdriver.ChromeOptions()
+        options.add_argument("start-maximized")
+        options.add_argument("enable-automation")
+        options.add_argument("--headless")  # Hace que no se abra un web browser en tu compu
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-browser-side-navigation")
+        options.add_argument("--disable-gpu")
+
+        # Inicializo el webdriver (Defino a Chrome como Web Browser)
+        # driver = webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # WARNING: DeprecationWarning: executable_path has been deprecated, please pass in a Service object --> https://stackoverflow.com/questions/64717302/deprecationwarning-executable-path-has-been-deprecated-selenium-python
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        return driver
+
+    def ScrollDown(self):
+        """
+        Carga todos los elementos en una pagina al deslizar el driver hacia abajo hasta el final
+        :return:
+        """
+        # Get scroll height
+        # Defino tiempo de pausa aleatorio entre 1 y 2 segundos para evitar banneo de IP
+        SCROLL_PAUSE_TIME = random.uniform(1, 2)
+
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        while True:
+            # Scroll down to bottom
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+            # Wait to load page
+            sleep(SCROLL_PAUSE_TIME)
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = self.driver.execute_script("return document.body.scrollHeight")
+
+            if new_height == last_height:
+                break
+            last_height = new_height
 
     def get_publications_url(self):
         """

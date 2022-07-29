@@ -24,7 +24,7 @@ st.write('- ¿Que necesidades del cliente prioriza la marca?')
 st.write('- ¿La marca ofrece calidad al menor precio posible?')
 st.write('- ¿Que marcas estan mejor posicionadas?')
 
-image_3 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
+image_3 = Image.open('./my_app/utils/posicion_mercado.jpeg')
 col1, col2, col3 = st.columns([0.2, 5, 0.2])
 col2.image(image_3, use_column_width=True)
 
@@ -74,7 +74,7 @@ if product != '':
     # Numero de alternativas por grupo
     st.write('##### Cantidad de alternativas por grupo')  # st.write('##### Tabla 1: Número de alternativas por grupo')
     st.write("Podemos ver la cantidad de alternativas dentro de cada uno de estos grupos.")
-    image_5 = Image.open('./p5_deployment/utils/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
+    image_5 = Image.open('./my_app/utils/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_5, use_column_width=True)
     st.write(" ")
@@ -98,7 +98,7 @@ if product != '':
     st.write(df_brand_per_cluster)
     st.write('Un gráfico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
              'gráfico')
-    image_4 = Image.open('./p5_deployment/utils/brand_{}.png'.format(product))
+    image_4 = Image.open('./my_app/utils/brand_{}.png'.format(product))
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_4, use_column_width=True)
 

@@ -3,9 +3,7 @@ import pandas as pd
 import random
 from time import sleep
 from p1_data_understanding.collect_data.mercadolibre_crawler import MercadoLibreCrawler
-from selenium import webdriver
 from bs4 import BeautifulSoup
-
 
 ################################################ FUNCIONES PRINCIPALES ################################################
 def get_product_attributes(home_page_url):
@@ -18,7 +16,8 @@ def get_product_attributes(home_page_url):
     PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
     d_attr_frec = {}  # diccionario donde guardare los atributos y su frecuencia
     SLEEP_MIN, SLEEP_MAX = 1, 2
-    crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
+    # crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
+    crawler = MercadoLibreCrawler()  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DEL PRODUCTO A BUSCAR
     crawler.driver.get(home_page_url)
@@ -88,7 +87,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
     SLEEP_MIN, SLEEP_MAX = 1, 2  # tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
     l_historial_pag = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
     # a parametro de corte 2
-    crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
+    crawler = MercadoLibreCrawler()  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO Y SELECCIONO CONDICION="NUEVO"
     crawler.driver.get(home_page_url), sleep(3)  # hasta que no se carga toda la pagina, no sigue...
@@ -147,7 +146,6 @@ def data_extractor(df_alt, df_opi, home_page_url):
                         # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
                         df_opi_new_alt = crawler.get_publication_opinions_data(id_alternativa)
                         df_opi = pd.concat([df_opi, df_opi_new_alt], ignore_index=True)
-                        # df_opi = add_lines_to_dataframe(d_opiniones_alternativa, df_opi)
                         print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
 
                     # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
@@ -201,27 +199,6 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
 
 ################################################ FUNCIONES SECUNDARIAS ################################################
-# UTILIZADA EN GET_PRODUCT_ATTRIBUTES() Y EN DATA_EXTRACTOR()
-def inicialize_driver():
-    """
-    Inicializa un chrome driver automatico
-    :return: Chrome driver automatico
-    """
-    # Defino opciones del webdriver
-    options = webdriver.ChromeOptions()
-    options.add_argument("start-maximized")
-    options.add_argument("enable-automation")
-    options.add_argument("--headless") # Hace que no se abra un web browser en tu compu
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-browser-side-navigation")
-    options.add_argument("--disable-gpu")
-
-    # Inicializo el webdriver
-    return webdriver.Chrome(executable_path='/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/p1_data_understanding/collect_data/chromedriver', options=options)  # Defino a Chrome como Web Browser
-
-
 # UTILIZADA EN GET_PRODUCT_ATTRIBUTES()
 def select_relevant_attributes(d_attr_frec):
     """
@@ -373,6 +350,10 @@ def explicacion_corte(pag_num, pag_max, ult_pub_sin_data):
         print("Corto por no haber mas paginas. Se recorrieron {} paginas".format(pag_num))
 
 
-''' # para correr pruebas en archivo independientemente de main.py
-main("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
-'''
+# para correr pruebas en archivo independientemente de main.py
+l_atributos = get_product_attributes("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
+print(" b) Creando dataframes del producto...".center(120))
+df_alt = pd.DataFrame(columns=['id_alternativa', 'precio'] + l_atributos)
+df_opi = pd.DataFrame(columns=['id_alternativa', 'opinion'])
+print(" c) Extrayendo datos del producto...".center(120))
+df_alt, df_opi = data_extractor(df_alt, df_opi, "https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
