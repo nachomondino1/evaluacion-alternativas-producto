@@ -312,7 +312,7 @@ def main():
              "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
              "una reseña, entre otros.")
 
-    image_1 = Image.open('./my_app/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
+    image_1 = Image.open('./p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_1, use_column_width=True)
 
@@ -320,7 +320,7 @@ def main():
              "proceso extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y "
              "encima no terminemos escogiendo la alternativa ideal para nosotros.")
 
-    image_2 = Image.open('./my_app/utils/alternativas_posibles.png')
+    image_2 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_2, use_column_width=True)
 

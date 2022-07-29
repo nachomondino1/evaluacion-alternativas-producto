@@ -18,14 +18,14 @@ with st.sidebar:
 
 # (1) INTRODUCCIÓN A ANALISIS
 st.header('POSICIONAMIENTO DE MARCAS')  # imprimo titulo
-st.write('La herramienta tiene como objetivo identificar el **posicionamiento en el mercado de las marcas de un '
-         'producto**. Al final del analisis podras contestar preguntas como:')
+st.write('La herramienta tiene como objetivo identificar el **posicionamiento de las marcas de un producto en el mercado**. '
+         'Al final del analisis podras contestar preguntas como:')
 st.write('- ¿Que necesidades del cliente prioriza la marca?')
 st.write('- ¿La marca ofrece calidad al menor precio posible?')
 st.write('- ¿Que marcas estan mejor posicionadas?')
 
-image_3 = Image.open('./my_app/utils/posicion_mercado.jpeg')
-col1, col2, col3 = st.columns([0.2, 5, 0.2])
+image_3 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
+col1, col2, col3 = st.columns([0.2, 0.8, 0.2])
 col2.image(image_3, use_column_width=True)
 
 st.write('En dos simples pasos, podrás conocer el posicionamiento de las marcas en el mercado. Primero, seleccionas un '
@@ -74,7 +74,7 @@ if product != '':
     # Numero de alternativas por grupo
     st.write('##### Cantidad de alternativas por grupo')  # st.write('##### Tabla 1: Número de alternativas por grupo')
     st.write("Podemos ver la cantidad de alternativas dentro de cada uno de estos grupos.")
-    image_5 = Image.open('./my_app/utils/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
+    image_5 = Image.open('./p5_deployment/utils/cant_alt_{}.png'.format(product))  # st.bar_chart(df_alt_per_clust)
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_5, use_column_width=True)
     st.write(" ")
@@ -98,7 +98,7 @@ if product != '':
     st.write(df_brand_per_cluster)
     st.write('Un gráfico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
              'gráfico')
-    image_4 = Image.open('./my_app/utils/brand_{}.png'.format(product))
+    image_4 = Image.open('./p5_deployment/utils/brand_{}.png'.format(product))
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_4, use_column_width=True)
 
