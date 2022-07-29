@@ -57,15 +57,12 @@ if product != '':
     st.write('Con el objetivo de posicionar las marcas en el mercado, llevamos a cabo un análisis en el que '
              'agrupamos las alternativas de un producto segun la similaridad de sus caracteristicas.')
 
-    st.write("Primero, conocemos profundamente a cada grupo en términos de cuantos hay, que nombres"
-             "tienen, como es una alternativa típica del grupo, que necesidades del cliente cumple mejor cada uno. "
+    st.write("Primero, conocemos profundamente a cada grupo en términos de cuantos hay, que nombres "
+             "tienen, como es una alternativa típica del grupo y que necesidades del cliente cumple mejor cada uno. "
              "Finalmente, veremos con que grupo se identifica cada marca y podremos responder a las preguntas anteriores")
     st.write(" ")
 
     st.write("#### 2.1. CONOCIMIENTO DE GRUPOS")
-    st.write('Conozcamos que hay dentro de cada uno de estos grupos!')
-    st.write(" ")
-
     st.write('##### Cantidad de grupos y sus nombres')
     st.write("* Nº GRUPOS: {}".format(len(df_alt_per_clust)))
     st.write("* NOMBRES DE GRUPOS:  {}".format("  -  ".join(list(df_alt_per_clust.index))))
