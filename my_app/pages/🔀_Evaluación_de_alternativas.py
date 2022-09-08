@@ -69,10 +69,10 @@ def get_help_button(cust_need, producto):
     :return: String. Texto 'help' que explica el significado de la customer need para dicho producto.
     """
     # Defino 'help' generales
-    help_precio =  "Precio y marca del dispositivo. Aclaración: Generalmente, a mayor importancia, se buscaran precios " \
+    help_precio =  "Precio y marca del dispositivo. Aclaración: Generalmente, a mayor importancia, se buscarán precios " \
                    "más bajos aunque siempre se priorizara una mayor relacion precio-calidad"
     help_bateria = 'Duración de la batería'
-    help_tam = "Tamaño de pantalla del dispositivo. Aclaración: Generalmente, a mayor importancia, se priorizaran " \
+    help_tam = "Tamaño de pantalla del dispositivo. Aclaración: Generalmente, a mayor importancia, se priorizarán " \
                   "tamaños de pantalla más grandes"
     help_dis = "Estética, calidad de materiales y resistencia a caídas, a agua y a polvo "
     help_vel = 'Velocidad de procesamiento del dispositivo'
@@ -83,25 +83,25 @@ def get_help_button(cust_need, producto):
               'camara': 'Resoluciones de foto y video tanto de la cámara frontal como de la cámara trasera',
               'diseño': help_dis,
               'memoria': "Capacidad de almacenamiento interna. En otras palabras, espacio para descargar muchas "
-                         "aplicaciones, guardar muchas fotos o documentos, etcetera ",
+                         "aplicaciones, guardar muchas fotos o documentos, etcétera ",
               'pantalla': 'Calidad de imagen de la pantalla',
-              'sistema': 'Facilidad de uso del dispositivo, cantidad y calidad de funciones (por ejemplo, navegacion por '
+              'sistema': 'Facilidad de uso del dispositivo, cantidad y calidad de funciones (por ejemplo, navegación por '
                          'gestos, infrarrojo, entre otros) y frecuencia de actualizaciones del sistema operativo (tal '
                          'que no quede obseleto en pocos años)',
-              'sonido': 'Calidad del sonido, cantidad de parlantes y ubicacion de los mismos',
+              'sonido': 'Calidad del sonido, cantidad de parlantes y ubicación de los mismos',
               'tamaño': help_tam,
               'velocidad': help_vel
               },
          # TV
-         'tv': {'control': "Sencillez y calidad del control remoto (facilidad de uso, teclado numerico en "
-                           "control, integrado con comando por voz, etcetera)",
+         'tv': {'control': "Sencillez y calidad del control remoto (facilidad de uso, teclado numérico en "
+                           "control, integrado con comando por voz, etcétera)",
                 'conexion': "Estabilidad en las distintas conexiones (internet, ethernet y bluetooth) y cantidad de "
                             "entradas/puertos",
-                'diseño': 'Estetica y calidad de materiales',
+                'diseño': 'Estética y calidad de materiales',
                 'imagen': 'Calidad de imagen de la pantalla',
                 'precio': help_precio,
                 'sistema': 'Facilidad de uso del dispositivo y cantidad y calidad de aplicaciones que trae o que se '
-                           'pueden instalar (por ejemplo, netflix, youtube, disney+, spotify, etcetera)',
+                           'pueden instalar (por ejemplo, netflix, youtube, disney+, spotify, etcétera)',
                 'sonido': 'Calidad de sonido y cantidad de parlantes',
                 'tamaño': help_tam,
                 'velocidad': help_vel},
@@ -109,7 +109,7 @@ def get_help_button(cust_need, producto):
          'smartband': {'bluetooth': 'Alcance del bluetooth y sincronización de datos con celular',
                       'bateria': help_bateria,
                       'diseño': help_dis,
-                      'funciones': 'Cantidad y calidad de funciones (cuenta pasos, estres, etcetera)',
+                      'funciones': 'Cantidad y calidad de funciones (cuenta pasos, estres, etcétera)',
                       'pantalla': 'Calidad de imagen de la pantalla y tamaño de ésta',
                       'precio': help_precio}
          }
