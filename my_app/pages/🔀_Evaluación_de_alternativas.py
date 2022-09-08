@@ -70,10 +70,10 @@ def get_help_button(cust_need, producto):
     """
     # Defino 'help' generales
     help_precio =  "Precio y marca del dispositivo. Aclaración: Generalmente, a mayor importancia, se buscaran precios " \
-                   "mas bajos aunque siempre se priorizara una mayor relacion precio-calidad"
+                   "más bajos aunque siempre se priorizara una mayor relacion precio-calidad"
     help_bateria = 'Duración de la batería'
     help_tam = "Tamaño de pantalla del dispositivo. Aclaración: Generalmente, a mayor importancia, se priorizaran " \
-                  "tamaños de pantalla mas grandes"
+                  "tamaños de pantalla más grandes"
     help_dis = "Estética, calidad de materiales y resistencia a caídas, a agua y a polvo "
     help_vel = 'Velocidad de procesamiento del dispositivo'
 
@@ -325,7 +325,7 @@ def main():
     col2.image(image_2, use_column_width=True)
 
     st.write("Afortundamente, podrás facilitar este proceso utilizando la siguiente herramienta pensada para "
-             "encontrar **la mejor alternativa para vos** en solo 3 pasos")
+             "encontrar **la mejor alternativa para vos** en solo 3 pasos.")
     st.write(" ")
     st.write(" ")
 
@@ -354,9 +354,9 @@ def main():
         st.write('### PASO 2 DE 3: IMPORTANCIA DE CADA NECESIDAD DEL CLIENTE'.format(product))
         st.write('Ya elegiste el producto! Estás en el paso 2 de 3, yo le diría a Usain Bolt que se empiece a preocupar!')
         st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente típica de {}. "
-                 "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas)".format(product))
+                 "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas).".format(product))
         st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
-                 "la importancia que tiene ésta para vos")
+                 "la importancia que tiene ésta para vos.")
         st.write("Una vez que hayas asignado lo importante para vos, clikea el boton 'Procesar' abajo de todo.")
 
         # Solicito pesos al cliente
@@ -400,7 +400,7 @@ def main():
             # Listado de todas las alternativas tenidas en cuenta en el analisis
             with st.expander("Ver todas las alternativas tenidas en cuenta en el analisis"):
                 st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
-                         "verificar que no falta ninguna")
+                         "verificar que no falta ninguna.")
                 st.dataframe(df_alts_recommend.iloc[:, 1:])
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ def main():
     st.header('LA OPCION IDEAL DEL PRODUCTO PARA VOS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
 
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
-    st.write("Quedate con la tranquilidad de elegir la opcion optima de un producto para vos ahorrando mucho tiempo y "
+    st.write("Quedate con la tranquilidad de elegir la opción óptima de un producto para vos ahorrando mucho tiempo y "
              "estres.")
     st.markdown("---")
 

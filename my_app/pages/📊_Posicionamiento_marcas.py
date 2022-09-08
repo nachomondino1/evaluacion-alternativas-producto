@@ -19,7 +19,7 @@ with st.sidebar:
 # (1) INTRODUCCIÓN A ANALISIS
 st.header('POSICIONAMIENTO DE MARCAS')  # imprimo titulo
 st.write('La herramienta tiene como objetivo identificar el **posicionamiento de las marcas de un producto en el mercado**. '
-         'Al final del analisis podras contestar preguntas como:')
+         'Al final del análisis podras contestar preguntas como:')
 st.write('- ¿Que necesidades del cliente prioriza la marca?')
 st.write('- ¿La marca ofrece calidad al menor precio posible?')
 st.write('- ¿Que marcas estan mejor posicionadas?')
@@ -52,13 +52,13 @@ if product != '':
 
     # (3) MUESTRO RESULTADOS
     # Numero de grupos y sus nombres
-    st.write('### PASO 2: ANALISIS DE RESULTADOS')
+    st.write('### PASO 2: ANÁLISIS DE RESULTADOS')
 
     st.write('Con el objetivo de posicionar las marcas en el mercado, llevamos a cabo un análisis en el que '
-             'agrupamos las alternativas de un producto segun la similaridad de sus caracteristicas.')
+             'agrupamos las alternativas de un producto segun la similaridad de sus características.')
 
-    st.write("Primero, conocemos profundamente a cada grupo en términos de cuantos hay, que nombres "
-             "tienen, como es una alternativa típica del grupo y que necesidades del cliente cumple mejor cada uno. "
+    st.write("Primero, conocemos profundamente a cada grupo en términos de cuantos hay, qué nombres "
+             "tienen, cómo es una alternativa típica del grupo y qué necesidades del cliente cumple mejor cada uno. "
              "Finalmente, veremos con que grupo se identifica cada marca y podremos responder a las preguntas anteriores")
     st.write(" ")
 
@@ -77,8 +77,8 @@ if product != '':
     st.write(" ")
 
     # Ejemplo tipico de cada grupo
-    st.write('##### Alternativa tipica por grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
-    st.write('En la siguiente tabla, se responde a la pregunta "¿Como es la alternativa tipica de cada grupo?"')
+    st.write('##### Alternativa típica por grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
+    st.write('En la siguiente tabla, se responde a la pregunta "¿Como es la alternativa típica de cada grupo?"')
     st.write(df_centroids_values)
     st.write(" ")
 
@@ -89,9 +89,9 @@ if product != '':
     st.write(" ")
     st.write(" ")
 
-    st.write("#### 2.2. DISTRIBUCION DE MARCAS EN GRUPOS")
+    st.write("#### 2.2. DISTRIBUCIÓN DE MARCAS EN GRUPOS")
     # Distribucion de marcas en grupos
-    st.write('Con que grupo se identifica más cada marca?')
+    st.write('¿Con que grupo se identifica más cada marca?')
     st.write(df_brand_per_cluster)
     st.write('Un gráfico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
              'gráfico')
@@ -100,12 +100,12 @@ if product != '':
     col2.image(image_4, use_column_width=True)
 
     with st.expander("Ayuda en interpretacion del gráfico", expanded=False):
-        st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relacion precio-calidad')
-        st.write('* Marcas con mayor cantidad de amarillo - naranja -->  marcas con relacion precio-calidad media')
-        st.write('* Marcas con mayor cantidad de rojo -->  marcas con peor relacion precio-calidad')
+        st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relación precio-calidad')
+        st.write('* Marcas con mayor cantidad de amarillo - naranja -->  marcas con relación precio-calidad media')
+        st.write('* Marcas con mayor cantidad de rojo -->  marcas con peor relación precio-calidad')
 
     # Listado de todas las alternativas tenidas en cuenta en el analisis
     with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
         st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
-                 "verificar que no falta ninguna")
+                 "verificar que no falta ninguna.")
         st.dataframe(df_alt_cleaned_cluster.iloc[:, 1:])
