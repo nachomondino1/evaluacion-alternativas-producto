@@ -291,7 +291,7 @@ def main():
     # Defino variables
     st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
     st.cache()
-    product_options = ['', 'Celulares', 'Smartband', 'TV']
+    product_options = ['', 'Celular', 'Smartband', 'TV']
 
     # ELEMENTOS DEL SIDEBAR
     with st.sidebar:
@@ -354,9 +354,9 @@ def main():
         st.write('### PASO 2 DE 3: IMPORTANCIA DE CARACTERISTICAS DEL PRODUCTO'.format(product))
         st.write('Ya elegiste el produco y estas en el paso 2! Esto si que es rapido. Yo le diría a Usain Bolt que se '
                  'empiece a preocupar!')
-        st.write("Ahora, tenes que asignar que importancia tiene para vos cada caracteristica de {}. ¿Como hacer? Por "
-                 "cada caracteristica del producto habrá una barra donde podes elegir la importancia que tiene ésta para "
-                 "vos.".format(product))
+        st.write("Ahora, tenes que asignar que importancia tiene para vos cada caracteristica del producto {}. ¿Como "
+                 "hacer? Por cada caracteristica del producto habrá una barra donde podes elegir la importancia que "
+                 "tiene ésta para vos.".format(product))
         st.write("Una vez que termines, clikea el boton 'Procesar' abajo de todo.")
 
         # Solicito pesos al cliente
