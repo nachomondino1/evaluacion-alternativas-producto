@@ -27,15 +27,16 @@ def main():
     tab1, tab2 = st.tabs(["Evaluador de alternativas", "Evaluador de marcas"])
 
     with tab1:
-        st.header("A cat")
+        st.write("Queres comprar un celular y no sabes que opción elegir? O tal vez un televisor y te estresa que haya "
+                 "tantos modelos? En estos casos, te recomendamos usar esta herramienta!")
         image_1 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
-        st.image(image_1, use_column_width=True, caption="Evaluador de alternativas")
-
+        st.image(image_1, use_column_width=True, caption="Evaluador de alternativas", width=200)
 
     with tab2:
-        st.header("A dog")
+        st.write("Queres ver que marca es la mejor en un producto como los celulares? Si es así, te recomendamos "
+                 "usar esta herramienta!")
         image_2 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
-        st.image(image_2, use_column_width=True, caption="Evaluador de marcas")
+        st.image(image_2, use_column_width=True, caption="Evaluador de marcas", width=200)
 
     st.write(" ")
 
