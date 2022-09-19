@@ -39,7 +39,7 @@ st.write(" ")
 st.write(" ")
 
 # (2) SOLICITO PRODUCTO
-st.write('### PASO 1: ELEGI TU PRODUCTO')
+st.write('### PASO 1: ELEGÍ TU PRODUCTO')
 product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
 product = st.selectbox('¿Que producto desea evaluar?',product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
 product = product.lower()
