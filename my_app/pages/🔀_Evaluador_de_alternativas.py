@@ -354,9 +354,9 @@ def main():
         st.write('### PASO 2 DE 3: IMPORTANCIA DE CARACTERISTICAS DEL PRODUCTO'.format(product))
         st.write('Ya elegiste el produco y estas en el paso 2! Esto si que es rapido. Yo le diría a Usain Bolt que se '
                  'empiece a preocupar!')
-        st.write("Ahora, tenes que asignar que importancia tiene para vos cada caracteristica de {}.")
-        st.write("Como hacer? Por cada caracteristica del producto habrá una barra donde podes elegir "
-                 "la importancia que tiene ésta para vos.")
+        st.write("Ahora, tenes que asignar que importancia tiene para vos cada caracteristica de {}. ¿Como hacer? Por "
+                 "cada caracteristica del producto habrá una barra donde podes elegir la importancia que tiene ésta para "
+                 "vos.".format(product))
         st.write("Una vez que termines, clikea el boton 'Procesar' abajo de todo.")
 
         # Solicito pesos al cliente
