@@ -54,11 +54,11 @@ if product != '':
     # Numero de grupos y sus nombres
     st.write('### PASO 2: ANÁLISIS DE RESULTADOS')
 
-    st.write("Agrupamos todas las alternativas del producto {} según lo parecidas que son. Conociendo profundamente cada grupo, "
+    st.write("Agrupamos todas las alternativas del producto {} según lo parecidas que son. Conociendo profundamente cada grupo "
              "y con que grupo se identifica mayormente una marca, podremos responder a las preguntas anteriores.".format(product))
     st.write(" ")
 
-    st.write("#### 2.1. CONOCIMIENTO DE GRUPOS")
+    st.write("#### 2.1. CONOCIMIENTO DE LOS GRUPOS DE ALTERNATIVAS")
     st.write('##### Cantidad de grupos y sus nombres')
     st.write("* Nº GRUPOS: {}".format(len(df_alt_per_clust)))
     st.write("* NOMBRES DE GRUPOS:  {}".format("  -  ".join(list(df_alt_per_clust.index))))
@@ -88,12 +88,17 @@ if product != '':
     st.write("#### 2.2. DISTRIBUCIÓN DE MARCAS EN GRUPOS")
     # Distribucion de marcas en grupos
     st.write('¿Con que grupo se identifica más cada marca?')
-    st.write(df_brand_per_cluster)
-    st.write('Un gráfico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
-             'gráfico')
-    image_4 = Image.open('./p5_deployment/utils/brand_{}.png'.format(product))
-    col1, col2, col3 = st.columns([0.2, 5, 0.2])
-    col2.image(image_4, use_column_width=True)
+
+    # Tabla y Grafico
+    tab1, tab2 = st.tabs(["Tabla", "Gráfico"])
+    with tab1:
+        st.write(df_brand_per_cluster)
+    with tab2:
+        st.write('Un gráfico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
+                 'gráfico')
+        image_4 = Image.open('./p5_deployment/utils/brand_{}.png'.format(product))
+        col1, col2, col3 = st.columns([0.2, 5, 0.2])
+        col2.image(image_4, use_column_width=True)
 
     with st.expander("Ayuda en interpretacion del gráfico", expanded=False):
         st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relación precio-calidad')
