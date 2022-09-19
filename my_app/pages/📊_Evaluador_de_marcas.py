@@ -94,8 +94,6 @@ if product != '':
     with tab1:
         st.write(df_brand_per_cluster)
     with tab2:
-        st.write('Un gráfico suele ayudar a visualizar mejor los resultados, veamos la tabla anterior en el siguiente '
-                 'gráfico')
         image_4 = Image.open('./p5_deployment/utils/brand_{}.png'.format(product))
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_4, use_column_width=True)
