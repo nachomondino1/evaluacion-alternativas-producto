@@ -69,7 +69,7 @@ def get_help_button(cust_need, producto):
     :return: String. Texto 'help' que explica el significado de la customer need para dicho producto.
     """
     # Defino 'help' generales
-    help_precio =  "Precio y marca del dispositivo. Aclaración: Generalmente, a mayor importancia, se buscarán precios " \
+    help_precio = "Precio y marca del dispositivo. Aclaración: Generalmente, a mayor importancia, se buscarán precios " \
                    "más bajos aunque siempre se priorizara una mayor relacion precio-calidad"
     help_bateria = 'Duración de la batería'
     help_tam = "Tamaño de pantalla del dispositivo. Aclaración: Generalmente, a mayor importancia, se priorizarán " \
@@ -351,13 +351,13 @@ def main():
 
         # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
         # Imprimo titulo
-        st.write('### PASO 2 DE 3: IMPORTANCIA DE CADA NECESIDAD DEL CLIENTE'.format(product))
-        st.write('Ya elegiste el produco y estas en el paso 2! Yo le diría a Usain Bolt que se empiece a preocupar!')
-        st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente de {}. "
-                 "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas).".format(product))
-        st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
+        st.write('### PASO 2 DE 3: IMPORTANCIA DE CARACTERISTICAS DEL PRODUCTO'.format(product))
+        st.write('Ya elegiste el produco y estas en el paso 2! Esto si que es rapido. Yo le diría a Usain Bolt que se '
+                 'empiece a preocupar!')
+        st.write("Ahora, tenes que asignar que importancia tiene para vos cada caracteristica de {}.")
+        st.write("Como hacer? Por cada caracteristica del producto habrá una barra donde podes elegir "
                  "la importancia que tiene ésta para vos.")
-        st.write("Una vez que hayas asignado lo importante para vos, clikea el boton 'Procesar' abajo de todo.")
+        st.write("Una vez que termines, clikea el boton 'Procesar' abajo de todo.")
 
         # Solicito pesos al cliente
         df_cust_needs_with_weight = set_customer_needs_weigths(df_cust_needs, product)
