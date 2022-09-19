@@ -100,10 +100,10 @@ if product != '':
         col1, col2, col3 = st.columns([0.2, 5, 0.2])
         col2.image(image_4, use_column_width=True)
 
-    with st.expander("Ayuda en interpretacion del gráfico", expanded=False):
-        st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relación precio-calidad')
-        st.write('* Marcas con mayor cantidad de amarillo - naranja -->  marcas con relación precio-calidad media')
-        st.write('* Marcas con mayor cantidad de rojo -->  marcas con peor relación precio-calidad')
+        with st.expander("Ayuda en interpretacion del gráfico", expanded=False):
+            st.write('* Marcas con mayor cantidad de verde -->  marcas con mejor relación precio-calidad')
+            st.write('* Marcas con mayor cantidad de amarillo - naranja -->  marcas con relación precio-calidad media')
+            st.write('* Marcas con mayor cantidad de rojo -->  marcas con peor relación precio-calidad')
 
     # Listado de todas las alternativas tenidas en cuenta en el analisis
     with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
