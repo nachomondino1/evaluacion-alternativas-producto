@@ -18,7 +18,7 @@ def main():
 
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
     st.write("Hacé que comprar un producto sea rápido y fácil")
-    image_0 = Image.open('./p5_deployment/utils/prueba.png')
+    image_0 = Image.open('./p5_deployment/utils/home_image.png')
     st.image(image_0, use_column_width=True)
     st.markdown("---")
 

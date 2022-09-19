@@ -28,7 +28,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
         # Coloco container para que el cliente pueda seleccionar un uso
         st.write("Y si todavía no tenes claro cómo hacer, podes usar el sector 'Ayuda' donde fijamos las importancias según uso del producto")
         col1, col2 = st.columns([2, 0.8])
-        uso_selected = col2.selectbox('AYUDA: Orientación de importancias según uso del producto', ['Reestablecer'] + list(d_usos.keys()))
+        uso_selected = col2.selectbox('¿NECESITAS AYUDA? Orientación de importancias según uso del producto', ['Reestablecer'] + list(d_usos.keys()))
     # Si el producto no tiene usos especificados
     else:
         # No coloco container para que el cliente pueda seleccionar un uso
@@ -306,7 +306,7 @@ def main():
         st.info("Esta herramienta se enmarca en el proyecto final de carrera de quien les habla, Ignacio Mondino. Espero "
                 "que les sirva tanto como me sirvió a mí. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
 
-    st.header('EVALUACION DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
+    st.title('EVALUADOR DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
     st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
              "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
@@ -316,7 +316,7 @@ def main():
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
     col2.image(image_1, use_column_width=True)
 
-    st.write("Hoy en día, cada vez hay mas alternativas lo que hace que la elección de una sola de ellas, sea un "
+    st.write("Hoy en día, cada vez hay más alternativas lo que hace que la elección de una sola de ellas, sea un "
              "proceso extramadamente desgastante. Es muy probable que consumamos mucho de nuestro valioso tiempo y "
              "encima no terminemos escogiendo la alternativa ideal para nosotros.")
 
@@ -330,7 +330,7 @@ def main():
     st.write(" ")
 
     # (2) SOLICITO PRODUCTO
-    st.write('### PASO 1 DE 3: ELEGI TU PRODUCTO')
+    st.write('### PASO 1 DE 3: ELEGÍ TU PRODUCTO')
     product = st.selectbox('¿Que producto desea evaluar?', product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
     product = product.lower()
     st.write(" ")
@@ -352,8 +352,8 @@ def main():
         # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
         # Imprimo titulo
         st.write('### PASO 2 DE 3: IMPORTANCIA DE CADA NECESIDAD DEL CLIENTE'.format(product))
-        st.write('Ya elegiste el producto! Estás en el paso 2 de 3, yo le diría a Usain Bolt que se empiece a preocupar!')
-        st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente típica de {}. "
+        st.write('Ya elegiste el produco y estas en el paso 2! Yo le diría a Usain Bolt que se empiece a preocupar!')
+        st.write("Ahora, tenes que asignar que importancia tiene para vos, cada necesidad del cliente de {}. "
                  "Bueno, seguramente mas de uno se esta preguntando 'y como hago eso?' (tal vez usando alguna palabrita mas).".format(product))
         st.write("Es muy sencillo! A continuación, por cada necesidad del cliente habrá una barra donde podes elegir "
                  "la importancia que tiene ésta para vos.")
