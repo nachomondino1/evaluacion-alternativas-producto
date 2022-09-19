@@ -54,12 +54,8 @@ if product != '':
     # Numero de grupos y sus nombres
     st.write('### PASO 2: ANÁLISIS DE RESULTADOS')
 
-    st.write('Con el objetivo de posicionar las marcas en el mercado, llevamos a cabo un análisis en el que '
-             'agrupamos las alternativas de un producto segun la similaridad de sus características.')
-
-    st.write("Primero, conocemos profundamente a cada grupo en términos de cuantos hay, qué nombres "
-             "tienen, cómo es una alternativa típica del grupo y qué necesidades del cliente cumple mejor cada uno. "
-             "Finalmente, veremos con que grupo se identifica cada marca y podremos responder a las preguntas anteriores")
+    st.write("Agrupamos todas las alternativas del producto {} según lo parecidas que son. Conociendo profundamente cada grupo, "
+             "y con que grupo se identifica mayormente una marca, podremos responder a las preguntas anteriores.".format(product))
     st.write(" ")
 
     st.write("#### 2.1. CONOCIMIENTO DE GRUPOS")
