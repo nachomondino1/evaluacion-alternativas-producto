@@ -32,7 +32,7 @@ def main():
                  "tantos modelos? En estos casos, te recomendamos usar esta herramienta!")
         image_1 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
         col1, col2, col3, = st.columns([0.2, 2, 0.2])
-        col2.image(image_1, use_column_width=True, caption="Evaluador de alternativas", width=3)
+        col2.image(image_1, use_column_width=True)
 
     with tab2:
         st.subheader("Evaluador de marcas de un producto")
@@ -40,12 +40,12 @@ def main():
                  "usar esta herramienta!")
         image_2 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
         col1, col2, col3, = st.columns([0.2, 2, 0.2])
-        col2.image(image_2, use_column_width=True, caption="Evaluador de marcas", width=3)
+        col2.image(image_2, use_column_width=True)
 
     st.write(" ")
 
     st.header("Productos")
-    st.write("Las dos herramientas descritas se pueden utilizar para los siguientes productos:")
+    st.write("Las dos herramientas recién descritas se pueden utilizar para los siguientes productos:")
     image_3 = Image.open('./p5_deployment/utils/celular.jpeg')
     image_4 = Image.open('./p5_deployment/utils/smartband.jpeg')
     image_5 = Image.open('./p5_deployment/utils/tv.jpeg')
