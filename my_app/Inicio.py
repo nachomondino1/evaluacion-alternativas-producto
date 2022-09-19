@@ -4,16 +4,24 @@ from PIL import Image
 
 def main():
     # Defino variables
-    st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
+    st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="collapsed", menu_items=None)
 
     # ELEMENTOS DEL SIDEBAR
     with st.sidebar:
         # + Info
         st.subheader("+ Info")
-        st.info("Esta herramienta se enmarca en el proyecto final de carrera de quien les habla, Ignacio Mondino. Espero "
+        st.info("Estas herramientas se enmarcan en el proyecto final de carrera de quien les habla, Ignacio Mondino. Espero "
                 "que les sirva tanto como me sirvió a mí. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
 
-    st.header('LA OPCION IDEAL DEL PRODUCTO PARA VOS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
+    image_11 = Image.open('./p5_deployment/utils/prueba.png') # Imagen de persona antes ≠ alternativas
+
+
+if __name__ == '__main__':
+    main()
+
+
+'''
+ st.header('LA OPCIÓN IDEAL DEL PRODUCTO PARA VOS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
 
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
     st.write("Quedate con la tranquilidad de elegir la opción óptima de un producto para vos ahorrando mucho tiempo y "
@@ -39,7 +47,4 @@ def main():
     col6.image(image_5, use_column_width=True, caption="Televisor")
 
     st.write(" ")
-
-
-if __name__ == '__main__':
-    main()
+'''
