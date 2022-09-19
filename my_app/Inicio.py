@@ -14,6 +14,7 @@ def main():
                 "que les sirva tanto como me sirvió a mí. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
 
     image_11 = Image.open('./p5_deployment/utils/prueba.png') # Imagen de persona antes ≠ alternativas
+    st.image(image_11, use_column_width=True, caption="Evaluación de alternativas")
 
 
 if __name__ == '__main__':
