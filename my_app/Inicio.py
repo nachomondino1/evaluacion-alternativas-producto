@@ -17,7 +17,7 @@ def main():
     st.title('COMPRAR NUNCA FUE TAN FÁCIL')  # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
 
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
-    st.write("Hace que comprar un producto sea rápido y fácil")
+    st.write("Hacé que comprar un producto sea rápido y fácil")
     image_0 = Image.open('./p5_deployment/utils/prueba.png')
     st.image(image_0, use_column_width=True)
     st.markdown("---")
