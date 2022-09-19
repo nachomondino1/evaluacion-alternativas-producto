@@ -28,18 +28,18 @@ def main():
 
     with tab1:
         st.subheader("Evaluador de alternativas de un producto")
-        st.write("Queres comprar un celular y no sabes que opción elegir? O tal vez un televisor y te estresa que haya "
+        st.write("¿Queres comprar un celular y no sabes que opción elegir? ¿O tal vez un televisor y te estresa que haya "
                  "tantos modelos? En estos casos, te recomendamos usar esta herramienta!")
         image_1 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
-        col1, col2, col3, = st.columns([0.2, 2, 0.2])
+        col1, col2, col3, = st.columns([0.2, 1, 0.2])
         col2.image(image_1, use_column_width=True)
 
     with tab2:
         st.subheader("Evaluador de marcas de un producto")
-        st.write("Queres ver que marca es la mejor en un producto como los celulares? Si es así, te recomendamos "
+        st.write("¿Queres ver que marca es la mejor en un producto como los celulares? Si es así, te recomendamos "
                  "usar esta herramienta!")
         image_2 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
-        col1, col2, col3, = st.columns([0.2, 2, 0.2])
+        col1, col2, col3, = st.columns([0.2, 1, 0.2])
         col2.image(image_2, use_column_width=True)
 
     st.write(" ")
