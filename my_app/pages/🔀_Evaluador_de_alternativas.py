@@ -298,8 +298,6 @@ def main():
         # Glosario
         st.subheader("Glosario")
         st.write('- *Alternativas:* las distintas opciones que tiene el cliente a la hora de comprar un producto')
-        st.write('- *Necesidad del cliente:* las expresiones que los clientes utilizan para describir los productos y '
-                 'sus características deseables')
 
         # + Info
         st.subheader("+ Info")

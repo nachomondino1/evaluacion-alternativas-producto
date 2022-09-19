@@ -17,12 +17,12 @@ with st.sidebar:
             "que les sirva tanto como me sirvió a mí. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
 
 # (1) INTRODUCCIÓN A ANALISIS
-st.header('POSICIONAMIENTO DE MARCAS')  # imprimo titulo
+st.title('EVALUADOR DE MARCAS')  # imprimo titulo
 st.write('La herramienta tiene como objetivo identificar el **posicionamiento de las marcas de un producto en el mercado**. '
          'Al final del análisis podras contestar preguntas como:')
-st.write('- ¿Que necesidades del cliente prioriza la marca?')
-st.write('- ¿La marca ofrece calidad al menor precio posible?')
-st.write('- ¿Que marcas estan mejor posicionadas?')
+st.write('- ¿Que marcas estan mejor posicionadas para el consumidor?')
+st.write('- ¿Que caracteristicas del producto prioriza cada marca?')
+st.write('- ¿La *marca x* ofrece calidad al menor precio posible?')
 
 image_3 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
 col1, col2, col3 = st.columns([0.2, 0.8, 0.2])
