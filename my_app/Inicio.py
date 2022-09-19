@@ -14,7 +14,7 @@ def main():
                 "que les sirva tanto como me sirvió a mí. Pueden contactarme en el siguiente mail: nachomondino1@gmail.com")
 
     st.header('COMPRAR NUNCA FUE TAN FÁCIL')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
-    image_11 = Image.open('./p5_deployment/utils/alternativas_posibles.png')  # Imagen de persona antes ≠ alternativas
+    image_11 = Image.open('./p5_deployment/utils/prueba.png')  # Imagen de persona antes ≠ alternativas
     st.image(image_11, use_column_width=True, caption="Evaluación de alternativas")
 
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
