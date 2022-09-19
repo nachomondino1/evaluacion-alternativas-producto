@@ -27,7 +27,7 @@ def main():
     tab1, tab2 = st.tabs(["Evaluador de alternativas", "Evaluador de marcas"])
 
     with tab1:
-        st.header("Evaluador de alternativas de un producto")
+        st.subheader("Evaluador de alternativas de un producto")
         st.write("Queres comprar un celular y no sabes que opción elegir? O tal vez un televisor y te estresa que haya "
                  "tantos modelos? En estos casos, te recomendamos usar esta herramienta!")
         image_1 = Image.open('./p5_deployment/utils/alternativas_posibles.png')
@@ -35,7 +35,7 @@ def main():
         col2.image(image_1, use_column_width=True, caption="Evaluador de alternativas", width=3)
 
     with tab2:
-        st.header("Evaluador de marcas de un producto")
+        st.subheader("Evaluador de marcas de un producto")
         st.write("Queres ver que marca es la mejor en un producto como los celulares? Si es así, te recomendamos "
                  "usar esta herramienta!")
         image_2 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
@@ -45,7 +45,7 @@ def main():
     st.write(" ")
 
     st.header("Productos")
-    st.write("A su vez, los productos relevados son:")
+    st.write("Las dos herramientas descritas se pueden utilizar para los siguientes productos:")
     image_3 = Image.open('./p5_deployment/utils/celular.jpeg')
     image_4 = Image.open('./p5_deployment/utils/smartband.jpeg')
     image_5 = Image.open('./p5_deployment/utils/tv.jpeg')
