@@ -291,7 +291,7 @@ def main():
     # Defino variables
     st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
     st.cache()
-    product_options = ['', 'Celular', 'Smartband', 'TV']
+    product_options = ['', 'Celulares', 'Smartband', 'TV']
 
     # ELEMENTOS DEL SIDEBAR
     with st.sidebar:
