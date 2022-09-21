@@ -24,16 +24,16 @@ with st.sidebar:
 # (1) INTRODUCCIÓN A ANALISIS
 st.title('EVALUADOR DE MARCAS')  # imprimo titulo
 st.write('La herramienta tiene como objetivo identificar el **posicionamiento de las marcas de un producto en el mercado**. '
-         'Al final del análisis podras contestar preguntas como:')
-st.write('- ¿Que marcas estan mejor posicionadas para el consumidor?')
-st.write('- ¿Que caracteristicas del producto prioriza cada marca?')
-st.write('- ¿La *marca x* ofrece calidad al menor precio posible?')
+         'Al final del análisis podrás contestar preguntas como:')
+st.write('- ¿Qué marcas están mejor posicionadas para el consumidor?')
+st.write('- ¿Qué características del producto prioriza cada marca?')
+st.write('- La *marca x* ¿ofrece calidad al menor precio posible?')
 
 image_3 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
 col1, col2, col3 = st.columns([0.2, 0.8, 0.2])
 col2.image(image_3, use_column_width=True)
 
-st.write('En dos simples pasos, podrás conocer el posicionamiento de las marcas en el mercado. Primero, seleccionas un '
+st.write('En dos simples pasos, podrás conocer el posicionamiento de las marcas en el mercado. Primero, seleccionás un '
          'producto y luego te mostramos los resultados.')
 st.write(" ")
 st.write(" ")
@@ -41,7 +41,7 @@ st.write(" ")
 # (2) SOLICITO PRODUCTO
 st.write('### PASO 1: ELEGÍ TU PRODUCTO')
 product_options = ['', 'Celulares', 'Smartband', 'TV']  # ['Auriculares', 'Celulares', 'Fundas de celular', 'Notebook', 'Smartband', 'Suplementos','Tablets', 'TV']  # Lista de productos
-product = st.selectbox('¿Que producto desea evaluar?',product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
+product = st.selectbox('¿Qué producto deseás evaluar?',product_options)  # product = st.sidebar.selectbox('2) ¿Que producto desea evaluar?', product_options)
 product = product.lower()
 st.write(" ")
 st.write(" ")
@@ -60,7 +60,7 @@ if product != '':
     st.write('### PASO 2: ANÁLISIS DE RESULTADOS')
 
     st.write("Agrupamos todas las alternativas del producto {} según lo parecidas que son. Conociendo profundamente cada grupo "
-             "y con que grupo se identifica mayormente una marca, podremos responder a las preguntas anteriores.".format(product))
+             "y con qué grupo se identifica mayormente una marca, podremos responder a las preguntas anteriores.".format(product))
     st.write(" ")
 
     st.write("#### 2.1. CONOCIMIENTO DE LOS GRUPOS DE ALTERNATIVAS")
@@ -79,20 +79,20 @@ if product != '':
 
     # Ejemplo tipico de cada grupo
     st.write('##### Alternativa típica por grupo')  #  CENTROIDES DE CLUSTERS SEGUN VALORES DE ATRIBUTOS
-    st.write('En la siguiente tabla, se responde a la pregunta "¿Como es la alternativa típica de cada grupo?"')
+    st.write('En la siguiente tabla, se responde a la pregunta "¿Cómo es la alternativa típica de cada grupo?"')
     st.write(df_centroids_values)
     st.write(" ")
 
     st.write('##### Posición de cada grupo en las necesidades del cliente')  # st.write('##### Tabla 4: Mejores marcas por necesidad del cliente')
     # Mejores marcas por necesidad del cliente
-    st.write("A continuación, podra ver las mejores marcas por necesidad del cliente")
+    st.write("A continuación, podrá ver las mejores marcas por necesidad del cliente")
     st.dataframe(df_best_cluster_per_cust_need)
     st.write(" ")
     st.write(" ")
 
     st.write("#### 2.2. DISTRIBUCIÓN DE MARCAS EN GRUPOS")
     # Distribucion de marcas en grupos
-    st.write('¿Con que grupo se identifica más cada marca?')
+    st.write('¿Con qué grupo se identifica más cada marca?')
 
     # Tabla y Grafico
     tab1, tab2 = st.tabs(["Tabla", "Gráfico"])
@@ -110,6 +110,6 @@ if product != '':
 
     # Listado de todas las alternativas tenidas en cuenta en el analisis
     with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
-        st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
+        st.write("Acá, podrás ver todas las alternativas con las que trabajó la herramienta para que puedas"
                  "verificar que no falta ninguna.")
         st.dataframe(df_alt_cleaned_cluster.iloc[:, 1:])
