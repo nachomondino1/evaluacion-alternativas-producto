@@ -52,11 +52,11 @@ if product != '':
     df_brand_per_cluster = pd.read_excel('./data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(product),index_col=0)
     df_best_cluster_per_cust_need = pd.read_excel('./data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(product), index_col=0)
 
-    # (3) MUESTRO RESULTADOS
+    # (3) CONOCIMIENTO DE GRUPOS
     st.write('### PASO 2: CONOCÉ CADA GRUPO DE ALTERNATIVAS DEL PRODUCTO')
-    st.write("Agrupamos todas las alternativas del producto {} según lo parecidas que son. Conociendo profundamente cada grupo "
-        "y con qué grupo se identifica mayormente una marca, podremos responder a las preguntas anteriores.".format(
-            product))
+    st.write("Segun la similiradidad entre las alternativas del producto en sus caracteristicas, se las agrupó en "
+             "distintos grupos. Una vez que conozcamos profundamente cada grupo, en el siguiente y ultimo paso, podremos "
+             "responder a las preguntas de la introduccion viendo con qué grupo se identifica mayormente una marca.")
     st.write(" ")
 
     # Numero de grupos y sus nombres
@@ -86,6 +86,7 @@ if product != '':
     st.write(" ")
     st.write(" ")
 
+    # (4) IDENTIFICACIÓN DE MARCA CON GRUPOS
     st.write('### PASO 3: MIRÁ CON QUÉ GRUPO DE ALTERNATIVAS SE IDENTIFICA MAS CADA MARCA')
     # Tabla y Grafico
     tab1, tab2 = st.tabs(["Tabla", "Gráfico"])
