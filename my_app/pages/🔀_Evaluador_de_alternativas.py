@@ -40,7 +40,7 @@ def set_customer_needs_weigths(df_cust_needs, product):
 
         # Defino variables
         st.write('##### {}) {}'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider  # st.subheader('{}) {}:'.format(i + 1, l_cust_needs_three_words[i].upper()))  # titulo de cada slider
-        label = 'Ingrese que importancia tiene para vos "{}":'.format(l_cust_needs_three_words[i].upper())  # titulo de cada slider
+        label = 'Ingrese qué importancia tiene para vos "{}":'.format(l_cust_needs_three_words[i].upper())  # titulo de cada slider
         help = get_help_button(l_cust_needs_one_word[i], product)  # Texto help de cada slider
 
         # SI EL CLIENTE NO SELECCIONO UN USO, O BIEN, EL PRODUCTO NO LOS TIENE ESPECIFICADOS
@@ -70,8 +70,8 @@ def get_help_button(cust_need, producto):
     :return: String. Texto 'help' que explica el significado de la customer need para dicho producto.
     """
     # Defino 'help' generales
-    help_precio = "Precio y marca del dispositivo. Aclaración: Generalmente, a mayor importancia, se buscarán precios " \
-                   "más bajos aunque siempre se priorizara una mayor relacion precio-calidad"
+    help_precio = "Precio y marca del dispositivo. Aclaración: generalmente, a mayor importancia, se buscarán precios " \
+                   "más bajos aunque siempre se priorizará una mayor relación precio-calidad"
     help_bateria = 'Duración de la batería'
     help_tam = "Tamaño de pantalla del dispositivo. Aclaración: Generalmente, a mayor importancia, se priorizarán " \
                   "tamaños de pantalla más grandes"
