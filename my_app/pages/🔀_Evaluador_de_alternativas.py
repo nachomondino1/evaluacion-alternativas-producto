@@ -352,10 +352,10 @@ def main():
         st.write('### PASO 2 DE 3: ASIGNÁ LA IMPORTANCIA QUE TIENE PARA VOS, CADA CARACTERÍSTICA DEL PRODUCTO')
         st.write('Ya elegiste el produco y estás en el paso 2! Esto sí que es rápido. Yo le diría a Michael Schumacher que se '
                  'empiece a preocupar!')
-        st.write("Ahora, tenes que asignar que importancia tiene para vos cada característica del producto {}. ¿Como "
-                 "hacer? Por cada característica del producto habrá una barra donde podes elegir la importancia que "
+        st.write("Ahora, tenés que asignar qué importancia tiene para vos cada característica del producto {}. ¿Cómo "
+                 "se hace? Por cada característica del producto habrá una barra donde podés elegir la importancia que "
                  "tiene ésta para vos.".format(product))
-        st.write("Una vez que termines, clikea el boton 'Procesar' abajo de todo.")
+        st.write("Una vez que termines, clikeá el botón 'Procesar' abajo de todo.")
 
         # Solicito pesos al cliente
         df_cust_needs_with_weight = set_customer_needs_weigths(df_cust_needs, product)
