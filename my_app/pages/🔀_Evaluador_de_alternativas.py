@@ -394,11 +394,11 @@ def main():
             st.balloons()
 
             # Disclaimer de ultima actualizacion de datos (ppalmente por precio)
-            st.write("*Fecha de ultima actualización de los datos: 29 de Junio de 2022*")
+            st.write("*Fecha de la última actualización de los datos: 29 de Junio de 2022*")
 
             # Listado de todas las alternativas tenidas en cuenta en el analisis
-            with st.expander("Ver todas las alternativas tenidas en cuenta en el analisis"):
-                st.write("Acá, podras ver todas las alternativas con las que trabajó la herramienta, así, podes "
+            with st.expander("Ver todas las alternativas tenidas en cuenta en el análisis"):
+                st.write("Acá, podrás ver todas las alternativas con las que trabajó la herramienta para que puedas "
                          "verificar que no falta ninguna.")
                 st.dataframe(df_alts_recommend.iloc[:, 1:])
 
