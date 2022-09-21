@@ -39,7 +39,7 @@ def main():
         st.subheader("Evaluador de marcas de un producto")
         st.write("¿Querés ver qué marca es la mejor en un producto como los celulares? Si es así, te recomendamos "
                  "usar esta herramienta!")
-        image_2 = Image.open('./p5_deployment/utils/posicionamiento.png')
+        image_2 = Image.open('./p5_deployment/utils/posicionamiento.jpeg')
         col1, col2, col3, = st.columns([0.2, 1, 0.2])
         col2.image(image_2, use_column_width=True)
 
