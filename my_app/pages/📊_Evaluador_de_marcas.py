@@ -54,9 +54,9 @@ if product != '':
 
     # (3) CONOCIMIENTO DE GRUPOS
     st.write('### PASO 2: CONOCÉ CADA GRUPO DE ALTERNATIVAS DEL PRODUCTO')
-    st.write("Segun la similiradidad entre las alternativas del producto en sus caracteristicas, se las agrupó en "
-             "distintos grupos. Una vez que conozcamos profundamente cada grupo, en el siguiente y ultimo paso, podremos "
-             "responder a las preguntas de la introduccion viendo con qué grupo se identifica mayormente una marca.")
+    st.write("Según la similiradidad entre las alternativas del producto en sus características, se las agrupó en "
+             "distintos grupos. Una vez que conozcamos profundamente cada grupo, en el siguiente y último paso, podremos "
+             "responder a las preguntas de la introducción viendo con qué grupo se identifica mayormente una marca.")
     st.write(" ")
 
     # Numero de grupos y sus nombres
@@ -81,13 +81,17 @@ if product != '':
 
     st.write('##### Posición de cada grupo en las necesidades del cliente')  # st.write('##### Tabla 4: Mejores marcas por necesidad del cliente')
     # Mejores marcas por necesidad del cliente
-    st.write("A continuación, podrá ver las mejores marcas por necesidad del cliente")
+    st.write("A continuación, podrá ver qué grupo cumple mejor con cada necesidad del cliente del producto")
     st.dataframe(df_best_cluster_per_cust_need)
     st.write(" ")
     st.write(" ")
 
     # (4) IDENTIFICACIÓN DE MARCA CON GRUPOS
-    st.write('### PASO 3: MIRÁ CON QUÉ GRUPO DE ALTERNATIVAS SE IDENTIFICA MAS CADA MARCA')
+    st.write('### PASO 3: MIRÁ CON QUÉ GRUPO DE ALTERNATIVAS SE IDENTIFICA MÁS CADA MARCA')
+    st.write("Habiendo conocido los grupos de alternativas (cantidad de éstos, cómo es un ejemplo típico de cada uno y "
+             "cómo cumple cada uno con las necesidades del cliente) y viendo la cantidad de alternativas de una marca "
+             "en los distintos grupos, podremos saber cómo se posiciona cada marca en el mercado .")
+
     # Tabla y Grafico
     tab1, tab2 = st.tabs(["Tabla", "Gráfico"])
     with tab1:
