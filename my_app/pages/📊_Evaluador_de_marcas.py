@@ -29,7 +29,7 @@ st.write('- ¿Qué marcas están mejor posicionadas para el consumidor?')
 st.write('- ¿Qué características del producto prioriza cada marca?')
 st.write('- La *marca x* ¿ofrece calidad al menor precio posible?')
 
-image_3 = Image.open('./p5_deployment/utils/posicion_mercado.jpeg')
+image_3 = Image.open('./p5_deployment/utils/posicionamiento.jpeg')
 col1, col2, col3 = st.columns([0.2, 0.8, 0.2])
 col2.image(image_3, use_column_width=True)
 
