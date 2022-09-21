@@ -349,7 +349,7 @@ def main():
 
         # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
         # Imprimo titulo
-        st.write('### PASO 2 DE 3: ASIGNÁ LA IMPORTANCIA DE CADA CARACTERÍSTICA DEL PRODUCTO')
+        st.write('### PASO 2 DE 3: ASIGNÁ LA IMPORTANCIA QUE TIENE PARA VOS CADA CARACTERÍSTICA DEL PRODUCTO')
         st.write('Ya elegiste el produco y estas en el paso 2! Esto sí que es rápido. Yo le diría a Usain Bolt que se '
                  'empiece a preocupar!')
         st.write("Ahora, tenes que asignar que importancia tiene para vos cada característica del producto {}. ¿Como "
