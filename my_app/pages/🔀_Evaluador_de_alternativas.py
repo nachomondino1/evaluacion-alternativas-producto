@@ -380,7 +380,7 @@ def main():
             # Tabla de recomendacion
             st.write('### PASO 3 DE 3: ELEGÍ TU ALTERNATIVA')
             st.write('Llegaste al último paso! Acá te presentamos las 10 alternativas que mejor se ajustan a lo que '
-                     'buscas, solo tendrás que elegir una. Y quedate tranquil@, analizamos toooodas '
+                     'buscás, sólo tendrás que elegir una. Y quedate tranquil@, analizamos toooodas '
                      'las alternativas (¡Y si!... podes decir que lo hiciste todo vos!).')
             # st.write('Dada la importancia que le da a cada necesidad del cliente, buscamos las alternativas mas idoneas para vos')
             st.write('#### Las 10 alternativas que más te recomendamos')
