@@ -72,8 +72,8 @@ def get_help_button(cust_need, producto):
     # Defino 'help' generales
     help_precio = "Precio y marca del dispositivo. Aclaración: generalmente, a mayor importancia, se buscarán precios " \
                    "más bajos aunque siempre se priorizará una mayor relación precio-calidad"
-    help_bateria = 'Duración de la batería'
-    help_tam = "Tamaño de pantalla del dispositivo. Aclaración: Generalmente, a mayor importancia, se priorizarán " \
+    help_bateria = 'Tiempo de duración de la batería'
+    help_tam = "Tamaño de pantalla del dispositivo. Aclaración: generalmente, a mayor importancia, se priorizarán " \
                   "tamaños de pantalla más grandes"
     help_dis = "Estética, calidad de materiales y resistencia a caídas, a agua y a polvo "
     help_vel = 'Velocidad de procesamiento del dispositivo'
@@ -83,7 +83,7 @@ def get_help_button(cust_need, producto):
               'bateria': help_bateria,
               'camara': 'Resoluciones de foto y video tanto de la cámara frontal como de la cámara trasera',
               'diseño': help_dis,
-              'memoria': "Capacidad de almacenamiento interna. En otras palabras, espacio para descargar muchas "
+              'memoria': "Capacidad de almacenamiento interno. En otras palabras, espacio para descargar muchas "
                          "aplicaciones, guardar muchas fotos o documentos, etcétera ",
               'pantalla': 'Calidad de imagen de la pantalla',
               'sistema': 'Facilidad de uso del dispositivo, cantidad y calidad de funciones (por ejemplo, navegación por '
@@ -378,7 +378,7 @@ def main():
 
             # (6) MUESTRO RESULTADOS
             # Tabla de recomendacion
-            st.write('### PASO 3 DE 3: ELECCIÓN DE ALTERNATIVA')
+            st.write('### PASO 3 DE 3: ELEGÍ TU ALTERNATIVA')
             st.write('Llegaste al último paso! Acá te presentamos las 10 alternativas que mejor se ajustan a lo que '
                      'buscas, solo tendrás que elegir una. Y quedate tranquil@, analizamos toooodas '
                      'las alternativas (¡Y si!... podes decir que lo hiciste todo vos!).')
