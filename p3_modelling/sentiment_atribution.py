@@ -151,11 +151,7 @@ def to_attribute(df_alt, df_cust_needs_sent, df_relation_matrix):
                 df_sent_pond = df_values_attr_sent
                 print("\t No pondero sentiment pues el atributo toma dos valores")
 
-            # ESTANDARIZO SENTIMENT DE LOS VALORES DEL ATRIBUTO
-            # df_sent_pond_norm = standardize_sentiment(df_sent_pond)
-
             # GUARDO DATOS DEL ATRIBUTO
-            # df_values_attrs_sent = pd.concat([df_values_attrs_sent, df_sent_pond_norm])
             df_values_attrs_sent = pd.concat([df_values_attrs_sent, df_sent_pond])
 
         # SI EL ATRIBUTO FUE CREADO ARTIFICIALMENTE ("ATRIBUTO FICTICIO")
@@ -179,13 +175,8 @@ def to_attribute(df_alt, df_cust_needs_sent, df_relation_matrix):
             # PONDERO SENITMENT POR CANTIDAD DE OPINIONES
             df_sent_pond = sentiment_weighing_by_quantity_opinions(df_alt_sent)
 
-            # ESTANDARIZO SENTIMENT DE LAS ALTERNATIVAS PARA EL ATRIBUTO
-            # df_sent_pond_norm = standardize_sentiment(df_sent_pond)
-
             # GUARDO DATOS DEL ATRIBUTO
-            # df_alts_sent = pd.concat([df_alts_sent, df_sent_pond_norm])
             df_alts_sent = pd.concat([df_alts_sent, df_sent_pond])
-
 
     # Exporto Dataframes (solo en pruebas)
     df_values_attrs_sent.to_excel("/Users/nachomondino/Desktop/df_attr_values_sent.xlsx")
@@ -438,7 +429,7 @@ def sentiment_weighing_by_quantity_opinions(df):
         sent = df.loc[i, 'sent']
 
         # SI NO TIENE OPINIONES, O BIEN, TIENE MUY POCAS OPINIONES
-        if n_opis < 0.2 * n_opt_opis_x_val:  # str(sent) == 'nan' or
+        if n_opis < 0.2 * n_opt_opis_x_val:
 
             # REEMPLAZO SENTIMENT POR NONE
             df.loc[i, 'sent'] = None
@@ -489,35 +480,6 @@ def get_factor_3(df, idx):
             print("\t Ayudo al factor final en {:.2f}".format(FACTOR))
     return FACTOR
 
-def standardize_sentiment(df):
-    """
-    Normaliza los sentiment de los valores de un atributo. Esto quita las escala para los diferentes atributos
-    :param df: Daraframe. Unidad de analisis: alternativa o valor de un atributo. Columnas: unidad de analisis, atributo
-    cantidad de opiniones en que basa su sentiment y su sentiment ya ponderado
-    :return: Daraframe. Unidad de analisis: alternativa o valor de un atributo. Columnas: unidad de analisis, atributo
-    cantidad de opiniones en que basa su sentiment y su sentiment ponderado y normalizado
-    """
-    # Defino variable
-    df_sin_nan = df.dropna(subset=['sent'])  # borro unidedes de analisis cuyo sentiment=NaN
-
-    # SI TIENE DOS O MAS UNIDADES DE ANALISIS CON SENTIMENT
-    if len(set(df_sin_nan['sent'])) >= 2:
-        # Obtengo media y desvio de sentiments
-        media = st.mean(df_sin_nan['sent'])  # media de sentiment de los valores del atributo
-        desv = st.stdev(df_sin_nan['sent'])  # desvio de sentiment de los valores del atributo
-
-        # NORMALIZO EL SENTIMENT
-        # Por unidad de analisis
-        for i in list(df_sin_nan.index):  # solo indices de sent≠NaN
-            # Obtengo el sentiment del valor
-            sent = df.loc[i, 'sent']
-            # Normalizo dicho sentiment y lo guardo
-            new_sent = (sent - media) / desv
-            df.loc[i, 'sent'] = new_sent
-    else:
-        print("ERROR! Columna que fallo: ", df['atributo'].unique())
-    return df
-
 
 # CORRER PRUEBAS
 '''
@@ -535,7 +497,7 @@ df_cust_needs_sent.to_excel("/Users/nachomondino/Desktop/df_to_cust_need_prueba.
 
 
 # Correr solo to_attributes()
-producto = "celulares"
+producto = "smartband"
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
 df_cust_need_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_cust_need_sent.xlsx'.format(producto))
 df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
