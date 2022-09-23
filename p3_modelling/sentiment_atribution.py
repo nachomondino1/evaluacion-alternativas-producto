@@ -149,13 +149,14 @@ def to_attribute(df_alt, df_cust_needs_sent, df_relation_matrix):
             else:
                 # No pondero sentiment
                 df_sent_pond = df_values_attr_sent
-                print("\t No pondero sentimenr pues el atributo toma dos valores")
+                print("\t No pondero sentiment pues el atributo toma dos valores")
 
             # ESTANDARIZO SENTIMENT DE LOS VALORES DEL ATRIBUTO
-            df_sent_pond_norm = standardize_sentiment(df_sent_pond)
+            # df_sent_pond_norm = standardize_sentiment(df_sent_pond)
 
             # GUARDO DATOS DEL ATRIBUTO
-            df_values_attrs_sent = pd.concat([df_values_attrs_sent, df_sent_pond_norm])
+            # df_values_attrs_sent = pd.concat([df_values_attrs_sent, df_sent_pond_norm])
+            df_values_attrs_sent = pd.concat([df_values_attrs_sent, df_sent_pond])
 
         # SI EL ATRIBUTO FUE CREADO ARTIFICIALMENTE ("ATRIBUTO FICTICIO")
         else:
@@ -179,10 +180,12 @@ def to_attribute(df_alt, df_cust_needs_sent, df_relation_matrix):
             df_sent_pond = sentiment_weighing_by_quantity_opinions(df_alt_sent)
 
             # ESTANDARIZO SENTIMENT DE LAS ALTERNATIVAS PARA EL ATRIBUTO
-            df_sent_pond_norm = standardize_sentiment(df_sent_pond)
+            # df_sent_pond_norm = standardize_sentiment(df_sent_pond)
 
             # GUARDO DATOS DEL ATRIBUTO
-            df_alts_sent = pd.concat([df_alts_sent, df_sent_pond_norm])
+            # df_alts_sent = pd.concat([df_alts_sent, df_sent_pond_norm])
+            df_alts_sent = pd.concat([df_alts_sent, df_sent_pond])
+
 
     # Exporto Dataframes (solo en pruebas)
     df_values_attrs_sent.to_excel("/Users/nachomondino/Desktop/df_attr_values_sent.xlsx")
@@ -402,7 +405,7 @@ def get_n_opis_and_sent(df_relation_matrix_atrib, df_cust_needs_sent_filt):
         if relacion > 0:
             # OBTENGO CANTIDAD DE OPINIONES Y SENTIMENT PROMEDIO
             n_opi_con_sent += len(df_cust_needs_sent_filt[customer_need].dropna())
-            prom_sent += df_cust_needs_sent_filt[customer_need].dropna().mean() / sum_relaciones
+            prom_sent += df_cust_needs_sent_filt[customer_need].dropna().mean() * relacion / sum_relaciones
             print('\t Customer need: {} \t Relacion con atributo: {} \t n_opi_con_sent: {} \t Sentiment: {:.2f}'.format(customer_need, relacion, n_opi_con_sent, prom_sent))
 
     # GUARDO VALOR, ATRIBUTO AL QUE PERTENECE, CANT DE OPINIONES Y SENTIMENT
@@ -530,9 +533,9 @@ df_cust_needs_sent = to_customer_needs(df_opi, l_customer_needs_one_word, d_pal_
 df_cust_needs_sent.to_excel("/Users/nachomondino/Desktop/df_to_cust_need_prueba.xlsx")  # para ver que funcione bien los cambios
 '''
 
-'''
+
 # Correr solo to_attributes()
-producto = "tv"
+producto = "celulares"
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
 df_cust_need_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_cust_need_sent.xlsx'.format(producto))
 df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
@@ -542,7 +545,7 @@ print("4.1.2 Atribuyo sentiment a valores de los atributos del producto...".cent
 df_attr_values_sent, df_alts_sent = to_attribute(df_alt_cleaned, df_cust_need_sent, df_relation_matrix)
 
 # df_attr_values_sent.to_excel('/Users/nachomondino/Desktop/df_attr_values_sent_nueva.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-df_alts_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-'''
+# df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
+# df_alts_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
+
 
