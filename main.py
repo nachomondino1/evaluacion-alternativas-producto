@@ -84,6 +84,7 @@ def main():
     df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
     """
+    '''
     print(" (2.2) DESCRIBE DATA ".center(120))
     describe_data.getting_to_know_data(df_opi)
     describe_data.getting_to_know_data(df_alt)  #  print("Dataframe alternativas".center(120))
@@ -227,6 +228,7 @@ def main():
     df_centroids_values.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_centroids_values.xlsx'.format(producto))
     df_brand_per_cluster.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_brand_per_cluster.xlsx'.format(producto))
     df_best_cluster_per_cust_need.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/clustering/{}/df_best_cluster_per_cust_need.xlsx'.format(producto))
+    '''
 
 if __name__ == '__main__':
     main()

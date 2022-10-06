@@ -13,10 +13,9 @@ def get_product_attributes(home_page_url):
     :return: Lista. Atributos mas relevantes del producto
     """
     # DEFINO VARIABLES
-    PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
+    PAG_A_VISITAR = 1  # cantidad de publicaciones a visitar
     d_attr_frec = {}  # diccionario donde guardare los atributos y su frecuencia
     SLEEP_MIN, SLEEP_MAX = 1, 2
-    # crawler = MercadoLibreCrawler(driver=inicialize_driver())  # objeto de clase MercadoLibreCrawler()
     crawler = MercadoLibreCrawler()  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DEL PRODUCTO A BUSCAR
@@ -85,12 +84,11 @@ def data_extractor(df_alt, df_opi, home_page_url):
     no_mas_paginas = 0  # param 3: Hasta la ultima pagina (si hay menos que PAG_MAX)
     # Defino otras variables
     SLEEP_MIN, SLEEP_MAX = 1, 2  # tiempo de espera entre acciones del crawler para humanizarlo y evitar deteccion
-    l_historial_pag = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda
-    # a parametro de corte 2
+    l_historial_pag = []  # lista que guardara un 1 si la pub fue extraida, o bien, 0 (la pub no fue extraida). Ayuda a parametro de corte 2
     crawler = MercadoLibreCrawler()  # objeto de clase MercadoLibreCrawler()
 
     # INGRESO A PAGINA PRINCIPAL DE MERCADO LIBRE DEL PRODUCTO Y SELECCIONO CONDICION="NUEVO"
-    crawler.driver.get(home_page_url), sleep(3)  # hasta que no se carga toda la pagina, no sigue...
+    crawler.driver.get(home_page_url)  # hasta que no se carga toda la pagina, no sigue...
     crawler.driver.get(crawler.get_home_page_url_condition_new())  # Filtro para ingresar a publicaciones con Condicion=Nuevo (Evito publicaciones con condicion usado)
 
     # POR PAGINA DE PAGINACION
@@ -122,7 +120,8 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
                 # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
                 df_alt = pd.concat([df_alt, df_new_pub], ignore_index=True)
-                print("Nº alternativas extraidas: {}".format(df_alt.shape[0]))
+                print(df_alt)
+                # print("Nº alternativas extraidas: {}".format(df_alt.shape[0]))
 
                 # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
                 url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
@@ -146,7 +145,8 @@ def data_extractor(df_alt, df_opi, home_page_url):
                         # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
                         df_opi_new_alt = crawler.get_publication_opinions_data(id_alternativa)
                         df_opi = pd.concat([df_opi, df_opi_new_alt], ignore_index=True)
-                        print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
+                        print(df_opi)
+                        # print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
 
                     # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
                     else:
@@ -211,7 +211,7 @@ def select_relevant_attributes(d_attr_frec):
     """
     # DEFINO VARIABLES
     l_frecuencias = list(d_attr_frec.values())  # Lista de frecuencias de todos los atributos
-    PORC_FREC_MIN = 0.2  # atributos en al menos el x% de las publicaciones
+    PORC_FREC_MIN = 0.35  # atributos en al menos el x% de las publicaciones
     l_atributos = []  # Lista de atributos a retornar
     print("Los {} atributos y su frecuencia: {}".format(len(l_frecuencias), d_attr_frec))
 
@@ -224,22 +224,8 @@ def select_relevant_attributes(d_attr_frec):
         # SI EL ATRIBUTO ES LO SUFICIENTIMENTE FRECUENTE
         if porc_frec > PORC_FREC_MIN:
 
-            # SOLICITO A ADMINISTRADOR SI SELECCIONAR EL ATRIBUTO O NO
-            # Mientras que la carga sea invalida
-            while True:
-                # Si la carga es un numero
-                try:
-                    # Solicito al administrador si tendra en cuenta o no el atributo
-                    input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
-                    # Si cargo un "1"
-                    if input_admin == 1:
-                        # Guardo atributo
-                        l_atributos.append(atributo)
-                    # La carga es valida
-                    break
-                # si la carga no es un numero
-                except:
-                    pass
+            # Guardo atributo
+            l_atributos.append(atributo)
 
     # Imprimo atributos seleeccionados
     print('Los {} atributos mas relevantes: {}'.format(len(l_atributos), l_atributos))
@@ -288,14 +274,14 @@ def is_alternative_new(df_alt, df_new_pub):  # Probar con celulares a ver si fun
     print("La alternativa es nueva!")
     return True
 
-def ultimas_pub_sin_data(historico_paginas, porc_min_ult_pub_extraidas, cant_ult_pub):
+def ultimas_pub_sin_data(l_historico_paginas, porc_min_ult_pub_extraidas, cant_ult_pub):
     """
     Evalua si conviene seguir extrayendo datos o no segun el % de las ultimas x publicaciones en que el crawler extrajo
     datos.
-    :param historico_paginas: Lista de 0 y 1. Tiene un 1 por cada publicacion de la cual extrajo datos y un 0 en caso
-    contrario
-    :param porc_min_ult_pub_extraidas: Porcentaje minimo de las ultimas x publicaciones en que el crawler extrajo
-    datos (Float de 0 a 1)
+    :param l_historico_paginas: Lista de ceros y unos. Tiene un 1 por cada publicacion de la cual extrajo datos y un
+    0 en caso contrario
+    :param porc_min_ult_pub_extraidas: Float entre 0 y 1. Porcentaje minimo de las ultimas x publicaciones en que el
+    crawler extrajo datos
     :param cant_ult_pub: Numero que determina cuantas publicaciones son consideradas como las "ultimas publicaciones"
     :return: True si conviene dejar de extraer datos, o bien, False si conviene continuar extrayendo.
     """
@@ -303,10 +289,10 @@ def ultimas_pub_sin_data(historico_paginas, porc_min_ult_pub_extraidas, cant_ult
     MIN_PUB_A_VISITAR = 50  # es mas de 50 para que se estabilicen los % de publicaciones extraidas
 
     # SI YA VISITE AL MENOS <MIN_PUB_A_VISITAR> PUBLICACIONES
-    if len(historico_paginas) > MIN_PUB_A_VISITAR:
+    if len(l_historico_paginas) > MIN_PUB_A_VISITAR:
 
         # SELECCIONO LOS BOOLEAN DE LAS ULTIMAS <CANT_ULT_PUB> PUBLICACIONES
-        ultimas_paginas = historico_paginas[-cant_ult_pub:]
+        ultimas_paginas = l_historico_paginas[-cant_ult_pub:]
         # print("Ultimas {}:".format(cant_ult_pag), ultimas_paginas)
 
         # DEFINO CANTIDAD x DE LAS ULTIMAS <CANT_ULT_PUB> PUBS EN QUE LOGRE EXTRAER DATOS
@@ -357,3 +343,53 @@ df_alt = pd.DataFrame(columns=['id_alternativa', 'precio'] + l_atributos)
 df_opi = pd.DataFrame(columns=['id_alternativa', 'opinion'])
 print(" c) Extrayendo datos del producto...".center(120))
 df_alt, df_opi = data_extractor(df_alt, df_opi, "https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
+
+
+
+'''
+Por que la saco? Para que sea mas automatico el proceso. Es cansador decir que atributo si y cual no, 1 por 1. Si esta en mas del x% de las pubs, adentro. 
+def select_relevant_attributes(d_attr_frec):
+    """
+    Selecciono los atributos mas relevantes de todos los atributos posibles del producto
+    Recomendacion: Tener a mano publicaciones del producto para ver que valor toma cada atributo y asi entender de que
+    se trata el atributo
+    :param d_attr_frec: Diccionario. Key: atributo del producto. Value: frecuencia (cantidad de publicaciones de Mercado
+    Libre en que aparece el atributo)
+    :return: Lista. Atributos mas relevantes del producto
+    """
+    # DEFINO VARIABLES
+    l_frecuencias = list(d_attr_frec.values())  # Lista de frecuencias de todos los atributos
+    PORC_FREC_MIN = 0.2  # atributos en al menos el x% de las publicaciones
+    l_atributos = []  # Lista de atributos a retornar
+    print("Los {} atributos y su frecuencia: {}".format(len(l_frecuencias), d_attr_frec))
+
+    # POR ATRIBUTO
+    for atributo in d_attr_frec.keys():
+
+        # OBTENGO SU PORCENTAJE DE FRECUENCIA
+        porc_frec = d_attr_frec[atributo] / max(l_frecuencias)
+
+        # SI EL ATRIBUTO ES LO SUFICIENTIMENTE FRECUENTE
+        if porc_frec > PORC_FREC_MIN:
+
+            # SOLICITO A ADMINISTRADOR SI SELECCIONAR EL ATRIBUTO O NO
+            # Mientras que la carga sea invalida
+            while True:
+                # Si la carga es un numero
+                try:
+                    # Solicito al administrador si tendra en cuenta o no el atributo
+                    input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
+                    # Si cargo un "1"
+                    if input_admin == 1:
+                        # Guardo atributo
+                        l_atributos.append(atributo)
+                    # La carga es valida
+                    break
+                # si la carga no es un numero
+                except:
+                    pass
+
+    # Imprimo atributos seleeccionados
+    print('Los {} atributos mas relevantes: {}'.format(len(l_atributos), l_atributos))
+    return l_atributos
+'''

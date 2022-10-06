@@ -27,7 +27,7 @@ class MercadoLibreCrawler():
         options = webdriver.ChromeOptions()
         options.add_argument("start-maximized")
         options.add_argument("enable-automation")
-        options.add_argument("--headless")  # Hace que no se abra un web browser en tu compu
+        # options.add_argument("--headless")  # Hace que no se abra un web browser en tu compu
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-infobars")
         options.add_argument("--disable-dev-shm-usage")
@@ -73,12 +73,13 @@ class MercadoLibreCrawler():
 
         # ESPERO HASTA ENCONTRAR LOS TAGS QUE CONTIENEN LAS URLs
         try:
-            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image"]/a')))  # imagen de primera publicacion de la pagina
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@class="ui-search-result__image shops__picturesStyles"]/a')))  # imagen de primera publicacion de la pagina
 
         # FINALMENTE
         finally:
+
             # OBTENGO LOS TAGS
-            tag_urls_publicaciones = self.driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
+            tag_urls_publicaciones = self.driver.find_elements(By.XPATH, '//div[@class="ui-search-result__image shops__picturesStyles"]/a')  # No le puedo hacer get_attribute al ser mas de un elemento
 
             # POR CADA TAG
             for tag_url in tag_urls_publicaciones:
@@ -115,7 +116,9 @@ class MercadoLibreCrawler():
         # SI TIENE BOTON "VER TODAS LAS OPINIONES"
         try:
             # OBTENGO URL DE "VER TODAS LAS OPINIONES"
-            url = self.driver.find_element(By.XPATH, '//a[@class="andes-button ui-review-button__action andes-button--small andes-button--transparent"]').get_attribute("href")
+            # WebDriverWait(self.driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='show-more-click']"))).click()
+            url = self.driver.find_element(By.XPATH, '//button[@class="show-more-click"]')
+            #url = self.driver.find_element(By.XPATH, '//a[@class="andes-button ui-review-button__action andes-button--small andes-button--transparent"]').get_attribute("href")
             # print("URL 'Ver todas las opiniones': ", url)
 
         # SI NO TIENE BOTON "VER TODAS LAS OPINIONES"
@@ -366,64 +369,13 @@ class MercadoLibreCrawler():
         :return: String. URL de la pagina principal del producto (solo publicaciones de condicion "nuevo") en Mercado
         Libre
         """
+        page_source = self.driver.page_source
+        bs = BeautifulSoup(page_source, 'html.parser')
+
         # Busco tag de filtros para el producto
-        tag_filters = self.driver.find_element(By.XPATH,'//section[@class="ui-search-filter-groups"]')
+        tag_filters = bs.find('section', class_="ui-search-filter-groups")
 
         # Busco url de alternativas filtradas por Condicion=Nuevo
-        url = tag_filters.find_element(By.XPATH, '//a[@aria-label="Nuevo"]').get_attribute("href") # el "." es para que siga desde 'section' aunque al usar la variable tag_filters no es necesario. Los "//" son 2 pues el tag a no es hijo del tag section sino que es hijo de sus hijos (si fuese hijo directo seria una barra "/")
-        print(url)
+        url = tag_filters.find('a', attrs={"aria-label": "Nuevo"})['href']
         return url
 
-
-''' Meti funcion que busca url en pub dentro de get_publication_id() pues facilitaba no solo entender lo que hace sino es mas eficiente.
-    def get_publication_id(self, url):
-        """
-        Extrae el id de una publicacion dentro de la URL de esta. En caso que el id no este en la URL, es porque la URL
-        no es de las comunes, y por ende, buscare la URL correcta dentro del codigo html de la publicacion. Solo en el
-        eventual caso que no encuentra la nueva URL, entonces no encuentra el id.
-        :param url: String. URL de una publicacion de Mercado Libre
-        :return: String. Id de la publicación, o bien, None si no lo encontro
-        """
-        # Extriago id de url
-        id_pub = self.extract_id_from_url(url)
-
-        # Si no se encontro el id en la url
-        if id_pub is None:
-            print("No se encontro el id en la url de la publicacion por ser del tipo www.click1.mercado...")
-
-            # Obtengo URL de codigo html de la publicacion
-            new_url = self.get_new_url_publication()
-
-            # Si obtuve la URL (puede no encontrarla dentro de la publicacion)
-            if new_url is not None:
-
-                # Extraigo id de nueva url
-                id_pub = self.extract_id_from_url(new_url)
-
-                # Si no encontre id en nueva url
-                if id_pub is None:
-                    print("Tampoco se encontro el id dentro de la publicacion")
-                    return None
-
-        # retorno id de publicacion
-        return id_pub
-
-    def get_new_url_publication(self):
-        """
-        Extrae URL de la publicacion dentro del codigo html de la propia publicacion
-        :return: String con url de la publicacion de Mercado Libre
-        """
-        # OBTENGO CODIGO HTML DE LA PUBLICACION
-        pageSource = self.driver.page_source
-        bs = BeautifulSoup(pageSource, 'html.parser')
-
-        # SI LA URL ESTA EN EL CODIGO
-        try:
-            # EXTRIAGO URL
-            new_url = bs.find('meta', {'property': 'og:url'}).attrs['content']
-            return new_url
-
-        # SI LA URL NO ESTA EN EL CODIGO
-        except:
-            return None
-'''

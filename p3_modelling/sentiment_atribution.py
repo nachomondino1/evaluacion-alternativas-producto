@@ -495,7 +495,7 @@ df_cust_needs_sent = to_customer_needs(df_opi, l_customer_needs_one_word, d_pal_
 df_cust_needs_sent.to_excel("/Users/nachomondino/Desktop/df_to_cust_need_prueba.xlsx")  # para ver que funcione bien los cambios
 '''
 
-
+'''
 # Correr solo to_attributes()
 producto = "smartband"
 df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
@@ -509,5 +509,5 @@ df_attr_values_sent, df_alts_sent = to_attribute(df_alt_cleaned, df_cust_need_se
 # df_attr_values_sent.to_excel('/Users/nachomondino/Desktop/df_attr_values_sent_nueva.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 # df_attr_values_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_values_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
 # df_alts_sent.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-
+'''
 
