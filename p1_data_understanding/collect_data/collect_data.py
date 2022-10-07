@@ -13,7 +13,7 @@ def get_product_attributes(home_page_url):
     :return: Lista. Atributos mas relevantes del producto
     """
     # DEFINO VARIABLES
-    PAG_A_VISITAR = 1  # cantidad de publicaciones a visitar
+    PAG_A_VISITAR = 30  # cantidad de publicaciones a visitar
     d_attr_frec = {}  # diccionario donde guardare los atributos y su frecuencia
     SLEEP_MIN, SLEEP_MAX = 1, 2
     crawler = MercadoLibreCrawler()  # objeto de clase MercadoLibreCrawler()
@@ -97,7 +97,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
         # EXTRAIGO URLS DE PUBLICACIONES DE LA PAGINA Y URL DE SIGUIENTE PAGINA
         urls_publicaciones = crawler.get_publications_url()
         url_paginacion = crawler.get_pagination_url()
-        print("Cantidad de pubs:", len(urls_publicaciones))
+        print("Cantidad de publicaciones:", len(urls_publicaciones))
 
         # POR CADA PUBLICACION DE LA PAGINA (tipicamente 1 pagina tiene 50 a 55 publicaciones)
         for url_publicacion in urls_publicaciones:
@@ -120,8 +120,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
 
                 # GUARDO DATOS DE ALTERNATIVA EN DATAFRAME ("df_alternativas")
                 df_alt = pd.concat([df_alt, df_new_pub], ignore_index=True)
-                print(df_alt)
-                # print("Nº alternativas extraidas: {}".format(df_alt.shape[0]))
+                print(df_alt)  # print("Nº alternativas extraidas: {}".format(df_alt.shape[0]))
 
                 # BUSCO EL BOTON "VER TODAS LAS OPINIONES" DENTRO DE LA PUBLICACION
                 url_ver_todas_las_opiniones = crawler.get_ver_todas_las_opiniones_url()
@@ -145,8 +144,7 @@ def data_extractor(df_alt, df_opi, home_page_url):
                         # EXTRAIGO OPINIONES Y LAS GUARDO EN UN DATAFRAME ("df_opiniones")
                         df_opi_new_alt = crawler.get_publication_opinions_data(id_alternativa)
                         df_opi = pd.concat([df_opi, df_opi_new_alt], ignore_index=True)
-                        print(df_opi)
-                        # print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
+                        print(df_opi)  # print("Nº opiniones extraidas: {}".format(df_opi.shape[0]))
 
                     # SI LAS OPINIONES NO SON NUEVAS (ES DECIR, SE REPITEN)
                     else:
@@ -202,7 +200,8 @@ def data_extractor(df_alt, df_opi, home_page_url):
 # UTILIZADA EN GET_PRODUCT_ATTRIBUTES()
 def select_relevant_attributes(d_attr_frec):
     """
-    Selecciono los atributos mas relevantes de todos los atributos posibles del producto
+    Selecciono los atributos mas relevantes de todos los atributos posibles del producto. No necesariamente por ser
+    frecuente, es relevante. Ni por ser poco frecuente, irrelevante.
     Recomendacion: Tener a mano publicaciones del producto para ver que valor toma cada atributo y asi entender de que
     se trata el atributo
     :param d_attr_frec: Diccionario. Key: atributo del producto. Value: frecuencia (cantidad de publicaciones de Mercado
@@ -211,7 +210,7 @@ def select_relevant_attributes(d_attr_frec):
     """
     # DEFINO VARIABLES
     l_frecuencias = list(d_attr_frec.values())  # Lista de frecuencias de todos los atributos
-    PORC_FREC_MIN = 0.35  # atributos en al menos el x% de las publicaciones
+    PORC_FREC_MIN = 0.2  # atributos en al menos el x% de las publicaciones
     l_atributos = []  # Lista de atributos a retornar
     print("Los {} atributos y su frecuencia: {}".format(len(l_frecuencias), d_attr_frec))
 
@@ -220,12 +219,26 @@ def select_relevant_attributes(d_attr_frec):
 
         # OBTENGO SU PORCENTAJE DE FRECUENCIA
         porc_frec = d_attr_frec[atributo] / max(l_frecuencias)
-
+        
         # SI EL ATRIBUTO ES LO SUFICIENTIMENTE FRECUENTE
         if porc_frec > PORC_FREC_MIN:
 
-            # Guardo atributo
-            l_atributos.append(atributo)
+            # SOLICITO A ADMINISTRADOR SI SELECCIONAR EL ATRIBUTO O NO
+            # Mientras que la carga sea invalida
+            while True:
+                # Si la carga es un numero
+                try:
+                    # Solicito al administrador si tendra en cuenta o no el atributo
+                    input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
+                    # Si cargo un "1"
+                    if input_admin == 1:
+                        # Guardo atributo
+                        l_atributos.append(atributo)
+                    # La carga es valida
+                    break
+                # si la carga no es un numero
+                except:
+                    pass
 
     # Imprimo atributos seleeccionados
     print('Los {} atributos mas relevantes: {}'.format(len(l_atributos), l_atributos))
@@ -243,11 +256,17 @@ def is_alternative_new(df_alt, df_new_pub):  # Probar con celulares a ver si fun
     :return: True si la publicacion corresponde a una nueva alternativa, de lo contrario, False.
     """
     # Defino variables
-    l_attr_modelo_unico = ['Modelo'] # En celulares: , 'Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
+    l_attr_modelo_unico = ['Modelo', 'Memoria interna', 'Memoria RAM'] # En celulares: , 'Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
     id_new_alt = df_new_pub.loc[0, 'id_alternativa']  # id y modelo de nueva publicacion
     l_val_attr_new_alt = []  # Valores de atributos de nueva publicacion para identificar modelo unico (en miniscula)
-    for attr in l_attr_modelo_unico:
-        l_val_attr_new_alt.append(str(df_new_pub.loc[0, attr]).lower())
+
+    # BUSCO VALORES DE LA NUEVA ALTERNATIVA EN ATRIBUTOS QUE IDENTIFICAN A UN MODELO COMO UNICO
+    try:
+        for attr in l_attr_modelo_unico:
+            l_val_attr_new_alt.append(str(df_new_pub.loc[0, attr]).lower())
+    # Si el producto no tiene atributos "Memoria interna" o "Memoria ram"
+    except KeyError:  # no se si es este error
+        pass
 
     # POR ALTERNATIVA EXTRAIDA
     for i in df_alt.index:
@@ -335,7 +354,7 @@ def explicacion_corte(pag_num, pag_max, ult_pub_sin_data):
         # Imprimo mensaje
         print("Corto por no haber mas paginas. Se recorrieron {} paginas".format(pag_num))
 
-
+'''
 # para correr pruebas en archivo independientemente de main.py
 l_atributos = get_product_attributes("https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
 print(" b) Creando dataframes del producto...".center(120))
@@ -343,53 +362,49 @@ df_alt = pd.DataFrame(columns=['id_alternativa', 'precio'] + l_atributos)
 df_opi = pd.DataFrame(columns=['id_alternativa', 'opinion'])
 print(" c) Extrayendo datos del producto...".center(120))
 df_alt, df_opi = data_extractor(df_alt, df_opi, "https://listado.mercadolibre.com.ar/celulares#D[A:celulares]")
-
+'''
 
 
 '''
-Por que la saco? Para que sea mas automatico el proceso. Es cansador decir que atributo si y cual no, 1 por 1. Si esta en mas del x% de las pubs, adentro. 
-def select_relevant_attributes(d_attr_frec):
+POR QUE LA SACO? La modifique tal que no tenga que cambiar todo el tiempo los atributos que identifican como unico a un modelo. 
+def is_alternative_new(df_alt, df_new_pub):  # Probar con celulares a ver si funciona
     """
-    Selecciono los atributos mas relevantes de todos los atributos posibles del producto
-    Recomendacion: Tener a mano publicaciones del producto para ver que valor toma cada atributo y asi entender de que
-    se trata el atributo
-    :param d_attr_frec: Diccionario. Key: atributo del producto. Value: frecuencia (cantidad de publicaciones de Mercado
-    Libre en que aparece el atributo)
-    :return: Lista. Atributos mas relevantes del producto
+    Verifica si la publicacion proxima a extraer corresponde a una nueva alternativa o no
+    :param df_alt: Dataframe. Unidad de analisis: alternativa del producto. Columnas: id_alternativa y atributos del
+    producto.
+    :param df_new_pub: Dataframe. Unidad de analisis: publicacion del producto. Columnas: id_alternativa y atributos del
+    producto.
+    :return: True si la publicacion corresponde a una nueva alternativa, de lo contrario, False.
     """
-    # DEFINO VARIABLES
-    l_frecuencias = list(d_attr_frec.values())  # Lista de frecuencias de todos los atributos
-    PORC_FREC_MIN = 0.2  # atributos en al menos el x% de las publicaciones
-    l_atributos = []  # Lista de atributos a retornar
-    print("Los {} atributos y su frecuencia: {}".format(len(l_frecuencias), d_attr_frec))
+    # Defino variables
+    l_attr_modelo_unico = ['Modelo', 'Memoria interna', 'Memoria RAM'] # En celulares: , 'Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
+    id_new_alt = df_new_pub.loc[0, 'id_alternativa']  # id y modelo de nueva publicacion
+    l_val_attr_new_alt = []  # Valores de atributos de nueva publicacion para identificar modelo unico (en miniscula)
+    for attr in l_attr_modelo_unico:
+        l_val_attr_new_alt.append(str(df_new_pub.loc[0, attr]).lower())
 
-    # POR ATRIBUTO
-    for atributo in d_attr_frec.keys():
+    # POR ALTERNATIVA EXTRAIDA
+    for i in df_alt.index:
 
-        # OBTENGO SU PORCENTAJE DE FRECUENCIA
-        porc_frec = d_attr_frec[atributo] / max(l_frecuencias)
+        # Defino variables
+        id_alt = df_alt.loc[i, 'id_alternativa']  # Id de alternativa extraida
+        l_val_attr_alt = []  # Valores de atributos de alternativa extraida para identificar modelo unico (en miniscula)
+        for attr in l_attr_modelo_unico:
+            l_val_attr_alt.append(str(df_alt.loc[i, attr]).lower())
 
-        # SI EL ATRIBUTO ES LO SUFICIENTIMENTE FRECUENTE
-        if porc_frec > PORC_FREC_MIN:
+        # SI EL ID COINCIDE CON EL DE LA NUEVA PUBLICACION
+        if id_new_alt == id_alt:
+            print("ALTERNATIVA REPETIDA. Mismo id")
+            print(l_val_attr_alt, l_val_attr_new_alt)
+            return False
 
-            # SOLICITO A ADMINISTRADOR SI SELECCIONAR EL ATRIBUTO O NO
-            # Mientras que la carga sea invalida
-            while True:
-                # Si la carga es un numero
-                try:
-                    # Solicito al administrador si tendra en cuenta o no el atributo
-                    input_admin = int(input("Ingrese 1 si se usara el atributo '{}' de frecuencia {:.2f}%: ".format(atributo.upper(), porc_frec * 100)))
-                    # Si cargo un "1"
-                    if input_admin == 1:
-                        # Guardo atributo
-                        l_atributos.append(atributo)
-                    # La carga es valida
-                    break
-                # si la carga no es un numero
-                except:
-                    pass
+        # SI EL MODELO COINCIDE CON EL DE LA NUEVA PUBLICACION
+        elif l_val_attr_new_alt == l_val_attr_alt:
+            print("ALTERNATIVA REPETIDA. Mismo modelo")
+            print(l_val_attr_alt, l_val_attr_new_alt)
+            return False
 
-    # Imprimo atributos seleeccionados
-    print('Los {} atributos mas relevantes: {}'.format(len(l_atributos), l_atributos))
-    return l_atributos
+    # Si el id y el modelo es nuevo
+    print("La alternativa es nueva!")
+    return True
 '''

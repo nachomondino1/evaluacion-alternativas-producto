@@ -307,9 +307,9 @@ def main():
 
     st.title('EVALUADOR DE ALTERNATIVAS')  # imprimo titulo  # # st.title('EVALUACION AUTOMATICA DE ALTERNATIVAS EN PROCESO DE COMPRA')
     # ESCRIBO INTRODUCCION AL PROBLEMA QUE RESUELVE LA HERRAMIENTA
-    st.write("Antes de comprar cualquier producto que deseamos, solemos **evaluar las distintas alternativas** posibles. "
-             "Normalmente buscamos información en internet, por ejemplo, leemos opiniones, vemos videos que hagan "
-             "una reseña, entre otros.")
+    st.write("Antes de comprar el producto que sea, casi siempre, se hace una **evaluación de alternativas**. Por ejemplo, "
+             "nos surge la necesidad de comprar un celular. Es muy probable que no vayamos directamente a comprarlo sino "
+             "que, previamente, hagas una búsqueda de información y, principalmente, una evaluación de alternativas.")
 
     image_1 = Image.open('./p5_deployment/utils/investigar_alternativas.jpeg') # Imagen de persona antes ≠ alternativas
     col1, col2, col3 = st.columns([0.2, 5, 0.2])
@@ -351,8 +351,8 @@ def main():
         # (3) SOLICITO PESOS DE LAS CUSTOMER NEEDS
         # Imprimo titulo
         st.write('### PASO 2 DE 3: ASIGNÁ LA IMPORTANCIA QUE TIENE PARA VOS, CADA CARACTERÍSTICA DEL PRODUCTO')
-        st.write('Ya elegiste el produco y estás en el paso 2! Esto sí que es rápido. Yo le diría a Michael Schumacher que se '
-                 'empiece a preocupar!')
+        st.write('Ya elegiste el produco y estás en el paso 2! Esto sí que es rápido. Yo le diría a Michael Schumacher '
+                 'que se empiece a preocupar!')
         st.write("Ahora, tenés que asignar qué importancia tiene para vos cada característica del producto {}. ¿Cómo "
                  "se hace? Por cada característica del producto habrá una barra donde podés elegir la importancia que "
                  "tiene ésta para vos.".format(product))

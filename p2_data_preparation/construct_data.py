@@ -53,7 +53,7 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORA
     l_freq_words_filt = []
     l_pal_irrel = ['android', 'año', 'años', 'amazon', 'aparato',
                    'band', 'baja',
-                   'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado', 'camaras', 'celulares',
+                   'calidad', 'conforme', 'compra', 'cosas', 'color', 'compu', 'cosa', 'caso', 'cuidado', 'camaras', 'celulares', 'caracteristicas',
                    'descripcion', 'disney', 'diferencia',
                    'equipo', 'expectativas', 'encanto', 'estrellas', 'espectativas',
                    'funcion', 'flow', 'falta',
@@ -63,6 +63,7 @@ def filter_most_frequent_words(l_freq_words, d_rel_words):  # ES BASTANTE MEJORA
                    'luz',
                     'mano', 'mes', 'meses', 'momento', 'maquina', 'modelo', 'motorola', 'moto', 'mercado',
                     'netflix', 'nota',
+                   'opcion',
                     'preciocalidad', 'persona', 'personas', 'prestaciones', 'producto', 'problema', 'problemas', 'punto', 'puntos', 'publicacion', 'poder', 'pena', 'pulsera',
                     'redes', 'relacion', 'rendimiento', 'resto', 'regalo', 'respecto', 'reloj', 'relojes',
                     'tiempo', 'tipo', 'tv', 'tele', 'televisor', 'trabajo', 'telefono',
@@ -122,8 +123,8 @@ def select_possible_customer_needs(l_most_freq_words, l_possible_customer_needs)
     y customer needs de 3 palabras
     """
     # Defino variables
-    df_cust_needs = pd.DataFrame(columns=["cust_needs_three_words"])  # Dataframe a retornar
     i = 0
+    df_cust_needs = pd.DataFrame(columns=["cust_needs_three_words"])  # Dataframe a retornar
     print("{:^40s}\t{:^40}\t{:^40}".format("Palabra frecuente", "Posible customer need", "Posicion en frecuencia "))
 
     # POR POSIBLE CUSTOMER NEED

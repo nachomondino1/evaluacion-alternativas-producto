@@ -27,7 +27,7 @@ class MercadoLibreCrawler():
         options = webdriver.ChromeOptions()
         options.add_argument("start-maximized")
         options.add_argument("enable-automation")
-        # options.add_argument("--headless")  # Hace que no se abra un web browser en tu compu
+        options.add_argument("--headless")  # Hace que no se abra un web browser en tu compu
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-infobars")
         options.add_argument("--disable-dev-shm-usage")
@@ -98,7 +98,7 @@ class MercadoLibreCrawler():
         try:
             # OBTENGO URL DE LA SIGUIENTE PAGINA
             url_next_page = self.driver.find_element(By.XPATH,
-                '//li[@class="andes-pagination__button andes-pagination__button--next"]/a').get_attribute('href')
+                '//li[@class="andes-pagination__button andes-pagination__button--next shops__pagination-button"]/a').get_attribute('href')
 
         # SI NO EXISTE SIGUIENTE PAGINA
         except NoSuchElementException:
@@ -116,16 +116,14 @@ class MercadoLibreCrawler():
         # SI TIENE BOTON "VER TODAS LAS OPINIONES"
         try:
             # OBTENGO URL DE "VER TODAS LAS OPINIONES"
-            # WebDriverWait(self.driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='show-more-click']"))).click()
-            url = self.driver.find_element(By.XPATH, '//button[@class="show-more-click"]')
-            #url = self.driver.find_element(By.XPATH, '//a[@class="andes-button ui-review-button__action andes-button--small andes-button--transparent"]').get_attribute("href")
-            # print("URL 'Ver todas las opiniones': ", url)
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "//a[@class='ui-pdp-review__label ui-pdp-review__label--link']")))
+            url = self.driver.find_element(By.XPATH, '//a[@class="ui-pdp-review__label ui-pdp-review__label--link"]').get_attribute("href")
+            print("URL 'Ver todas las opiniones': ", url)
 
         # SI NO TIENE BOTON "VER TODAS LAS OPINIONES"
-        except NoSuchElementException:
+        except:  # NoSuchElementException (TimeoutException no esta...)
             # SETEO URL A NONE
             url = None
-
         return url
 
     def get_publication_opinions_data(self, id_publicacion):
@@ -238,8 +236,7 @@ class MercadoLibreCrawler():
 
         # ESPERO HASTA QUE APAREZCA LA SECCION "CARACTERISTICAS PRINCIPALES"
         try:
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//section[@id="highlighted-specs"]')))
 
         # FINALMENTE
         finally:
@@ -365,10 +362,11 @@ class MercadoLibreCrawler():
 
     def get_home_page_url_condition_new(self):
         """
-        Obtiene URL de pagina principal del producto en Mercado libre filtrando productos de condicion "Nuevo"
+        Obtiene URL de pagina principal del producto en Mercado libre filtrando productos de condicion "Nuevo".
         :return: String. URL de la pagina principal del producto (solo publicaciones de condicion "nuevo") en Mercado
         Libre
         """
+        # Obtengo codigo html de pagina principal
         page_source = self.driver.page_source
         bs = BeautifulSoup(page_source, 'html.parser')
 

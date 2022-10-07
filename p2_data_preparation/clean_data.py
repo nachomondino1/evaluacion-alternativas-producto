@@ -5,29 +5,6 @@ import statistics as st
 
 
 ################################################ FUNCIONES PRINCIPALES ################################################
-def delete_date_of_issue_from_opinion(df_opiniones):
-    """
-    Elimina fecha de emision de cada opinion
-    :param df_opiniones: Dataframe. Unidad de analisis: opinion del producto. Columnas: id_alternativa y opinion.
-    :return: Dataframe. Unidad de analisis: opinion del producto. Columnas: id_alternativa y opinion. Filas: misma
-    cantidad pero sin fecha de emision en valores de columna opinion.
-    """
-    # Defino variable
-    idx_opi = df_opiniones.columns.get_loc("opinion")  # indice de columna "opinion"
-
-    # POR OPINION
-    for i in df_opiniones.index:
-        opinion = df_opiniones.iloc[i, idx_opi]  # Busco una opinion
-
-        # BUSCO EL INDICE DEL ULTIMO PUNTO DE ESTA (despues del punto esta la fecha de emision)
-        idx = opinion.rfind('.')  # rfind() (r de reverse?) busca desde atras en cambio find() desde adelante
-
-        # REEMPLAZO OPINION POR ELLA MISMA PERO HASTA ANTES DEL ULTIMO PUNTO
-        df_opiniones.iloc[i, idx_opi] = opinion[:idx]
-
-    print("Se ha quitado con exito la fecha de emision de cada opinion \n")
-    return df_opiniones
-
 def clean_opinions(df_opiniones):  # creo que la voy a sacar y desde el main llamo a cada funcion directo de preparacion_texto.py
     """
     Procesa opiniones: convierto a miniscula, elimino acentos, elimino puntuacion, tokenizo y elimino palabras vacias

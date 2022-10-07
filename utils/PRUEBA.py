@@ -5,6 +5,7 @@ from p3_modelling import diccionario_palabras_relacionadas
 import re
 
 # IMPORTO ARCHIVOS PARA PRUEBAS
+
 producto = 'celulares'
 df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
 df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
@@ -13,7 +14,7 @@ df_attr_values_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evalua
 df_attr_alt_sent = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/modelling/atribucion/{}/df_attr_alt_sent.xlsx'.format(producto))
 d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(producto)
 
-
+'''
 print(" # CLEAN DATA: Limpieza de opiniones  ")
 print("## Elimino opiniones repetidas y opiniones NaN")  # Elimino opiniones repetidas y NaN
 df_opi = df_opi.dropna(subset='opinion')  # no documentado... creia que no habia opiniones nan
@@ -35,7 +36,7 @@ print("## Selecciono customer needs del producto propiamente")  # Selecciono fra
 df_cust_needs = construct_data.select_possible_customer_needs(l_most_freq_words_filt, l_possible_customer_needs)
 
 df_cust_needs = construct_data.manually_select_customer_needs(df_cust_needs)
-
+'''
 
 '''
 print("3.2. ATRIBUTOS")
@@ -132,9 +133,10 @@ print(list(d.values()))
 
 '''
 # Dataframe
-df = pd.DataFrame(data={"col1":[1,2,3,None,3,4], "col2": [4,5,6,4,6,7]})
+df = pd.DataFrame(data={"col1": [1, 2, 3, None, 3, 4], "col2": [4, 5, 6, 4, 6, 7]})
 idx = [1,3]
 print(df.loc[idx])
+'''
 
 # idx = df.index[df['col1'] == 4][0]
 # print(idx)
@@ -146,7 +148,7 @@ print(df.loc[idx])
 
 # df = pd.concat([df, new_fila], axis=1)
 # print(df)
-'''
+
 
 
 '''

@@ -1,51 +1,6 @@
-import pickle
 import pandas as pd
 
 def get_dict_related_words(producto):
-
-    '''
-    Como selecciono customer needs?
-    Obtengo lista de las n palabras mas frecuentes (por ej, n = 200).     Debo correr 'Data preparation'
-    Por palabra frecuente,
-        Identificar que significado tiene. Podria tener 1 solo significado o varios.
-            Casos:
-            1) Si tiene 1 significado => Mantengo la palabra
-            2) Si tiene +1 significado => a) Mantengo la palabra y evito otros significados (FP) b) Quito la palabra
-            Obs: Cuanto mas frecuente es una palabra, mayor es la posibilidad de que tenga mas de 1 significado.
-
-        Asociar cada palabra frecuente a un significado (sera una customer need)
-        Obs: ese importante entender que la relacion entre customer need y cantidad de significados es 1-1. Un significado por customer need.
-
-
-    Como elegir palabras relacionadas?
-    Una vez identificadas las customer needs:
-    # Obtengo dataframe con las n palabras mas frecuentes (ordenado por frecuencia descendente)
-    # Por palabra frecuente ir asociandola a la customer need que corresponda
-    # Por customer need, verificar que cada una de sus palabras tenga un significado (el de la customer need). Si tuviese otro, puedo: 1) dejar la palabra igual pero evitar FP mediante dict_avoid 2) quitar la palabra
-
-
-    Intento 1
-    Como elegir palabras relacionadas?
-    1) Por palabra mas frecuente (utilizadas por clientes en opiniones)
-        Identificar significado de cada palabra. A que se refiere el cliente cuando usa la palabra? Cuidado: puede tener varios significados como por ejemplo pantalla (dividir pantalla, fondo de pantalla, tamano de pantalla, calidad de imagen, etc)
-        Juntar palabras que se refieran a la misma caracteristica. Por ejemplo, 'imagen', 'pantalla' y 'definicion'.
-
-    2) Identificar customer needs (cada una es un significado). Por ej, 'calidad de imagen' (y esta reunira varias palabras como imagen, pantalla, resolucion, defincion, etc)
-
-    # identificar usos? puees no seran incluidos en cust needs...
-
-    3) Obtener palabras utilizadas para referirse a la customer need incluyendo adjetivos. decir como...leyendo opis por ej
-
-    4) Ver frecuencia de cada palabra relacionada (si hay 10000 opis minimo 20 sino no vale la pena). Descartar aquellas de baja frecuencia y centrarnos en las que tienen mayor frec
-    # ordenar dic de pal rel segun frecuencia de pal rel (aumenta eficiencia del proceso)
-
-    #tmb puede que descartes una customere need pues te das cuenta que no es tan frecuente al final (la frecuencia de una cust need es la suma de las frec de sus pal rel y hay veces que esta puede terminar siendo baja a pesar de tener una palabra frecuente...) Por ej, Tiene comando de voz
-
-    5)  Las palabras muy frecueentes es probable que tengan mas de un significado. Si la quiero incluir igual tendree que utilizar el dict_Avoid para evitar FP.
-
-
-
-    '''
     # Defino palabras relacionadas a algunas caracteristicas especificas   # deberia definirlos automaticamente segun valores unicos de atrib del producto?
     # l_marcas = get_marcas(df_alt)  # falla en smartband dado que no queda el atrib marca en df_alt_cleaned.
 
@@ -69,15 +24,16 @@ def get_dict_related_words(producto):
         'pantalla': [' pantalla ', 'resolucion', ' imagen ', 'refresco', ' grafic', ] + l_pantallas,  # No incluiria: [luminosidad, luz azul, iluminacion, 1080, 720, calidad de video, contraste, densidad] (pocas menciones) ; [hz] (No gano significativamente) ; [luz (camara), pantallas (otro), vista(varios), 4k (camara), pixeles (camara), nitidez (camara), tactil (responde), display (varios)] (Otros significados) ; [colores, definicion]  (siempre acompañados de 'pantalla') ; [brillo (como func el sensor de brillo autom)] (no se refieren a la calidad de la pantalla)    , display  # grafic incluye grafica/o/os/as
         'precio': ['precio', ' marca ', ' costo ', ' economic', ' barat', ' caro ', 'carisim', ' gastar', ' plata ',
                    ' dinero'],  # No incluiria: (1) Pocas menciones: dolares, euros (2) Muchos significados: gasto/a (bateria), vale (pena), sale (varios), cuesta (entender), pesos (varios) # caro y barato son ADJ pero siempre se refieren al SUST precio # No uso l_marcas pues hay mas FP # "marcas" incluye muchos FP (comparaciones de otros aspectos con otras marcas)
-        'sistema': ['sistema ', ' facil ', 'funciones', 'tactil', 'software', 'funcionalidades', 'interfaz', 'interface', 'actualizaciones', ' so ', 'preinstal'] + l_sistemas_operativos, # Veer si agrego: configura # No incluiria: [operativo] (siempre acompañada de 'sistema') ; [imcompatible] (Pocas menciones) ; [funcion (varios), de usar (varios), actualizar (modelo), actualizacion (varios)]   (Otro significado)
+        'funciones': ['funciones', 'sistema ', ' facil ', 'tactil', 'software', 'funcionalidades', 'interfaz', 'interface', 'actualizaciones', ' so ', 'preinstal'] + l_sistemas_operativos, # Veer si agrego: configura # No incluiria: [operativo] (siempre acompañada de 'sistema') ; [imcompatible] (Pocas menciones) ; [funcion (varios), de usar (varios), actualizar (modelo), actualizacion (varios)]   (Otro significado)
         'sonido': ['sonido', 'volumen', 'escucha ', ' audio ', ' parlante', ' suena', ' altavo'], # No incluria: [peliculas, agudos, auditivamente] (Pocas menciones) ; [graves (problema), auriculares (si trae o no), musica (uso)] (Otro significado) ; [dolby] (siempre acomapañado de 'sonido') # ojo con escucha que no debe incluir escuchar # altavo incluye altavoz y altavoces
          'tamaño': ['tamaño ', ' grande ', ' comodo', ' livian', ' peso ', 'pesado ', 'pesada ',  'dimensiones', ' ancho ',
                     ' gigante', 'pulgadas', ' compact'],  # No incluiria: [pequeño (diseño), bolsillo (caidas), ligero (velocidad)] (Otros significados)    , 'pesa', ' comod', 'incomod', 'mano', largo, alto, angosto, armatoste, enorme (muy pocas veces se ref a tamaño, y las que lo hacen se pueden salvar) # pense en agregar "pulgadas" pero no se refieren a si es chico o gde. # Pongo 'pesado ' porque pesados se refiere a juegos pesados.
         'velocidad': ['velocidad', ' rapido ', 'procesador', 'juegos', ' ram ', 'rendimiento', 'mismo tiempo', ' lento ',
                       ' fluid', 'funcionamiento', ' tilda', 'agil', 'rapidez', ' lentitud ', 'procesamiento', 'snapdragon',
                       'exynos', 'calienta', 'calent', 'temperatura', ' avion ', ' vuela ', ' nave ', ' potencia ',
-                      'abren y cierran', ' corre ', ' cuelga', ' traba ', ' trabo ', ' veloz', ' abiertas', ' congela ']
+                      'abren y cierran', ' corre ', ' cuelga', ' traba ', ' trabo ', ' veloz', ' abiertas', ' congela '],
                       # 'pesadas', 'pesados'],  # No incluiria:  (1) Pocas menciones: [lag, laguea/o/an, unisoc, bionic, gaming, simultaneo, snp] (2) Otros significados: [reinicia, apaga, core/s (modelo), streaming (uso), gamer(uso), a la vez (varios), respuesta (de vendedor), funciona rapido (gral), se cierra , cierra/n, responde (so y gral), tarda] ; [mediatek, jugar] (siempre acompañada de otra palabra relacionada)   # 'procesa' incluye 'porcesador' y 'procesamiento'.  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp", ' fluid' # calent incluye calento, sobrecalento, calentarse, recalentar
+         'señal': ['señal', 'conectividad', 'conexion', 'conecta', 'bluetooth']
          }
 
     # TV

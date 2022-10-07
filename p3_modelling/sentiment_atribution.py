@@ -72,6 +72,8 @@ def to_customer_needs(df_opi, l_customer_needs_one_word, d_pal_rel, d_avoid_fp):
 
                         # ASIGNO SENTIMENT A CUSTOMER NEEDS MENCIONADAS
                         df_frases_cust_needs = pd.concat([df_frases_cust_needs, assign_sentiment_to_cust_needs(frase_entre_comas, sent_opi, sent_frase_entre_comas, df_cust_needs_mentioned)])  # usaria sentiment de la frase en vez de opinion
+                        print(df_frases_cust_needs)
+
                     # Si no hay customer needs
                     else:
                         print("\t\t La frase no contiene customer needs")
@@ -81,6 +83,7 @@ def to_customer_needs(df_opi, l_customer_needs_one_word, d_pal_rel, d_avoid_fp):
 
                 # ASIGNO SENTIMENT A CUSTOMER NEEDS MENCIONADAS
                 df_frases_cust_needs = pd.concat([df_frases_cust_needs, assign_sentiment_to_cust_needs(frase, sent_opi,sent_frase,df_cust_needs_mentioned)])
+                print(df_frases_cust_needs)
 
             # SI NO MENCIONA CUSTOMER NEEDS
             else:
@@ -91,6 +94,8 @@ def to_customer_needs(df_opi, l_customer_needs_one_word, d_pal_rel, d_avoid_fp):
         for customer_need in l_customer_needs_one_word:
             # Guardo el sentiment de la customer need en la opinion
             df_cust_needs_sent.loc[i, customer_need] = df_frases_cust_needs[customer_need].dropna().mean()
+        print(df_cust_needs_sent)
+
     return df_cust_needs_sent
 
 def to_attribute(df_alt, df_cust_needs_sent, df_relation_matrix):
