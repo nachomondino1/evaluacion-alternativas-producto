@@ -2,9 +2,9 @@
 
 *Esta herramienta digital forma parte del catálogo de herramientas del **Banco Interamericano de Desarrollo**. Puedes conocer más sobre la iniciativa del BID en [code.iadb.org](https://code.iadb.org)*
 
-<h1 align="center"> Nombre de la herramienta</h1>
+<h1 align="center"> Evaluador de alternativas</h1>
 <p align="center"> Logo e imagen o gif de la interfaz principal de la herramienta</p>
-<p align="center"><img src="https://www.webdevelopersnotes.com/wp-content/uploads/create-a-simple-home-page.png"/></p> 
+<p align="center"><img src="https://nachomondino1-evaluacion-compra-automatica-my-appinicio-leworg.streamlit.app/~/+/media/364f7e86abe7e50f00933cae2fb2e014acb5032e99d8433f969098ce.jpeg"/></p> 
 
 ## Tabla de contenidos:
 ---
