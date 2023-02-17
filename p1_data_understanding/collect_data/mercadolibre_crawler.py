@@ -45,8 +45,8 @@ class MercadoLibreCrawler():
         :return:
         """
         # Get scroll height
-        # Defino tiempo de pausa aleatorio entre 1 y 2 segundos para evitar banneo de IP
-        SCROLL_PAUSE_TIME = random.uniform(1, 2)
+        # Defino tiempo de pausa aleatorio entre 0.5 y 1 segundos para evitar banneo de IP
+        SCROLL_PAUSE_TIME = random.uniform(0.5, 1)
 
         last_height = self.driver.execute_script("return document.body.scrollHeight")
         while True:

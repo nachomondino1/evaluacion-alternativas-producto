@@ -56,6 +56,7 @@ def get_home_page_url(producto):
     return 'https://listado.mercadolibre.com.ar/{}#D[A:{}]'.format(reg1, reg2)
 
 def main():
+
     # Escogo producto
     print(" (1) ELECCION DE PRODUCTO ".center(120, '#'))
     producto, home_page_url = select_product()
@@ -80,7 +81,7 @@ def main():
 
     '''
     # Levanto df para hacer 2 y 3 independientemente
-    producto = 'celulares'
+    producto = 'celular'
     df_alt = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_alt.xlsx'.format(producto))
     df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/collect_initial_data/{}/df_opi.xlsx'.format(producto))
 
@@ -110,21 +111,22 @@ def main():
     print("## Elimino opiniones repetidas y opiniones NaN")  # Elimino opiniones repetidas y NaN
     df_opi = df_opi.dropna(subset='opinion')  # no documentado... creia que no habia opiniones nan
     df_opi = df_opi.drop_duplicates(subset='opinion', ignore_index=True).reset_index(drop=True)  # elimino duplicados teniendo en cuenta solo la columna content que es la que contiene opiniones propiamente
+    df_opi.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto), index=False)
     print("## Stop word removal, puntuaction, tokenization")  # Limpio opiniones
-    df_opi_tokenizado = clean_data.clean_opinions(df_opi)  # Preparo las opiniones
+    df_opi_clean_tokenizado = clean_data.clean_opinions(df_opi)  # Preparo las opiniones
     print("# CONSTRUCT DATA: Descubrimiento customer needs del producto")
     print("## Obtengo frases de 3 palabras mas frecuentes en opiniones")
-    l_possible_customer_needs = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_tokenizado, n_ngram=3, QUANT_NGRAMS=3000)
+    l_possible_customer_needs = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_clean_tokenizado, n_ngram=3, QUANT_NGRAMS=3000)
     print("## Descarto frases irrelevantes")
     print("### Obtengo palabras mas frecuentes en opiniones")  # Obtengo palabras mas frecuentes en opiniones
-    l_most_freq_words = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_tokenizado, n_ngram=1, QUANT_NGRAMS=200)
+    l_most_freq_words = construct_data.most_frequent_ngrams(df_opi_tokenizado=df_opi_clean_tokenizado, n_ngram=1, QUANT_NGRAMS=200)
     print("### Filtro palabras mas frecuentes")  # Obtengo palabras mas frecuentes en opiniones
     l_most_freq_words_filt = construct_data.filter_most_frequent_words(l_most_freq_words, d_rel_words)
     print("### Selecciono posibles customer needs del producto")  # Selecciono frases mas frecuentes como customer needs
     df_cust_needs = construct_data.select_possible_customer_needs(l_most_freq_words_filt, l_possible_customer_needs)
     print("## Manualmente selecciono customer needs del producto")  # Selecciono frases mas frecuentes como customer needs
     df_cust_needs = construct_data.manually_select_customer_needs(df_cust_needs)
-
+    
     print("3.2. ATRIBUTOS")
     print(" # CLEAN DATA: Descarto atributos extriados exclusivamente para ser mostrados a cliente")
     df_alt_cleaned = select_data.select_attributes(df_alt)  # debo desagregar columnas antes...
@@ -154,28 +156,27 @@ def main():
     # EXPORTO DATAFRAMES
     # Exporto dataframes alternativas cleaned y opiniones cleaned
     df_alt_cleaned.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto), index=False)  # cuando corra tod@ junto pongo product.nombre
-    df_opi_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto))  # al pedo si no lo uso... encima se importa mal, entiende la lista de palabras como string
+    df_opi_clean_tokenizado.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_clean_tokenizado.xlsx'.format(producto))  # al pedo si no lo uso... encima se importa mal, entiende la lista de palabras como string
     # Exporto dataframe de customer needs del producto y matriz de relaciones
     df_cust_needs.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto))  # cuando corra tod@ junto pongo product.nombre
     df_relation_matrix.to_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_label="customer_need")
 
+
     
-    """
     # Levanto df para hacer modelling independientemente
-    producto = 'smartband'
+    producto = 'celulares'
     df_alt_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_alt_cleaned.xlsx'.format(producto))
-    df_opi = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_without_date.xlsx'.format(producto), index_col=0)
+    df_opi_cleaned = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_opi_cleaned.xlsx'.format(producto)) #, index_col=0)
     df_relation_matrix = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_relation_matrix.xlsx'.format(producto), index_col=0)
     df_cust_needs = pd.read_excel('/Users/nachomondino/Documents/GitHub/evaluacion-compra-automatica/data/data_preparation/{}/df_cust_needs.xlsx'.format(producto), index_col=0)  # cuando corra tod@ junto pongo product.nombre
     d_rel_words = diccionario_palabras_relacionadas.get_dict_related_words(producto)
-    print(df_alt_cleaned, df_opi, df_relation_matrix)
-    """
+    print(df_alt_cleaned, df_opi_cleaned, df_relation_matrix)
 
     print(" (4) MODELLING ".center(120, "#"))
     print(" (4.1) ATRIBUCION ".center(120))
     print("a) Atribuyo sentiment a customer needs...".center(120))
     d_avoid_fp = diccionario_palabras_relacionadas.get_dict_avoid(producto)
-    df_cust_need_sent = sentiment_atribution.to_customer_needs(df_opi, list(df_cust_needs.index), d_rel_words, d_avoid_fp)  # df_opi falta eliminar acentos...
+    df_cust_need_sent = sentiment_atribution.to_customer_needs(df_opi_cleaned, list(df_cust_needs.index), d_rel_words, d_avoid_fp)  # df_opi falta eliminar acentos...
 
     print("b) Atribuyo sentiment a valores de los atributos del producto...".center(120))
     df_attr_values_sent, df_attr_alt_sent = sentiment_atribution.to_attribute(df_alt_cleaned, df_cust_need_sent, df_relation_matrix)

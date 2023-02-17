@@ -33,7 +33,7 @@ def get_dict_related_words(producto):
                       'exynos', 'calienta', 'calent', 'temperatura', ' avion ', ' vuela ', ' nave ', ' potencia ',
                       'abren y cierran', ' corre ', ' cuelga', ' traba ', ' trabo ', ' veloz', ' abiertas', ' congela '],
                       # 'pesadas', 'pesados'],  # No incluiria:  (1) Pocas menciones: [lag, laguea/o/an, unisoc, bionic, gaming, simultaneo, snp] (2) Otros significados: [reinicia, apaga, core/s (modelo), streaming (uso), gamer(uso), a la vez (varios), respuesta (de vendedor), funciona rapido (gral), se cierra , cierra/n, responde (so y gral), tarda] ; [mediatek, jugar] (siempre acompañada de otra palabra relacionada)   # 'procesa' incluye 'porcesador' y 'procesamiento'.  # rapido no tiene asociado sentiment alto.. perjudica cuando dicen "es rapidp", ' fluid' # calent incluye calento, sobrecalento, calentarse, recalentar
-         'señal': ['señal', 'conectividad', 'conexion', 'conecta', 'bluetooth']
+         'señal': ['señal', 'conectividad', 'conexion', 'conecta', 'bluetooth', ' sim ']
          }
 
     # TV
@@ -86,7 +86,7 @@ def get_dict_related_words(producto):
 
     # FUNDAS DE CELULAR
 
-    d_prod = {'celulares': d1, 'tv': d2, 'auriculares': d3, 'smartband': d4}
+    d_prod = {'celular': d1, 'tv': d2, 'auriculares': d3, 'smartband': d4}
 
     return d_prod[producto]
 
@@ -211,7 +211,7 @@ def get_dict_avoid(producto):
           'correa': ['repuesto', 'adicional', 'extra', 'alternativa', 'color'],
           }
 
-    d_prod = {'celulares': d1, 'tv': d2, 'smartband': d4}
+    d_prod = {'celular': d1, 'tv': d2, 'smartband': d4}
 
     return d_prod[producto]
 

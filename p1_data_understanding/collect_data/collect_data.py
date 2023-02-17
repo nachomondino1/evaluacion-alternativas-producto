@@ -256,17 +256,17 @@ def is_alternative_new(df_alt, df_new_pub):  # Probar con celulares a ver si fun
     :return: True si la publicacion corresponde a una nueva alternativa, de lo contrario, False.
     """
     # Defino variables
-    l_attr_modelo_unico = ['Modelo', 'Memoria interna', 'Memoria RAM'] # En celulares: , 'Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
+    l_attr_modelo_unico = ['Marca', 'Modelo', 'Memoria interna', 'Memoria RAM'] # En celulares: , 'Memoria interna', 'Memoria RAM']  # lista de atributos sobre los cuales identificar modelos unicos
     id_new_alt = df_new_pub.loc[0, 'id_alternativa']  # id y modelo de nueva publicacion
     l_val_attr_new_alt = []  # Valores de atributos de nueva publicacion para identificar modelo unico (en miniscula)
 
     # BUSCO VALORES DE LA NUEVA ALTERNATIVA EN ATRIBUTOS QUE IDENTIFICAN A UN MODELO COMO UNICO
-    try:
-        for attr in l_attr_modelo_unico:
+    for attr in l_attr_modelo_unico:
+        # intento buscar valores de atributos que identifican a modelo como unico
+        try:
             l_val_attr_new_alt.append(str(df_new_pub.loc[0, attr]).lower())
-    # Si el producto no tiene atributos "Memoria interna" o "Memoria ram"
-    except KeyError:  # no se si es este error
-        pass
+        except KeyError:
+            pass
 
     # POR ALTERNATIVA EXTRAIDA
     for i in df_alt.index:
@@ -275,7 +275,11 @@ def is_alternative_new(df_alt, df_new_pub):  # Probar con celulares a ver si fun
         id_alt = df_alt.loc[i, 'id_alternativa']  # Id de alternativa extraida
         l_val_attr_alt = []  # Valores de atributos de alternativa extraida para identificar modelo unico (en miniscula)
         for attr in l_attr_modelo_unico:
-            l_val_attr_alt.append(str(df_alt.loc[i, attr]).lower())
+            # intento buscar valores de atributos que identifican a modelo como unico
+            try:
+                l_val_attr_alt.append(str(df_alt.loc[i, attr]).lower())
+            except KeyError:
+                pass
 
         # SI EL ID COINCIDE CON EL DE LA NUEVA PUBLICACION
         if id_new_alt == id_alt:
