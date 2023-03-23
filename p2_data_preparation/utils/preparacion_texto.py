@@ -161,7 +161,7 @@ class TextPreparation:
 
         return self.textos
 
-    def dowload_stop_word_removal_file(self):
+    def download_stop_word_removal_file(self):
         """
         Descarga archivo que contiene todas las palabras vacias
         :return:

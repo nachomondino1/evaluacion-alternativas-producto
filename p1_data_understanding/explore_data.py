@@ -4,7 +4,7 @@ import pandas as pd
 
 def check_ids(df_alt, df_opi): # notas
     """
-
+    Verifica unicidad de ids y consistencia entre dataframes
     :param df_alt:
     :param df_opi:
     :return:

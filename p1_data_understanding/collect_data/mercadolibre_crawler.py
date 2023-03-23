@@ -376,4 +376,3 @@ class MercadoLibreCrawler():
         # Busco url de alternativas filtradas por Condicion=Nuevo
         url = tag_filters.find('a', attrs={"aria-label": "Nuevo"})['href']
         return url
-
