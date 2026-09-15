@@ -31,7 +31,7 @@ python3.10 -m venv venv
 source venv/bin/activate
 
 # 2) Instalar las dependencias necesarias para la app (streamlit)
-pip install streamlit==1.11.0 pandas==1.4.3 numpy==1.23.0 Pillow==9.2.0 openpyxl==3.0.10 altair==4.2.0
+pip install -r requirements.txt
 
 # 3) Correr la app (desde la raíz del repo, no desde /my_app)
 streamlit run my_app/Inicio.py
@@ -39,10 +39,10 @@ streamlit run my_app/Inicio.py
 
 Esto abre la app en `http://localhost:8501`.
 
-Si en cambio necesitás el pipeline completo de scraping/NLP/modelado (`p1_data_understanding`, `p2_data_preparation`, `p3_modelling`), instalá todo el `requirements.txt` en vez del paso 2:
+`requirements.txt` (en la raíz) tiene solo lo necesario para correr la app — es el mismo archivo que usa el deploy en Streamlit Community Cloud. Si en cambio necesitás el pipeline completo de scraping/NLP/modelado (`p1_data_understanding`, `p2_data_preparation`, `p3_modelling`), instalá `requirements-pipeline.txt`:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-pipeline.txt
 ```
 
 ## Guía de usuario
