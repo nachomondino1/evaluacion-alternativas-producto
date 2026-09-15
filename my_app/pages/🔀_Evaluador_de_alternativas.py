@@ -83,12 +83,12 @@ def get_help_button(cust_need, producto):
               'bateria': help_bateria,
               'camara': 'Resoluciones de foto y video tanto de la cámara frontal como de la cámara trasera',
               'diseño': help_dis,
+              'funciones': 'Cantidad y calidad de funciones adicionales del dispositivo (por ejemplo, NFC, resistencia '
+                           'al agua, lector de huella, entre otros)',
               'memoria': "Capacidad de almacenamiento interno. En otras palabras, espacio para descargar muchas "
                          "aplicaciones, guardar muchas fotos o documentos, etcétera ",
               'pantalla': 'Calidad de imagen de la pantalla',
-              'sistema': 'Facilidad de uso del dispositivo, cantidad y calidad de funciones (por ejemplo, navegación por '
-                         'gestos, infrarrojo, entre otros) y frecuencia de actualizaciones del sistema operativo (tal '
-                         'que no quede obseleto en pocos años)',
+              'señal': 'Calidad y estabilidad de la conectividad (datos móviles, wifi, entre otros)',
               'sonido': 'Calidad del sonido, cantidad de parlantes y ubicación de los mismos',
               'tamaño': help_tam,
               'velocidad': help_vel
@@ -129,19 +129,19 @@ def get_usos(product):
         'celulares': {'Para jugar': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Poco importante',
                                 'pantalla': 'Importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
                                 'velocidad': 'Muy importante', 'sonido': 'Algo importante', 'diseño': 'No es importante',
-                                'sistema': 'Poco importante'},
+                                'funciones': 'Poco importante', 'señal': 'Algo importante'},
                       'Para trabajar': {'precio': 'Muy importante', 'bateria': 'Importante', 'camara': 'Algo importante',
                                    'pantalla': 'Algo importante', 'memoria': 'Importante', 'tamaño': 'Poco importante',
                                    'velocidad': 'Muy importante', 'sonido': 'Poco importante', 'diseño': 'Algo importante',
-                                   'sistema': 'Poco importante'},
+                                   'funciones': 'Algo importante', 'señal': 'Muy importante'},
                       'Para redes sociales': {'precio': 'Algo importante', 'bateria': 'Importante', 'camara': 'Muy importante',
                                 'pantalla': 'Algo importante', 'memoria': 'Algo importante', 'tamaño': 'Algo importante',
                                 'velocidad': 'Importante', 'sonido': 'Poco importante', 'diseño': 'Algo importante',
-                                'sistema': 'Poco importante'},
+                                'funciones': 'Algo importante', 'señal': 'Importante'},
                       'Para comunicación': {'precio': 'Muy importante', 'bateria': 'No es importante', 'camara': 'Poco importante',
                                        'pantalla': 'Poco importante', 'memoria': 'No es importante', 'tamaño': 'Importante',
                                        'velocidad': 'No es importante', 'sonido': 'Importante', 'diseño': 'Poco importante',
-                                       'sistema': 'Importante'},
+                                       'funciones': 'Poco importante', 'señal': 'Muy importante'},
                       }
     }
 
