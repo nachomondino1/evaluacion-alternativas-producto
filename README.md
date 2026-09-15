@@ -21,6 +21,30 @@ Esto es un archivo README. Debe contener la documentación de soporte uso de la 
 
 Asegúrate de empezar este archivo con una breve descripción sobre las funcionalidades y contexto de la herramienta digital. Sé conciso y al grano.
 
+## Instalación y ejecución local
+---
+Para correr la app de Streamlit en tu máquina (Python 3.10 recomendado, ya que algunas dependencias no compilan en versiones más nuevas):
+
+```bash
+# 1) Crear y activar un entorno virtual
+python3.10 -m venv venv
+source venv/bin/activate
+
+# 2) Instalar las dependencias necesarias para la app (streamlit)
+pip install streamlit==1.11.0 pandas==1.4.3 numpy==1.23.0 Pillow==9.2.0 openpyxl==3.0.10 altair==4.2.0
+
+# 3) Correr la app (desde la raíz del repo, no desde /my_app)
+streamlit run my_app/Inicio.py
+```
+
+Esto abre la app en `http://localhost:8501`.
+
+Si en cambio necesitás el pipeline completo de scraping/NLP/modelado (`p1_data_understanding`, `p2_data_preparation`, `p3_modelling`), instalá todo el `requirements.txt` en vez del paso 2:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Guía de usuario
 ---
 Explica los pasos básicos sobre cómo usar la herramienta digital. Es una buena sección para mostrar capturas de pantalla o gifs que ayuden a entender la herramienta digital.
