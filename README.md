@@ -49,6 +49,17 @@ Esto abre la app en `http://localhost:8501`.
 pip install -r requirements-pipeline.txt
 ```
 
+## Despliegue en Render
+---
+El repo incluye [`render.yaml`](render.yaml), así que el deploy es automático:
+
+1. Entrá a [render.com](https://render.com) y logueate con tu cuenta de GitHub.
+2. `New` → `Blueprint`, elegí este repositorio.
+3. Render lee `render.yaml` solo y crea el servicio (`evaluacion-alternativas-producto`), con el build (`pip install -r requirements.txt`) y el comando de arranque (`streamlit run my_app/Inicio.py`) ya configurados. Confirmá y esperá el primer deploy.
+4. La URL final queda como `https://evaluacion-alternativas-producto.onrender.com` (Render agrega un sufijo si ese nombre ya está tomado).
+
+En el plan free, el servicio se duerme tras 15 minutos de inactividad y tarda ~30-60s en volver a arrancar con la primera visita.
+
 ## Guía de usuario
 ---
 1. Entrá a la app ([demo online](https://nachomondino1-evaluacion-compra-automatica-my-appinicio-leworg.streamlit.app/) o corriéndola localmente, ver sección anterior).
