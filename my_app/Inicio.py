@@ -5,7 +5,6 @@ from PIL import Image
 def main():
     # Defino variables
     st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="expanded", menu_items=None)
-    st.cache()
 
     # ELEMENTOS DEL SIDEBAR
     with st.sidebar:
