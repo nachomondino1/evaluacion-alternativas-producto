@@ -13,7 +13,6 @@ def set_customer_needs_weigths(df_cust_needs, product):
     de 3 palabras y peso de la customer need.
     """
     # Defino variables
-    st.cache()
     l_cust_needs_one_word, l_cust_needs_three_words =  list(df_cust_needs.index), list(df_cust_needs['cust_needs_three_words'])
     df_cust_needs['Peso'] = None  # Inicializo columna peso de customer needs
     l_categorias = ["No es importante", 'Poco importante', 'Algo importante', 'Importante', 'Muy importante']
@@ -291,7 +290,6 @@ def create_recomendation_table(df_alt, df_alt_val_final):
 def main():
     # Defino variables
     st.set_page_config(page_title=None, page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items=None)
-    st.cache()
     product_options = ['', 'Celulares', 'Smartband', 'TV']
 
     # ELEMENTOS DEL SIDEBAR
