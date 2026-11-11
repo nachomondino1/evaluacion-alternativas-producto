@@ -1,7 +1,7 @@
 # Evaluación de alternativas de un producto en proceso de compra utilizando web scraping y análisis de sentimientos 
 
 <h1 align="center"> Evaluador de alternativas</h1>
-<p align="center"><img src="https://nachomondino1-evaluacion-compra-automatica-my-appinicio-leworg.streamlit.app/~/+/media/364f7e86abe7e50f00933cae2fb2e014acb5032e99d8433f969098ce.jpeg"/></p>
+<p align="center"><img src="site/img/home_image.png"/></p>
 
 ## Tabla de contenidos:
 ---
@@ -65,7 +65,7 @@ El workflow `.github/workflows/pages.yml` publica `site/` en cada push a `main` 
 
 ## Guía de usuario
 ---
-1. Entrá a la app ([demo online](https://nachomondino1-evaluacion-compra-automatica-my-appinicio-leworg.streamlit.app/) o corriéndola localmente, ver sección anterior).
+1. Entrá a la app ([demo online](https://nachomondino1.github.io/evaluacion-alternativas-producto/) o corriéndola localmente, ver sección anterior).
 2. En la pantalla de inicio, elegí una de las dos herramientas: **Evaluador de alternativas** o **Evaluador de marcas**.
 3. Seleccioná el producto que querés evaluar (celulares, smartband o TV).
 4. **Si elegiste Evaluador de alternativas**: para cada atributo del producto (precio, calidad, batería, etc.), indicá con el slider qué tan importante es para vos — podés arrancar de un uso predefinido si el producto lo tiene, o ajustarlo manualmente. La herramienta te devuelve la alternativa que mejor se ajusta a esas prioridades.
@@ -77,7 +77,7 @@ El workflow `.github/workflows/pages.yml` publica `site/` en cada push a `main` 
 
 ## Información adicional
 ---
-- Demo online: https://nachomondino1-evaluacion-compra-automatica-my-appinicio-leworg.streamlit.app/
+- Demo online: https://nachomondino1.github.io/evaluacion-alternativas-producto/
 - Stack: Python, Selenium/BeautifulSoup (scraping de MercadoLibre), NLP para análisis de sentimiento por atributo, clustering (KMeans) para agrupar alternativas similares, Streamlit para la interfaz.
 - Estructura del repo: `p1_data_understanding` (scraping y exploración), `p2_data_preparation` (limpieza y armado del dataset), `p3_modelling` (clustering y atribución de sentimiento), `p5_deployment`/`my_app` (la app de Streamlit).
 
