@@ -49,6 +49,20 @@ Esto abre la app en `http://localhost:8501`.
 pip install -r requirements-pipeline.txt
 ```
 
+## Sitio estático (GitHub Pages)
+---
+La versión publicada es un sitio estático en `site/` (HTML + JS, sin servidor ni cold start). Los cálculos corren en el navegador sobre JSON generados desde los Excel de `data/`.
+
+```bash
+# Regenerar los JSON cuando cambien los Excel (requiere pandas y openpyxl)
+python scripts/export_site_data.py
+
+# Probar localmente
+python -m http.server 8000 --directory site
+```
+
+El workflow `.github/workflows/pages.yml` publica `site/` en cada push a `main` (en Settings → Pages, elegir "GitHub Actions" como source). La app Streamlit original (`my_app/`) se mantiene como referencia.
+
 ## Guía de usuario
 ---
 1. Entrá a la app ([demo online](https://nachomondino1-evaluacion-compra-automatica-my-appinicio-leworg.streamlit.app/) o corriéndola localmente, ver sección anterior).
